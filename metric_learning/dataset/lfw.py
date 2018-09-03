@@ -17,3 +17,7 @@ def create_dataset():
             labels.append(label_map[label])
 
     return create_image_dataset(image_files, labels)
+
+
+if __name__ == '__main__':
+    print(create_dataset())

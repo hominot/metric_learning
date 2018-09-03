@@ -1,5 +1,8 @@
+from collections import defaultdict
 from tqdm import tqdm
+
 import math
+import random
 import requests
 import tarfile
 import tensorflow as tf
@@ -43,10 +46,43 @@ def create_image_dataset(file_paths, labels):
         image_string = tf.read_file(filename)
         image_decoded = tf.image.decode_jpeg(image_string)
         image_resized = tf.image.resize_images(image_decoded, [250, 250])
-        return image_resized, label
+        image_normalized = image_resized / 255.
+        return image_normalized, label
     file_paths = tf.constant(file_paths)
     labels = tf.constant(labels)
 
     dataset = tf.data.Dataset.from_tensor_slices((file_paths, labels))
     dataset = dataset.map(_parse_function)
     return dataset
+
+
+def sample_pairs(images, labels, num_positives, num_negatives):
+    data_map = defaultdict(list)
+    positive_pair_candidates = []
+    for image, label in zip(images, labels):
+        data_map[int(label)].append(image)
+    for label, image_list in data_map.items():
+        if len(image_list) >= 2:
+            positive_pair_candidates.append(label)
+
+    images_1 = []
+    images_2 = []
+    pair_labels = []
+
+    if positive_pair_candidates:
+        for _ in range(num_positives):
+            label = random.choice(positive_pair_candidates)
+            x, y = random.sample(data_map[label], 2)
+            images_1.append(x)
+            images_2.append(y)
+            pair_labels.append(1)
+
+    for _ in range(num_negatives):
+        x, y = random.sample(data_map.keys(), 2)
+        images_1.append(random.choice(data_map[x]))
+        images_2.append(random.choice(data_map[y]))
+        pair_labels.append(0)
+    images_1 = tf.stack(images_1)
+    images_2 = tf.stack(images_2)
+    pair_labels = pair_labels
+    return images_1, images_2, pair_labels
