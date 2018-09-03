@@ -41,21 +41,6 @@ def extract(filepath):
         tar.extract(item, extract_path)
 
 
-def create_image_dataset(file_paths, labels):
-    def _parse_function(filename, label):
-        image_string = tf.read_file(filename)
-        image_decoded = tf.image.decode_jpeg(image_string)
-        image_resized = tf.image.resize_images(image_decoded, [250, 250])
-        image_normalized = image_resized / 255.
-        return image_normalized, label
-    file_paths = tf.constant(file_paths)
-    labels = tf.constant(labels)
-
-    dataset = tf.data.Dataset.from_tensor_slices((file_paths, labels))
-    dataset = dataset.map(_parse_function)
-    return dataset
-
-
 def sample_pairs(images, labels, num_positives, num_negatives):
     data_map = defaultdict(list)
     positive_pair_candidates = []

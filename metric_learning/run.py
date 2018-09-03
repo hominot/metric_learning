@@ -1,8 +1,7 @@
 import tensorflow as tf
-import numpy as np
 import time
 
-from metric_learning.dataset.lfw import create_dataset
+from util.data_loader import DataLoader
 from metric_learning.models.simple_conv import create_model
 from metric_learning.loss_functions.contrastive_loss import contrastive_loss
 
@@ -23,7 +22,7 @@ writer = tf.contrib.summary.create_file_writer(
     flush_millis=10000)
 writer.set_as_default()
 
-image_dataset = create_dataset()
+image_dataset = DataLoader.create('mnist').load_dataset()
 train_ds = image_dataset.shuffle(1024).batch(32)
 
 step_counter = tf.train.get_or_create_global_step()

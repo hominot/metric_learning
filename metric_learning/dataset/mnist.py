@@ -1,3 +1,5 @@
+from util.data_loader import DataLoader
+
 import gzip
 import os
 import shutil
@@ -6,6 +8,9 @@ import tempfile
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
+
+
+directory = '/tmp/research/mnist'
 
 
 def read32(bytestream):
@@ -40,7 +45,7 @@ def check_labels_file_header(filename):
                                                                            f.name))
 
 
-def download(directory, filename):
+def download(filename):
     """Download (and unzip) a file from the MNIST dataset if not already done."""
     filepath = os.path.join(directory, filename)
     if tf.gfile.Exists(filepath):
@@ -59,11 +64,11 @@ def download(directory, filename):
     return filepath
 
 
-def dataset(directory, images_file, labels_file):
+def dataset(images_file, labels_file):
     """Download and parse MNIST dataset."""
 
-    images_file = download(directory, images_file)
-    labels_file = download(directory, labels_file)
+    images_file = download(images_file)
+    labels_file = download(labels_file)
 
     check_image_file_header(images_file)
     check_labels_file_header(labels_file)
@@ -72,7 +77,7 @@ def dataset(directory, images_file, labels_file):
         # Normalize from [0, 255] to [0.0, 1.0]
         image = tf.decode_raw(image, tf.uint8)
         image = tf.cast(image, tf.float32)
-        image = tf.reshape(image, [784])
+        image = tf.reshape(image, [28, 28, 1])
         return image / 255.0
 
     def decode_label(label):
@@ -87,12 +92,24 @@ def dataset(directory, images_file, labels_file):
     return tf.data.Dataset.zip((images, labels))
 
 
-def train(directory):
+def train():
     """tf.data.Dataset object for MNIST training data."""
-    return dataset(directory, 'train-images-idx3-ubyte'
+    return dataset('train-images-idx3-ubyte',
                    'train-labels-idx1-ubyte')
 
 
-def test(directory):
+def test():
     """tf.data.Dataset object for MNIST test data."""
-    return dataset(directory, 't10k-images-idx3-ubyte', 't10k-labels-idx1-ubyte')
+    return dataset('t10k-images-idx3-ubyte', 't10k-labels-idx1-ubyte')
+
+
+class MNISTDataLoader(DataLoader):
+    name = 'mnist'
+
+    def load_dataset(self):
+        return train()
+
+
+if __name__ == '__main__':
+    mnist = DataLoader.create('mnist')
+    print(mnist.load_dataset())
