@@ -42,7 +42,6 @@ def extract(filepath):
 
 
 def create_dataset_from_directory(directory):
-    print(directory)
     label_map = {}
     labels = []
     image_files = []
@@ -54,3 +53,12 @@ def create_dataset_from_directory(directory):
             image_files.append(os.path.join(subdir, file))
             labels.append(label_map[label])
     return image_files, labels
+
+
+def split_train_test(images, labels, split_test_ratio=0.2):
+    data = zip(images, labels)
+    random.shuffle(data)
+    num_test = int(split_test_ratio * len(data))
+    training_data = data[:len(data) - num_test]
+    testing_data = data[-num_test:]
+    return training_data, testing_data
