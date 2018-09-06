@@ -41,33 +41,16 @@ def extract(filepath):
         tar.extract(item, extract_path)
 
 
-def sample_pairs(images, labels, num_positives, num_negatives):
-    data_map = defaultdict(list)
-    positive_pair_candidates = []
-    for image, label in zip(images, labels):
-        data_map[int(label)].append(image)
-    for label, image_list in data_map.items():
-        if len(image_list) >= 2:
-            positive_pair_candidates.append(label)
-
-    images_1 = []
-    images_2 = []
-    pair_labels = []
-
-    if positive_pair_candidates:
-        for _ in range(num_positives):
-            label = random.choice(positive_pair_candidates)
-            x, y = random.sample(data_map[label], 2)
-            images_1.append(x)
-            images_2.append(y)
-            pair_labels.append(1)
-
-    for _ in range(num_negatives):
-        x, y = random.sample(data_map.keys(), 2)
-        images_1.append(random.choice(data_map[x]))
-        images_2.append(random.choice(data_map[y]))
-        pair_labels.append(0)
-    images_1 = tf.stack(images_1)
-    images_2 = tf.stack(images_2)
-    pair_labels = pair_labels
-    return images_1, images_2, pair_labels
+def create_dataset_from_directory(directory):
+    print(directory)
+    label_map = {}
+    labels = []
+    image_files = []
+    for subdir, dirs, files in os.walk(directory):
+        for file in files:
+            label = subdir.split('/')[-1]
+            if label not in label_map:
+                label_map[label] = len(label_map) + 1
+            image_files.append(os.path.join(subdir, file))
+            labels.append(label_map[label])
+    return image_files, labels

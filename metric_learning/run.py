@@ -23,21 +23,22 @@ writer = tf.contrib.summary.create_file_writer(
 writer.set_as_default()
 
 image_dataset = DataLoader.create('mnist').load_dataset()
-train_ds = image_dataset.shuffle(1024).batch(32)
+train_ds = image_dataset.shuffle(10000).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer()
 model = create_model()
 
 start = time.time()
-for (batch, (images, labels)) in enumerate(train_ds):
-    with tf.contrib.summary.record_summaries_every_n_global_steps(
-            10, global_step=step_counter):
-        with tf.GradientTape() as tape:
-            embeddings = model(images, training=True)
-            loss_value = contrastive_loss(embeddings, labels)
-            tf.contrib.summary.scalar('loss', loss_value)
-            #tf.contrib.summary.scalar('accuracy', compute_accuracy(embeddings, labels))
-        grads = tape.gradient(loss_value, model.variables)
-        optimizer.apply_gradients(
-            zip(grads, model.variables), global_step=step_counter)
+for _ in range(10):
+    for (batch, (images, labels)) in enumerate(train_ds):
+        with tf.contrib.summary.record_summaries_every_n_global_steps(
+                10, global_step=step_counter):
+            with tf.GradientTape() as tape:
+                embeddings = model(images, training=True)
+                loss_value = contrastive_loss(embeddings, labels)
+                tf.contrib.summary.scalar('loss', loss_value)
+                #tf.contrib.summary.scalar('accuracy', compute_accuracy(embeddings, labels))
+            grads = tape.gradient(loss_value, model.variables)
+            optimizer.apply_gradients(
+                zip(grads, model.variables), global_step=step_counter)

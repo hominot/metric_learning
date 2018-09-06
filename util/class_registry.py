@@ -5,9 +5,12 @@ class ClassRegistry(type):
             cls.registry = dict()
         if hasattr(cls, 'name'):
             if cls.name in cls.registry:
+                pass
+                """
                 raise Exception(
                     '"{}" already registered as "{}"'.format(
                         cls.name, cls.registry[cls.name].__name__))
+                """
 
             cls.registry[cls.name] = cls
 

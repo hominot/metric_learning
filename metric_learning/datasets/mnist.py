@@ -1,4 +1,5 @@
 from util.data_loader import DataLoader
+from util.dataset import create_dataset_from_directory
 
 import gzip
 import os
@@ -9,6 +10,7 @@ import numpy as np
 from six.moves import urllib
 import tensorflow as tf
 
+from collections import defaultdict
 
 directory = '/tmp/research/mnist'
 
@@ -64,7 +66,7 @@ def download(filename):
     return filepath
 
 
-def dataset(images_file, labels_file):
+def prepare_image_files(images_file, labels_file):
     """Download and parse MNIST dataset."""
 
     images_file = download(images_file)
@@ -73,41 +75,55 @@ def dataset(images_file, labels_file):
     check_image_file_header(images_file)
     check_labels_file_header(labels_file)
 
-    def decode_image(image):
-        # Normalize from [0, 255] to [0.0, 1.0]
-        image = tf.decode_raw(image, tf.uint8)
-        image = tf.cast(image, tf.float32)
-        image = tf.reshape(image, [28, 28, 1])
-        return image / 255.0
+    with open(images_file, 'rb') as f:
+        image_data = np.frombuffer(f.read(), np.uint8, offset=16)
+    image_data = image_data.reshape(-1, 28, 28)
 
-    def decode_label(label):
-        label = tf.decode_raw(label, tf.uint8)  # tf.string -> [tf.uint8]
-        label = tf.reshape(label, [])  # label is a scalar
-        return tf.to_int32(label)
+    with open(labels_file, 'rb') as f:
+        label_data = np.frombuffer(f.read(), np.uint8, offset=8)
 
-    images = tf.data.FixedLengthRecordDataset(
-        images_file, 28 * 28, header_bytes=16).map(decode_image)
-    labels = tf.data.FixedLengthRecordDataset(
-        labels_file, 1, header_bytes=8).map(decode_label)
-    return tf.data.Dataset.zip((images, labels))
+    label_count_map = defaultdict(int)
+    for image, label in zip(image_data, label_data):
+        label_count_map[label] += 1
+        image = tf.reshape(tf.constant(image), [28, 28, 1])
+        filename = '{:04d}.png'.format(label_count_map[label])
+        label_directory = os.path.join(directory, 'mnist', str(label))
+        if not tf.gfile.Exists(label_directory):
+            tf.gfile.MakeDirs(label_directory)
+        tf.write_file(os.path.join(label_directory, filename), tf.image.encode_png(image))
 
 
-def train():
+def prepare_training_image_files():
     """tf.data.Dataset object for MNIST training data."""
-    return dataset('train-images-idx3-ubyte',
-                   'train-labels-idx1-ubyte')
+    prepare_image_files('train-images-idx3-ubyte', 'train-labels-idx1-ubyte')
 
 
-def test():
+def prepare_testing_image_files():
     """tf.data.Dataset object for MNIST test data."""
-    return dataset('t10k-images-idx3-ubyte', 't10k-labels-idx1-ubyte')
+    prepare_image_files('t10k-images-idx3-ubyte', 't10k-labels-idx1-ubyte')
 
 
 class MNISTDataLoader(DataLoader):
     name = 'mnist'
 
+    def prepare_files(self):
+        prepare_image_files('train-images-idx3-ubyte', 'train-labels-idx1-ubyte')
+
     def load_dataset(self):
-        return train()
+        self.prepare_files()
+        def _parse_function(filename):
+            image_string = tf.read_file(filename)
+            image_decoded = tf.image.decode_png(image_string, channels=1)
+            image_resized = tf.image.resize_images(image_decoded, [28, 28])
+            image_normalized = image_resized / 255.
+            image_normalized = tf.reshape(image_normalized, [28, 28, 1])
+            return image_normalized
+
+        image_files, labels = create_dataset_from_directory(os.path.join(directory, 'mnist'))
+        images = tf.data.Dataset.from_tensor_slices(tf.constant(image_files)).map(_parse_function)
+        labels = tf.data.Dataset.from_tensor_slices(tf.constant(labels))
+
+        return tf.data.Dataset.zip((images, labels))
 
 
 if __name__ == '__main__':
