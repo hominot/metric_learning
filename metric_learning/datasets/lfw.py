@@ -1,6 +1,5 @@
 from util.dataset import download, extract, create_dataset_from_directory
 from util.data_loader import DataLoader
-import os
 import tensorflow as tf
 
 
@@ -22,16 +21,19 @@ def create_image_dataset(file_paths, labels):
 
 class LFWDataLoader(DataLoader):
     name = 'lfw'
+    directory = '/tmp/research'
 
     def prepare_files(self):
         filepath = download('http://vis-www.cs.umass.edu/lfw/lfw.tgz')
         extract(filepath)
 
-    def load_dataset(self):
-        image_files, labels = create_dataset_from_directory(
-            '{}/lfw'.format(os.path.dirname(self.data_path()))
-        )
-        return create_image_dataset(image_files, labels)
+    def _image_parse_function(self, filename):
+        image_string = tf.read_file(filename)
+        image_decoded = tf.image.decode_jpeg(image_string)
+        image_resized = tf.image.resize_images(image_decoded, [250, 250])
+        image_normalized = image_resized / 255.
+        image_normalized = tf.reshape(image_normalized, [250, 250, 3])
+        return image_normalized
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ import os
 from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test
-from metric_learning.models.simple_dense import create_model
+from metric_learning.models.simple_conv import create_model
 from metric_learning.loss_functions.triplet_loss import triplet_loss
 
 
@@ -45,7 +45,7 @@ tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
 
-run_name = 'triplet_loss'
+run_name = 'lfw_conv_triplet_loss'
 run_dir = '{}_0001'.format(run_name)
 runs = list(filter(
     lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
@@ -60,7 +60,7 @@ writer = tf.contrib.summary.create_file_writer(
     flush_millis=10000)
 writer.set_as_default()
 
-data_loader: DataLoader = DataLoader.create('mnist')
+data_loader: DataLoader = DataLoader.create('lfw')
 image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test(image_files, labels)
 
