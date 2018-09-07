@@ -7,7 +7,7 @@ from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test
 from metric_learning.models.simple_dense import create_model
-from metric_learning.loss_functions.contrastive_loss import contrastive_loss
+from metric_learning.loss_functions.triplet_loss import triplet_loss
 
 
 tf.enable_eager_execution()
@@ -44,11 +44,16 @@ def compute_verification_accuracy(embeddings, labels):
 tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
-runs = next(os.walk(tensorboard_dir))[1]
-run_dir = 'run_0001'
+
+run_name = 'triplet_loss'
+run_dir = '{}_0001'.format(run_name)
+runs = list(filter(
+    lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
+    next(os.walk(tensorboard_dir))[1]
+))
 if runs:
     next_run = int(max(runs).split('_')[-1]) + 1
-    run_dir = 'run_{:04d}'.format(next_run)
+    run_dir = '{}_{:04d}'.format(run_name, next_run)
 
 writer = tf.contrib.summary.create_file_writer(
     os.path.join(tensorboard_dir, run_dir),
@@ -60,7 +65,7 @@ image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test(image_files, labels)
 
 train_ds = data_loader.create_dataset(*zip(*training_data)) \
-    .shuffle(1000).batch(256)
+    .shuffle(10000).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer()
@@ -73,7 +78,7 @@ for _ in range(10):
                 10, global_step=step_counter):
             with tf.GradientTape() as tape:
                 embeddings = model(images, training=True)
-                loss_value = contrastive_loss(embeddings, labels)
+                loss_value = triplet_loss(embeddings, labels)
                 tf.contrib.summary.scalar('loss', loss_value)
                 tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(embeddings, labels))
             grads = tape.gradient(loss_value, model.variables)
