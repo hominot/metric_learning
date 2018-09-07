@@ -1,29 +1,66 @@
 import tensorflow as tf
 import time
+import random
+import os
 
+from collections import defaultdict
 from util.data_loader import DataLoader
-from metric_learning.models.simple_conv import create_model
+from util.dataset import split_train_test
+from metric_learning.models.simple_dense import create_model
 from metric_learning.loss_functions.contrastive_loss import contrastive_loss
 
 
 tf.enable_eager_execution()
 
 
-def compute_accuracy(logits, labels):
-    predictions = tf.argmax(logits, axis=1, output_type=tf.int64)
-    labels = tf.cast(labels, tf.int64)
-    batch_size = int(logits.shape[0])
-    return tf.reduce_sum(
-        tf.cast(tf.equal(predictions, labels), dtype=tf.float32)) / batch_size
+def compute_verification_accuracy(embeddings, labels):
+    data_map = defaultdict(set)
+    for index in range(embeddings.shape[0]):
+        data_map[int(labels[index])].add(index)
 
+    failure = 0.
+    total = 0.
+    for index in range(embeddings.shape[0]):
+        label = int(labels[index])
+        if len(data_map[label]) < 2:
+            continue
+        total += 1
+        anchor_embedding = embeddings[index]
+        positive_indices = random.sample(data_map[label], 2)
+        positive_index = positive_indices[0] if positive_indices[0] != index else positive_indices[1]
+        p_d = tf.norm(anchor_embedding - embeddings[positive_index])
+
+        negative_candidates = set(range(embeddings.shape[0])) - data_map[int(labels[index])]
+        negative_indices = random.sample(negative_candidates, min(len(negative_candidates), 5))
+
+        for negative_index in negative_indices:
+            if tf.norm(embeddings[negative_index] - anchor_embedding) < p_d:
+                failure += 1
+                break
+
+    return (total - failure) / total
+
+
+tensorboard_dir = '/tmp/tensorflow/metric_learning'
+if not tf.gfile.Exists(tensorboard_dir):
+    tf.gfile.MakeDirs(tensorboard_dir)
+runs = next(os.walk(tensorboard_dir))[1]
+run_dir = 'run_0001'
+if runs:
+    next_run = int(max(runs).split('_')[-1]) + 1
+    run_dir = 'run_{:04d}'.format(next_run)
 
 writer = tf.contrib.summary.create_file_writer(
-    '/tmp/tensorflow/metric_learning',
+    os.path.join(tensorboard_dir, run_dir),
     flush_millis=10000)
 writer.set_as_default()
 
-image_dataset = DataLoader.create('mnist').load_dataset()
-train_ds = image_dataset.shuffle(10000).batch(256)
+data_loader: DataLoader = DataLoader.create('mnist')
+image_files, labels = data_loader.load_image_files()
+training_data, testing_data = split_train_test(image_files, labels)
+
+train_ds = data_loader.create_dataset(*zip(*training_data)) \
+    .shuffle(1000).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer()
@@ -38,7 +75,7 @@ for _ in range(10):
                 embeddings = model(images, training=True)
                 loss_value = contrastive_loss(embeddings, labels)
                 tf.contrib.summary.scalar('loss', loss_value)
-                #tf.contrib.summary.scalar('accuracy', compute_accuracy(embeddings, labels))
+                tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(embeddings, labels))
             grads = tape.gradient(loss_value, model.variables)
             optimizer.apply_gradients(
                 zip(grads, model.variables), global_step=step_counter)

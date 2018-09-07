@@ -12,20 +12,20 @@ def create_model():
         [
             layers.Conv2D(
                 32,
-                5,
+                3,
                 padding='same',
                 data_format=data_format,
                 activation=tf.nn.relu),
             max_pool,
             layers.Conv2D(
                 64,
-                5,
+                3,
                 padding='same',
                 data_format=data_format,
                 activation=tf.nn.relu),
             max_pool,
             layers.Flatten(),
-            layers.Dense(1024, activation=tf.nn.relu),
+            layers.Dense(128, activation=tf.nn.relu),
             layers.Dropout(0.4),
             layers.Dense(10),
         ])

@@ -56,7 +56,7 @@ def create_dataset_from_directory(directory):
 
 
 def split_train_test(images, labels, split_test_ratio=0.2):
-    data = zip(images, labels)
+    data = list(zip(images, labels))
     random.shuffle(data)
     num_test = int(split_test_ratio * len(data))
     training_data = data[:len(data) - num_test]

@@ -101,7 +101,6 @@ class MNISTDataLoader(DataLoader):
         return image_normalized
 
 
-
 if __name__ == '__main__':
     mnist = DataLoader.create('mnist')
     print(mnist.load_dataset())
