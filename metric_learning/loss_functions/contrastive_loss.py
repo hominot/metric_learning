@@ -38,7 +38,7 @@ def sample_pairs(images, labels, num_positives, num_negatives):
     return images_1, images_2, pair_labels
 
 
-def contrastive_loss(embeddings, labels):
+def contrastive_loss(embeddings, labels, grid_points):
     images_1, images_2, pair_labels = sample_pairs(
         embeddings, labels, labels.shape[0], labels.shape[0])
 

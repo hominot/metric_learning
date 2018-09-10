@@ -34,7 +34,7 @@ def sample_triples(images, labels):
     )
 
 
-def triplet_loss(embeddings, labels):
+def triplet_loss(embeddings, labels, grid_points):
     anchor_images, positive_images, negative_images = sample_triples(embeddings, labels)
 
     d_p = tf.reduce_sum(tf.square(anchor_images - positive_images), axis=1)

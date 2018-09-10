@@ -67,6 +67,14 @@ class MNISTDataLoader(DataLoader):
         def prepare_image_files(images_file, labels_file):
             """Download and parse MNIST dataset."""
 
+            count = 0
+            for root, dirnames, filenames in os.walk(os.path.join(self.directory, self.name)):
+                for filename in filenames:
+                    if filename.endswith('.png'):
+                        count += 1
+            if count == 60000:
+                return
+
             images_file = download(images_file)
             labels_file = download(labels_file)
 

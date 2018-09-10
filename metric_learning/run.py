@@ -1,4 +1,8 @@
 import tensorflow as tf
+import numpy as np
+
+tfe = tf.contrib.eager
+
 import time
 import random
 import os
@@ -6,8 +10,8 @@ import os
 from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test
-from metric_learning.models.simple_conv import create_model
-from metric_learning.loss_functions.triplet_loss import triplet_loss
+from metric_learning.models.simple_dense import create_model
+from metric_learning.loss_functions.grid_loss import grid_loss
 
 
 tf.enable_eager_execution()
@@ -45,7 +49,7 @@ tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
 
-run_name = 'lfw_conv_triplet_loss'
+run_name = 'mnist_simple_dense_variable_grid_loss'
 run_dir = '{}_0001'.format(run_name)
 runs = list(filter(
     lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
@@ -60,12 +64,14 @@ writer = tf.contrib.summary.create_file_writer(
     flush_millis=10000)
 writer.set_as_default()
 
-data_loader: DataLoader = DataLoader.create('lfw')
+data_loader: DataLoader = DataLoader.create('mnist')
 image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test(image_files, labels)
+num_labels = max(labels)
+grid_points = np.random.random([num_labels, 8]) * 2 - 1
 
 train_ds = data_loader.create_dataset(*zip(*training_data)) \
-    .shuffle(10000).batch(256)
+    .shuffle(3000).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer()
@@ -78,7 +84,7 @@ for _ in range(10):
                 10, global_step=step_counter):
             with tf.GradientTape() as tape:
                 embeddings = model(images, training=True)
-                loss_value = triplet_loss(embeddings, labels)
+                loss_value = grid_loss(embeddings, labels, grid_points)
                 tf.contrib.summary.scalar('loss', loss_value)
                 tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(embeddings, labels))
             grads = tape.gradient(loss_value, model.variables)
