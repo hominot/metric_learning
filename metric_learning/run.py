@@ -17,30 +17,33 @@ from metric_learning.loss_functions.grid_loss import grid_loss
 tf.enable_eager_execution()
 
 
-def compute_verification_accuracy(embeddings, labels):
-    data_map = defaultdict(set)
-    for index in range(embeddings.shape[0]):
-        data_map[int(labels[index])].add(index)
+def compute_verification_accuracy(testing_ds):
+    data_map = defaultdict(list)
+    for images, labels in testing_ds:
+        embeddings = model(images, training=False)
+        for index in range(embeddings.shape[0]):
+            data_map[int(labels[index])].append(embeddings[index])
 
     failure = 0.
     total = 0.
-    for index in range(embeddings.shape[0]):
-        label = int(labels[index])
+    for label in data_map.keys():
         if len(data_map[label]) < 2:
             continue
-        total += 1
-        anchor_embedding = embeddings[index]
-        positive_indices = random.sample(data_map[label], 2)
-        positive_index = positive_indices[0] if positive_indices[0] != index else positive_indices[1]
-        p_d = tf.norm(anchor_embedding - embeddings[positive_index])
+        for index, anchor_embedding in enumerate(data_map[label]):
+            total += 1
+            positive_indices = random.sample(range(len(data_map[label])), 2)
+            positive_index = positive_indices[0] if positive_indices[0] != index else positive_indices[1]
+            p_d = tf.norm(anchor_embedding - data_map[label][positive_index])
+            num_negative_examples = min(5, len(data_map) - 1)
+            negative_labels = random.sample(set(data_map.keys()) - {label}, num_negative_examples)
+            negative_embeddings = []
+            for negative_label in negative_labels:
+                negative_embeddings.append(random.choice(data_map[negative_label]))
 
-        negative_candidates = set(range(embeddings.shape[0])) - data_map[int(labels[index])]
-        negative_indices = random.sample(negative_candidates, min(len(negative_candidates), 5))
-
-        for negative_index in negative_indices:
-            if tf.norm(embeddings[negative_index] - anchor_embedding) < p_d:
-                failure += 1
-                break
+            for negative_embedding in negative_embeddings:
+                if tf.norm(negative_embedding - anchor_embedding) < p_d:
+                    failure += 1
+                    break
 
     return (total - failure) / total
 
@@ -72,6 +75,7 @@ grid_points = np.random.random([num_labels, 8]) * 2 - 1
 
 train_ds = data_loader.create_dataset(*zip(*training_data)) \
     .shuffle(3000).batch(256)
+test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer()
@@ -90,7 +94,7 @@ with tf.device(device):
                     embeddings = model(images, training=True)
                     loss_value = grid_loss(embeddings, labels, grid_points)
                     tf.contrib.summary.scalar('loss', loss_value)
-                    tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(embeddings, labels))
+                    tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(test_ds))
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(
                     zip(grads, model.variables), global_step=step_counter)
