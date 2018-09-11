@@ -77,16 +77,20 @@ step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer()
 model = create_model()
 
+device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
+
 start = time.time()
-for _ in range(10):
-    for (batch, (images, labels)) in enumerate(train_ds):
-        with tf.contrib.summary.record_summaries_every_n_global_steps(
-                10, global_step=step_counter):
-            with tf.GradientTape() as tape:
-                embeddings = model(images, training=True)
-                loss_value = grid_loss(embeddings, labels, grid_points)
-                tf.contrib.summary.scalar('loss', loss_value)
-                tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(embeddings, labels))
-            grads = tape.gradient(loss_value, model.variables)
-            optimizer.apply_gradients(
-                zip(grads, model.variables), global_step=step_counter)
+
+with tf.device(device):
+    for _ in range(10):
+        for (batch, (images, labels)) in enumerate(train_ds):
+            with tf.contrib.summary.record_summaries_every_n_global_steps(
+                    10, global_step=step_counter):
+                with tf.GradientTape() as tape:
+                    embeddings = model(images, training=True)
+                    loss_value = grid_loss(embeddings, labels, grid_points)
+                    tf.contrib.summary.scalar('loss', loss_value)
+                    tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(embeddings, labels))
+                grads = tape.gradient(loss_value, model.variables)
+                optimizer.apply_gradients(
+                    zip(grads, model.variables), global_step=step_counter)
