@@ -54,7 +54,7 @@ tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
 
-run_name = 'mnist_simple_dense_variable_grid_loss'
+run_name = 'mnist_simple_dense_grid_loss'
 run_dir = '{}_0001'.format(run_name)
 runs = list(filter(
     lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
@@ -75,8 +75,6 @@ training_data, testing_data = split_train_test(image_files, labels)
 num_labels = max(labels)
 grid_points = np.random.random([num_labels, 8]) * 2 - 1
 
-train_ds = data_loader.create_dataset(*zip(*training_data)) \
-    .shuffle(3000).batch(256)
 test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
@@ -89,6 +87,7 @@ start = time.time()
 
 with tf.device(device):
     for _ in range(10):
+        train_ds = data_loader.create_grouped_dataset(*zip(*training_data)).batch(256)
         for (batch, (images, labels)) in enumerate(train_ds):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
