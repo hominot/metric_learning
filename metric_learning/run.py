@@ -85,9 +85,9 @@ device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
 start = time.time()
 
-with tf.device(device):
-    for _ in range(10):
-        train_ds = data_loader.create_grouped_dataset(*zip(*training_data)).batch(256)
+for _ in range(10):
+    train_ds = data_loader.create_grouped_dataset(*zip(*training_data)).batch(256)
+    with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
