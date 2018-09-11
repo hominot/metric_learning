@@ -17,7 +17,7 @@ from metric_learning.loss_functions.grid_loss import grid_loss
 tf.enable_eager_execution()
 
 
-def compute_verification_accuracy(testing_ds):
+def compute_verification_accuracy(model, testing_ds, sampling_rate=1.0):
     data_map = defaultdict(list)
     for images, labels in testing_ds:
         embeddings = model(images, training=False)
@@ -30,6 +30,8 @@ def compute_verification_accuracy(testing_ds):
         if len(data_map[label]) < 2:
             continue
         for index, anchor_embedding in enumerate(data_map[label]):
+            if random.random() > sampling_rate:
+                continue
             total += 1
             positive_indices = random.sample(range(len(data_map[label])), 2)
             positive_index = positive_indices[0] if positive_indices[0] != index else positive_indices[1]
@@ -94,7 +96,9 @@ with tf.device(device):
                     embeddings = model(images, training=True)
                     loss_value = grid_loss(embeddings, labels, grid_points)
                     tf.contrib.summary.scalar('loss', loss_value)
-                    tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(test_ds))
+
+                if int(tf.train.get_global_step()) % 10 == 0:
+                    tf.contrib.summary.scalar('accuracy', compute_verification_accuracy(model, test_ds, 0.1))
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(
                     zip(grads, model.variables), global_step=step_counter)
