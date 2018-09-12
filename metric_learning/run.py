@@ -11,7 +11,7 @@ from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test
 from metric_learning.models.simple_dense import create_model
-from metric_learning.loss_functions.grid_loss import grid_loss
+from metric_learning.loss_functions.grid_loss import loss
 
 
 tf.enable_eager_execution()
@@ -93,7 +93,7 @@ for _ in range(10):
                     10, global_step=step_counter):
                 with tf.GradientTape() as tape:
                     embeddings = model(images, training=True)
-                    loss_value = grid_loss(embeddings, labels, grid_points)
+                    loss_value = loss(embeddings, labels, grid_points)
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 if int(tf.train.get_global_step()) % 10 == 0:
