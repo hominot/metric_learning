@@ -1,4 +1,3 @@
-from collections import defaultdict
 from tqdm import tqdm
 
 import math
@@ -9,7 +8,7 @@ import tensorflow as tf
 import os
 
 
-def download(url, directory='/tmp/research', filename=None):
+def download(url, directory, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
     filepath = os.path.join(directory, filename)
@@ -34,11 +33,10 @@ def download(url, directory='/tmp/research', filename=None):
     return filepath
 
 
-def extract(filepath):
-    extract_path = os.path.dirname(filepath)
+def extract(filepath, directory):
     tar = tarfile.open(filepath, 'r')
     for item in tar:
-        tar.extract(item, extract_path)
+        tar.extract(item, directory)
 
 
 def create_dataset_from_directory(directory):

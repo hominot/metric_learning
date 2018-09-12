@@ -8,11 +8,10 @@ import random
 
 
 class DataLoader(object, metaclass=ClassRegistry):
-    name = None
-    directory = None
+    module_path = 'metric_learning.datasets'
 
-    def data_path(self):
-        return '/tmp/research/{}'.format(self.name)
+    data_directory = '/tmp/research/data'
+    temp_directory = '/tmp/research/temp'
 
     def prepare_files(self):
         pass
@@ -37,9 +36,7 @@ class DataLoader(object, metaclass=ClassRegistry):
         for image_file, label in data:
             data_map[label].append(image_file)
 
-        for k, v in data_map.items():
-            if len(v) < group_size:
-                del data_map[k]
+        data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
         grouped_data = []
         while len(data_map) >= num_groups:
             sampled_labels = random.sample(data_map.keys(), num_groups)
@@ -59,7 +56,5 @@ class DataLoader(object, metaclass=ClassRegistry):
         self.prepare_files()
 
         image_files, labels = create_dataset_from_directory(
-            os.path.join(self.directory, self.name))
+            os.path.join(self.data_directory, self.name))
         return image_files, labels
-
-from metric_learning.datasets import *

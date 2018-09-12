@@ -14,7 +14,6 @@ from collections import defaultdict
 
 class MNISTDataLoader(DataLoader):
     name = 'mnist'
-    directory = '/tmp/research/mnist'
 
     def prepare_files(self):
         def read32(bytestream):
@@ -48,11 +47,11 @@ class MNISTDataLoader(DataLoader):
 
         def download(filename):
             """Download (and unzip) a file from the MNIST dataset if not already done."""
-            filepath = os.path.join(self.directory, filename)
+            filepath = os.path.join(self.temp_directory, self.name, filename)
             if tf.gfile.Exists(filepath):
                 return filepath
-            if not tf.gfile.Exists(self.directory):
-                tf.gfile.MakeDirs(self.directory)
+            if not tf.gfile.Exists(os.path.join(self.temp_directory, self.name)):
+                tf.gfile.MakeDirs(os.path.join(self.temp_directory, self.name))
             # CVDF mirror of http://yann.lecun.com/exdb/mnist/
             url = 'https://storage.googleapis.com/cvdf-datasets/mnist/' + filename + '.gz'
             _, zipped_filepath = tempfile.mkstemp(suffix='.gz')
@@ -67,13 +66,15 @@ class MNISTDataLoader(DataLoader):
         def prepare_image_files(images_file, labels_file):
             """Download and parse MNIST dataset."""
 
-            count = 0
-            for root, dirnames, filenames in os.walk(os.path.join(self.directory, self.name)):
-                for filename in filenames:
-                    if filename.endswith('.png'):
-                        count += 1
-            if count == 60000:
-                return
+            data_directory = os.path.join(self.data_directory, self.name)
+            if tf.gfile.Exists(data_directory):
+                count = 0
+                for root, dirnames, filenames in os.walk(data_directory):
+                    for filename in filenames:
+                        if filename.endswith('.png'):
+                            count += 1
+                if count == 60000:
+                    return
 
             images_file = download(images_file)
             labels_file = download(labels_file)
@@ -93,7 +94,7 @@ class MNISTDataLoader(DataLoader):
                 label_count_map[label] += 1
                 image = tf.reshape(tf.constant(image), [28, 28, 1])
                 filename = '{:04d}.png'.format(label_count_map[label])
-                label_directory = os.path.join(self.directory, self.name, str(label))
+                label_directory = os.path.join(data_directory, str(label))
                 if not tf.gfile.Exists(label_directory):
                     tf.gfile.MakeDirs(label_directory)
                 tf.write_file(os.path.join(label_directory, filename), tf.image.encode_png(image))
@@ -107,8 +108,3 @@ class MNISTDataLoader(DataLoader):
         image_normalized = image_resized / 255.
         image_normalized = tf.reshape(image_normalized, [28, 28, 1])
         return image_normalized
-
-
-if __name__ == '__main__':
-    mnist = DataLoader.create('mnist')
-    print(mnist.load_dataset())

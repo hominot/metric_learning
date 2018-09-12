@@ -1,8 +1,6 @@
 import tensorflow as tf
 import numpy as np
 
-tfe = tf.contrib.eager
-
 import time
 import random
 import os
@@ -54,22 +52,7 @@ tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
 
-run_name = 'mnist_simple_dense_npair_loss'
-run_dir = '{}_0001'.format(run_name)
-runs = list(filter(
-    lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
-    next(os.walk(tensorboard_dir))[1]
-))
-if runs:
-    next_run = int(max(runs).split('_')[-1]) + 1
-    run_dir = '{}_{:04d}'.format(run_name, next_run)
-
-writer = tf.contrib.summary.create_file_writer(
-    os.path.join(tensorboard_dir, run_dir),
-    flush_millis=10000)
-writer.set_as_default()
-
-data_loader: DataLoader = DataLoader.create('mnist')
+data_loader: DataLoader = DataLoader.create('lfw')
 image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test(image_files, labels)
 num_labels = max(labels)
@@ -83,7 +66,19 @@ model = create_model()
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-start = time.time()
+run_name = 'mnist_simple_dense_npair_loss'
+run_dir = '{}_0001'.format(run_name)
+runs = list(filter(
+    lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
+    next(os.walk(tensorboard_dir))[1]
+))
+if runs:
+    next_run = int(max(runs).split('_')[-1]) + 1
+    run_dir = '{}_{:04d}'.format(run_name, next_run)
+writer = tf.contrib.summary.create_file_writer(
+    os.path.join(tensorboard_dir, run_dir),
+    flush_millis=10000)
+writer.set_as_default()
 
 for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
