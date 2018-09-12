@@ -11,7 +11,7 @@ from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test
 from metric_learning.models.simple_dense import create_model
-from metric_learning.loss_functions.grid_loss import loss
+from metric_learning.loss_functions.npair_loss import loss
 
 
 tf.enable_eager_execution()
@@ -54,7 +54,7 @@ tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
 
-run_name = 'mnist_simple_dense_grid_loss'
+run_name = 'mnist_simple_dense_npair_loss'
 run_dir = '{}_0001'.format(run_name)
 runs = list(filter(
     lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
@@ -86,7 +86,11 @@ device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 start = time.time()
 
 for _ in range(10):
-    train_ds = data_loader.create_grouped_dataset(*zip(*training_data)).batch(256)
+    train_ds = data_loader.create_grouped_dataset(
+        *zip(*training_data),
+        group_size=2,
+        num_groups=4,
+    ).batch(256)
     with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
