@@ -14,10 +14,10 @@ class DataLoader(object, metaclass=ClassRegistry):
     temp_directory = '/tmp/research/temp'
 
     def prepare_files(self):
-        pass
+        raise NotImplementedError
 
     def _image_parse_function(self, filename):
-        pass
+        raise NotImplementedError
 
     def create_dataset(self, image_files, labels):
         data = list(zip(image_files, labels))

@@ -1,7 +1,7 @@
 import tensorflow as tf
-import random
 
 from collections import defaultdict
+from util.loss_function import LossFunction
 
 
 def sample_npair(images, labels, n):
@@ -32,22 +32,25 @@ def sample_npair(images, labels, n):
     return ret
 
 
-def loss(embeddings, labels, grid_points, n = 4):
-    sampled_data = sample_npair(embeddings, labels, n)
+class NPairLossFunction(LossFunction):
+    name = 'npair'
 
-    losses = []
-    for anchor_images, positive_images, negative_images in sampled_data:
-        losses.append(tf.reduce_mean(
-            tf.reduce_sum(
-                tf.log(
-                    1 + \
-                    tf.exp(
-                        tf.matmul(anchor_images, tf.transpose(negative_images)) - \
-                        tf.reduce_sum(tf.multiply(anchor_images, positive_images), axis=1, keepdims=True)
-                    )
-                ),
-                axis=1
-            )
-        ))
-    return sum(losses)
+    def loss(self, embeddings, labels, *args, **kwargs):
+        sampled_data = sample_npair(embeddings, labels, kwargs['n'])
+
+        losses = []
+        for anchor_images, positive_images, negative_images in sampled_data:
+            losses.append(tf.reduce_mean(
+                tf.reduce_sum(
+                    tf.log(
+                        1 + \
+                        tf.exp(
+                            tf.matmul(anchor_images, tf.transpose(negative_images)) - \
+                            tf.reduce_sum(tf.multiply(anchor_images, positive_images), axis=1, keepdims=True)
+                        )
+                    ),
+                    axis=1
+                )
+            ))
+        return sum(losses)
 

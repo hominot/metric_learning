@@ -2,6 +2,7 @@ import tensorflow as tf
 import random
 
 from collections import defaultdict
+from util.loss_function import LossFunction
 
 
 def sample_triples(images, labels):
@@ -34,11 +35,14 @@ def sample_triples(images, labels):
     )
 
 
-def loss(embeddings, labels, grid_points):
-    anchor_images, positive_images, negative_images = sample_triples(embeddings, labels)
+class TripletLossFunction(LossFunction):
+    name = 'triplet'
 
-    d_p = tf.reduce_sum(tf.square(anchor_images - positive_images), axis=1)
-    d_n = tf.reduce_sum(tf.square(anchor_images - negative_images), axis=1)
-    loss_value = sum(tf.maximum(0, 1 + d_p - d_n))
+    def loss(self, embeddings, labels, *args, **kwargs):
+        anchor_images, positive_images, negative_images = sample_triples(embeddings, labels)
 
-    return loss_value
+        d_p = tf.reduce_sum(tf.square(anchor_images - positive_images), axis=1)
+        d_n = tf.reduce_sum(tf.square(anchor_images - negative_images), axis=1)
+        loss_value = sum(tf.maximum(0, 1 + d_p - d_n))
+
+        return loss_value

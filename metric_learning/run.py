@@ -1,15 +1,14 @@
 import tensorflow as tf
 import numpy as np
 
-import time
 import random
 import os
 
 from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test
+from util.loss_function import LossFunction
 from metric_learning.models.simple_dense import create_model
-from metric_learning.loss_functions.npair_loss import loss
 
 
 tf.enable_eager_execution()
@@ -48,11 +47,17 @@ def compute_verification_accuracy(model, testing_ds, sampling_rate=1.0):
     return (total - failure) / total
 
 
+conf = {
+    'dataset': 'lfw',
+    'loss': 'triplet',
+}
+
+
 tensorboard_dir = '/tmp/tensorflow/metric_learning'
 if not tf.gfile.Exists(tensorboard_dir):
     tf.gfile.MakeDirs(tensorboard_dir)
 
-data_loader: DataLoader = DataLoader.create('lfw')
+data_loader: DataLoader = DataLoader.create(conf['dataset'])
 image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test(image_files, labels)
 num_labels = max(labels)
@@ -66,7 +71,9 @@ model = create_model()
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-run_name = 'mnist_simple_dense_npair_loss'
+loss_function: LossFunction = LossFunction.create(conf['loss'])
+
+run_name = '{dataset}_simple_dense_{loss}_loss'.format(**conf)
 run_dir = '{}_0001'.format(run_name)
 runs = list(filter(
     lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
@@ -92,7 +99,7 @@ for _ in range(10):
                     10, global_step=step_counter):
                 with tf.GradientTape() as tape:
                     embeddings = model(images, training=True)
-                    loss_value = loss(embeddings, labels, grid_points)
+                    loss_value = loss_function.loss(embeddings, labels, grid_points)
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 if int(tf.train.get_global_step()) % 10 == 0:

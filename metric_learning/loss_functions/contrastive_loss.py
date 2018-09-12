@@ -3,6 +3,7 @@ import numpy as np
 import random
 
 from collections import defaultdict
+from util.loss_function import LossFunction
 
 
 def sample_pairs(images, labels, num_positives, num_negatives):
@@ -38,19 +39,22 @@ def sample_pairs(images, labels, num_positives, num_negatives):
     return images_1, images_2, pair_labels
 
 
-def loss(embeddings, labels, grid_points):
-    images_1, images_2, pair_labels = sample_pairs(
-        embeddings, labels, labels.shape[0], labels.shape[0])
+class ContrastiveLossFunction(LossFunction):
+    name = 'contrastive'
 
-    pair_labels = np.array(pair_labels)
+    def loss(self, embeddings, labels, *args, **kwargs):
+        images_1, images_2, pair_labels = sample_pairs(
+            embeddings, labels, labels.shape[0], labels.shape[0])
 
-    positive_images_1 = tf.boolean_mask(images_1, pair_labels == 1)
-    positive_images_2 = tf.boolean_mask(images_2, pair_labels == 1)
-    negative_images_1 = tf.boolean_mask(images_1, pair_labels == 0)
-    negative_images_2 = tf.boolean_mask(images_2, pair_labels == 0)
+        pair_labels = np.array(pair_labels)
 
-    d_p = tf.reduce_sum(tf.square(positive_images_1 - positive_images_2), axis=1)
-    d_n = tf.norm(negative_images_1 - negative_images_2, axis=1)
-    loss_value = sum(d_p) + sum(tf.square(tf.maximum(0, 1 - d_n)))
+        positive_images_1 = tf.boolean_mask(images_1, pair_labels == 1)
+        positive_images_2 = tf.boolean_mask(images_2, pair_labels == 1)
+        negative_images_1 = tf.boolean_mask(images_1, pair_labels == 0)
+        negative_images_2 = tf.boolean_mask(images_2, pair_labels == 0)
 
-    return loss_value
+        d_p = tf.reduce_sum(tf.square(positive_images_1 - positive_images_2), axis=1)
+        d_n = tf.norm(negative_images_1 - negative_images_2, axis=1)
+        loss_value = sum(d_p) + sum(tf.square(tf.maximum(0, 1 - d_n)))
+
+        return loss_value
