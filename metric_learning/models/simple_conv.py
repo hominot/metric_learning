@@ -27,5 +27,5 @@ def create_model():
             layers.Flatten(),
             layers.Dense(128, activation=tf.nn.relu),
             layers.Dropout(0.4),
-            layers.Dense(10),
+            layers.Dense(16),
         ])

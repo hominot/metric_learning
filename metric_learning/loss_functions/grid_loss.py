@@ -8,5 +8,5 @@ class GridLossFunction(LossFunction):
 
     def loss(self, embeddings, labels, *args, **kwargs):
         grid_points_for_labels = kwargs['grid_points'][labels - 1, :]
-        d = tf.reduce_sum(tf.square(embeddings - grid_points_for_labels), axis=1)
-        return sum(d)
+        d = tf.norm(embeddings - grid_points_for_labels, axis=1)
+        return tf.reduce_mean(tf.maximum(0, d - 0.2))

@@ -1,3 +1,4 @@
 .idea
 __data__/
 *.pyc
+*.swp

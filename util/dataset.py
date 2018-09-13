@@ -7,6 +7,8 @@ import tarfile
 import tensorflow as tf
 import os
 
+from collections import defaultdict
+
 
 def download(url, directory, filename=None):
     if filename is None:
@@ -60,3 +62,20 @@ def split_train_test(images, labels, split_test_ratio=0.2):
     training_data = data[:len(data) - num_test]
     testing_data = data[-num_test:]
     return training_data, testing_data
+
+
+def split_train_test_by_label(images, labels, split_test_ratio=0.2):
+    data = list(zip(images, labels))
+    random.shuffle(data)
+
+    data_map = defaultdict(list)
+    for image, label in zip(images, labels):
+        data_map[label].append(image)
+    candidate_labels = list(data_map.keys())
+    random.shuffle(candidate_labels)
+    num_test = int(split_test_ratio * len(candidate_labels))
+    training_labels = candidate_labels[:len(candidate_labels) - num_test]
+    testing_labels = candidate_labels[-num_test:]
+    training_data = filter(lambda x: x[1] in training_labels, data)
+    testing_data = filter(lambda x: x[1] in testing_labels, data)
+    return list(training_data), list(testing_data)
