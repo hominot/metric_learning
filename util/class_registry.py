@@ -6,7 +6,7 @@ class ClassRegistry(type):
 
     def __init__(cls, name, bases, nmspc):
         super(ClassRegistry, cls).__init__(name, bases, nmspc)
-        if not hasattr(cls, 'registry') and object in bases:
+        if not hasattr(cls, 'registry') and hasattr(cls, 'module_path'):
             cls.registry = {}
             return
         if hasattr(cls, 'name'):

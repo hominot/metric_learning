@@ -6,9 +6,9 @@ import os
 
 from collections import defaultdict
 from util.data_loader import DataLoader
-from util.dataset import split_train_test_by_label, split_train_test
+from util.dataset import split_train_test_by_label
 from util.loss_function import LossFunction
-from metric_learning.models.simple_conv import create_model
+from util.model import Model
 
 
 tf.enable_eager_execution()
@@ -51,12 +51,13 @@ def compute_verification_accuracy(model, testing_ds, sampling_rate=1.0):
 
 
 conf = {
-    'dataset': 'lfw',
+    'dataset': 'mnist',
     'loss': {
-        'name': 'grid',
+        'name': 'contrastive',
         'conf': {
         },
     },
+    'model': 'simple_dense',
 }
 
 
@@ -74,14 +75,15 @@ test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-model = create_model()
+model = Model.create(conf['model'])
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
 loss_function: LossFunction = LossFunction.create(conf['loss']['name'])
 
-run_name = '{}_simple_conv_{}_loss'.format(
+run_name = '{}_{}_{}_loss'.format(
     conf['dataset'],
+    conf['model'],
     conf['loss']['name'],
 )
 run_dir = '{}_0001'.format(run_name)
