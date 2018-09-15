@@ -1,53 +1,16 @@
 import tensorflow as tf
 import numpy as np
 
-import random
 import os
 
-from collections import defaultdict
 from util.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
 from util.loss_function import LossFunction
 from util.model import Model
+from util.metric import Metric
 
 
 tf.enable_eager_execution()
-
-
-def compute_verification_accuracy(model, testing_ds, sampling_rate=1.0):
-    data_map = defaultdict(list)
-    for images, labels in testing_ds:
-        embeddings = model(images, training=False)
-        for index in range(embeddings.shape[0]):
-            data_map[int(labels[index])].append(embeddings[index])
-
-    failure = 0.
-    total = 0.
-    norm_sum = 0.
-    norm_total = 0.
-    for label in data_map.keys():
-        if len(data_map[label]) < 2:
-            continue
-        for index, anchor_embedding in enumerate(data_map[label]):
-            if random.random() > sampling_rate:
-                continue
-            norm_sum += float(tf.norm(anchor_embedding))
-            total += 1
-            positive_indices = random.sample(range(len(data_map[label])), 2)
-            positive_index = positive_indices[0] if positive_indices[0] != index else positive_indices[1]
-            p_d = tf.norm(anchor_embedding - data_map[label][positive_index])
-            num_negative_examples = min(5, len(data_map) - 1)
-            negative_labels = random.sample(set(data_map.keys()) - {label}, num_negative_examples)
-            negative_embeddings = []
-            for negative_label in negative_labels:
-                negative_embeddings.append(random.choice(data_map[negative_label]))
-
-            for negative_embedding in negative_embeddings:
-                if tf.norm(negative_embedding - anchor_embedding) <= p_d:
-                    failure += 1
-                    break
-
-    return (total - failure) / total, norm_sum / total
 
 
 conf = {
@@ -58,6 +21,15 @@ conf = {
         },
     },
     'model': 'simple_dense',
+    'metrics': [
+        {
+            'name': 'accuracy',
+            'compute_period': 10,
+            'conf': {
+                'sampling_rate': 0.1,
+            }
+        }
+    ]
 }
 
 
@@ -114,10 +86,11 @@ for _ in range(10):
                     loss_value = loss_function.loss(embeddings, labels, grid_points=grid_points, **conf['loss']['conf'])
                     tf.contrib.summary.scalar('loss', loss_value)
 
-                if int(tf.train.get_global_step()) % 10 == 0:
-                    accuracy, norm_avg = compute_verification_accuracy(model, test_ds, 0.1)
-                    tf.contrib.summary.scalar('accuracy', accuracy)
-                    tf.contrib.summary.scalar('norm', norm_avg)
+                for metric_conf in conf['metrics']:
+                    if int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
+                        metric = Metric.create(metric_conf['name'])
+                        score = metric.compute_metric(model, test_ds, **metric_conf['conf'])
+                        tf.contrib.summary.scalar(metric_conf['name'], score)
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(
                     zip(grads, model.variables), global_step=step_counter)
