@@ -14,19 +14,14 @@ tf.enable_eager_execution()
 
 conf = {
     'dataset': {
-        'name': 'mnist',
-    },
-    'loss': {
-        'name': 'contrastive',
-        'conf': {
-        },
+        'name': 'lfw',
     },
     'model': {
         'name': 'mean_embedding',
         'child_model': {
-            'name': 'simple_dense',
-            'k': 8,
-        }
+            'name': 'simple_conv',
+            'k': 4,
+        },
     },
     'metrics': [
         {
@@ -63,10 +58,9 @@ model = Model.create(conf['model'], extra_info)
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-run_name = '{}_{}_{}_loss'.format(
+run_name = '{}_{}'.format(
     conf['dataset']['name'],
     conf['model']['name'],
-    conf['loss']['name'],
 )
 run_dir = '{}_0001'.format(run_name)
 runs = list(filter(
@@ -84,7 +78,7 @@ writer.set_as_default()
 for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
         *zip(*training_data),
-        group_size=2,
+        group_size=16,
         num_groups=4,
     ).batch(64)
     with tf.device(device):

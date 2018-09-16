@@ -9,8 +9,8 @@ layers = tf.keras.layers
 class SimpleConvolutionModel(Model):
     name = 'simple_conv'
 
-    def __init__(self, conf):
-        super(SimpleConvolutionModel, self).__init__(conf)
+    def __init__(self, conf, extra_info):
+        super(SimpleConvolutionModel, self).__init__(conf, extra_info)
 
         data_format = 'channels_last'
 
