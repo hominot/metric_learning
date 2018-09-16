@@ -9,8 +9,8 @@ layers = tf.keras.layers
 class SimpleConvolutionModel(Model):
     name = 'simple_conv'
 
-    def __init__(self):
-        super(SimpleConvolutionModel, self).__init__()
+    def __init__(self, conf):
+        super(SimpleConvolutionModel, self).__init__(conf)
 
         data_format = 'channels_last'
 
@@ -36,7 +36,7 @@ class SimpleConvolutionModel(Model):
                 layers.Flatten(),
                 layers.Dense(128, activation=tf.nn.relu),
                 layers.Dropout(0.4),
-                layers.Dense(16),
+                layers.Dense(conf['k']),
             ])
 
     def call(self, inputs, training=None, mask=None):

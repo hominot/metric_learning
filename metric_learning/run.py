@@ -5,7 +5,6 @@ import os
 
 from util.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
-from util.loss_function import LossFunction
 from util.model import Model
 from util.metric import Metric
 
@@ -14,13 +13,21 @@ tf.enable_eager_execution()
 
 
 conf = {
-    'dataset': 'mnist',
+    'dataset': {
+        'name': 'mnist',
+    },
     'loss': {
         'name': 'contrastive',
         'conf': {
         },
     },
-    'model': 'simple_dense',
+    'model': {
+        'name': 'mean_embedding',
+        'child_model': {
+            'name': 'simple_dense',
+            'k': 8,
+        }
+    },
     'metrics': [
         {
             'name': 'accuracy',
@@ -40,22 +47,25 @@ if not tf.gfile.Exists(tensorboard_dir):
 data_loader: DataLoader = DataLoader.create(conf['dataset'])
 image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test_by_label(image_files, labels)
+
 num_labels = max(labels)
+
+extra_info = {
+    'num_labels': num_labels,
+}
 grid_points = np.random.random([num_labels, 16]) * 2 - 1
 
 test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-model = Model.create(conf['model'])
+model = Model.create(conf['model'], extra_info)
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-loss_function: LossFunction = LossFunction.create(conf['loss']['name'])
-
 run_name = '{}_{}_{}_loss'.format(
-    conf['dataset'],
-    conf['model'],
+    conf['dataset']['name'],
+    conf['model']['name'],
     conf['loss']['name'],
 )
 run_dir = '{}_0001'.format(run_name)
@@ -82,13 +92,12 @@ for _ in range(10):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
                 with tf.GradientTape() as tape:
-                    embeddings = model(images, training=True)
-                    loss_value = loss_function.loss(embeddings, labels, grid_points=grid_points, **conf['loss']['conf'])
+                    loss_value = model.loss(images, labels)
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 for metric_conf in conf['metrics']:
                     if int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
-                        metric = Metric.create(metric_conf['name'])
+                        metric = Metric.create(metric_conf)
                         score = metric.compute_metric(model, test_ds, **metric_conf['conf'])
                         tf.contrib.summary.scalar(metric_conf['name'], score)
                 grads = tape.gradient(loss_value, model.variables)

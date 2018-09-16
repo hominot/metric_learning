@@ -35,8 +35,8 @@ def sample_npair(images, labels, n):
 class NPairLossFunction(LossFunction):
     name = 'npair'
 
-    def loss(self, embeddings, labels, *args, **kwargs):
-        sampled_data = sample_npair(embeddings, labels, kwargs['n'])
+    def loss(self, embeddings, labels):
+        sampled_data = sample_npair(embeddings, labels, self.conf['loss']['conf']['n'])
 
         losses = []
         for anchor_images, positive_images, negative_images in sampled_data:

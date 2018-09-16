@@ -13,6 +13,11 @@ class DataLoader(object, metaclass=ClassRegistry):
     data_directory = '/tmp/research/data'
     temp_directory = '/tmp/research/temp'
 
+    def __init__(self, conf, extra_info):
+        super(DataLoader, self).__init__()
+        self.conf = conf
+        self.extra_info = extra_info
+
     def prepare_files(self):
         raise NotImplementedError
 

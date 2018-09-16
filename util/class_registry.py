@@ -12,11 +12,12 @@ class ClassRegistry(type):
         if hasattr(cls, 'name'):
             cls.registry[cls.name] = cls
 
-    def create(cls, name, *args, **kwargs):
+    def create(cls, conf, extra_info=None):
         m = importlib.import_module(cls.module_path)
         for submodule_name in m.__all__:
             importlib.import_module('{}.{}'.format(cls.module_path, submodule_name))
+        name = conf['name']
         if name not in cls.registry:
             raise ModuleNotFoundError(
                 'No class named "{}" registered'.format(name))
-        return cls.registry[name](*args, **kwargs)
+        return cls.registry[name](conf, extra_info)

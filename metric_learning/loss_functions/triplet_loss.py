@@ -38,7 +38,7 @@ def sample_triples(images, labels):
 class TripletLossFunction(LossFunction):
     name = 'triplet'
 
-    def loss(self, embeddings, labels, *args, **kwargs):
+    def loss(self, embeddings, labels):
         anchor_images, positive_images, negative_images = sample_triples(embeddings, labels)
 
         d_p = tf.reduce_sum(tf.square(anchor_images - positive_images), axis=1)
