@@ -30,4 +30,4 @@ class GridModel(Model):
         self.grid[unique_labels - 1] += delta_embeddings_by_label * 0.001
 
         d = tf.norm(embeddings - grid_points_for_labels, axis=1)
-        return tf.reduce_mean(tf.maximum(0, d - 0.2))
+        return tf.reduce_mean(d)

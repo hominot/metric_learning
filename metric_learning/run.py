@@ -14,13 +14,14 @@ tf.enable_eager_execution()
 
 conf = {
     'dataset': {
-        'name': 'mnist',
+        'name': 'lfw',
     },
     'model': {
-        'name': 'grid',
-        'child_model': {
-            'name': 'simple_dense',
-            'k': 4,
+        'name': 'simple_conv',
+        'k': 4,
+        'loss': {
+            'name': 'npair',
+            'n': 8,
         },
     },
     'metrics': [
@@ -48,12 +49,11 @@ num_labels = max(labels)
 extra_info = {
     'num_labels': num_labels,
 }
-grid_points = np.random.random([num_labels, 16]) * 2 - 1
 
 test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
-optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
 model = Model.create(conf['model'], extra_info)
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
@@ -78,8 +78,8 @@ writer.set_as_default()
 for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
         *zip(*training_data),
-        group_size=16,
-        num_groups=4,
+        group_size=2,
+        num_groups=32,
     ).batch(64)
     with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):

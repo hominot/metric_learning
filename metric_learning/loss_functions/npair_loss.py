@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 from collections import defaultdict
 from util.loss_function import LossFunction
@@ -13,21 +14,14 @@ def sample_npair(images, labels, n):
         for index, label in enumerate(cur_labels):
             data_map[int(label)].append(index)
 
-        anchor_images = []
-        positive_images = []
-        negative_images = []
+        first_images = []
+        second_images = []
         for label in data_map.keys():
-            anchor_images.append(cur_images[data_map[label][0]])
-            positive_images.append(cur_images[data_map[label][1]])
-            for negative_label, negative_index in data_map.items():
-                if label == negative_label:
-                    continue
-                negative_images.append(cur_images[data_map[negative_label][1]])
-
+            first_images.append(cur_images[data_map[label][0]])
+            second_images.append(cur_images[data_map[label][1]])
         ret.append((
-            tf.stack(anchor_images),
-            tf.stack(positive_images),
-            tf.stack(negative_images),
+            tf.stack(first_images),
+            tf.stack(second_images),
         ))
     return ret
 
@@ -36,21 +30,29 @@ class NPairLossFunction(LossFunction):
     name = 'npair'
 
     def loss(self, embeddings, labels):
-        sampled_data = sample_npair(embeddings, labels, self.conf['loss']['conf']['n'])
-
+        sampled_data = sample_npair(embeddings, labels, self.conf['n'])
         losses = []
-        for anchor_images, positive_images, negative_images in sampled_data:
+        reg = []
+        for first_images, second_images in sampled_data:
+            b = 1 - np.eye(int(first_images.shape[0]))
             losses.append(tf.reduce_mean(
-                tf.reduce_sum(
-                    tf.log(
-                        1 + \
-                        tf.exp(
-                            tf.matmul(anchor_images, tf.transpose(negative_images)) - \
-                            tf.reduce_sum(tf.multiply(anchor_images, positive_images), axis=1, keepdims=True)
-                        )
+                tf.log(
+                    1 + \
+                    tf.reduce_sum(
+                        tf.reshape(
+                            tf.boolean_mask(
+                                tf.exp(
+                                    tf.matmul(first_images, tf.transpose(second_images)) - \
+                                    tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True)
+                                ),
+                                b
+                            ),
+                            (self.conf['n'], self.conf['n'] - 1)
+                        ),
+                        axis=1
                     ),
-                    axis=1
                 )
             ))
+            reg.append(sum(tf.reduce_sum(tf.square(first_images), axis=1)) + sum(tf.reduce_sum(tf.square(second_images), axis=1)))
         return sum(losses)
 
