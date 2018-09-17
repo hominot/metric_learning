@@ -19,7 +19,7 @@ conf = {
     'model': {
         'name': 'grid',
         'child_model': {
-            'name': 'simple_conv',
+            'name': 'simple_dense',
             'k': 4,
         },
     },

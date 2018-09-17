@@ -22,5 +22,12 @@ class GridModel(Model):
     def loss(self, images, labels):
         embeddings = self.call(images, training=True)
         grid_points_for_labels = self.grid[labels - 1, :]
+        unique_labels, idx = tf.unique(labels)
+        delta_embeddings_by_label = tf.unsorted_segment_sum(
+            embeddings - grid_points_for_labels,
+            idx,
+            int(unique_labels.shape[0]))
+        self.grid[unique_labels - 1] += delta_embeddings_by_label * 0.001
+
         d = tf.norm(embeddings - grid_points_for_labels, axis=1)
         return tf.reduce_mean(tf.maximum(0, d - 0.2))

@@ -21,13 +21,6 @@ class CenterEmbeddingModel(Model):
     def loss(self, images, labels):
         embeddings = self.call(images, training=True)
         mean_embeddings = self.embedding(labels - 1)
+        d = tf.norm(embeddings - mean_embeddings, axis=1)
+        return tf.reduce_mean(tf.maximum(0, d - 0.2))
 
-        embedding_loss = 0
-        for i in labels:
-            for j in labels:
-                if i != j:
-                    e_i = self.embedding(i)
-                    e_j = self.embedding(j)
-                    d = tf.reduce_sum(tf.square(e_i - e_j))
-                    embedding_loss += tf.maximum(0, 1 - d)
-        return sum(tf.reduce_sum(tf.square(embeddings - mean_embeddings), axis=1)) + embedding_loss / 16.0
