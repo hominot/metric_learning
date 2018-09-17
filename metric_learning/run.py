@@ -17,7 +17,7 @@ conf = {
         'name': 'lfw',
     },
     'model': {
-        'name': 'mean_embedding',
+        'name': 'center_embedding',
         'child_model': {
             'name': 'simple_conv',
             'k': 4,

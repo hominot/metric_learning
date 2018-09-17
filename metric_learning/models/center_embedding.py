@@ -6,11 +6,11 @@ from util.model import Model
 layers = tf.keras.layers
 
 
-class MeanEmbeddingModel(Model):
-    name = 'mean_embedding'
+class CenterEmbeddingModel(Model):
+    name = 'center_embedding'
 
     def __init__(self, conf, extra_info):
-        super(MeanEmbeddingModel, self).__init__(conf, extra_info)
+        super(MedoidModel, self).__init__(conf, extra_info)
 
         self.child_model = Model.create(conf['child_model'], extra_info)
         self.embedding = layers.Embedding(extra_info['num_labels'], conf['child_model']['k'])
