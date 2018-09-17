@@ -14,10 +14,10 @@ tf.enable_eager_execution()
 
 conf = {
     'dataset': {
-        'name': 'lfw',
+        'name': 'mnist',
     },
     'model': {
-        'name': 'center_embedding',
+        'name': 'grid',
         'child_model': {
             'name': 'simple_conv',
             'k': 4,
