@@ -14,14 +14,14 @@ tf.enable_eager_execution()
 
 conf = {
     'dataset': {
-        'name': 'lfw',
+        'name': 'mnist',
     },
     'model': {
-        'name': 'simple_conv',
+        'name': 'simple_dense',
         'k': 4,
         'loss': {
             'name': 'npair',
-            'n': 8,
+            'n': 4,
         },
     },
     'metrics': [
@@ -31,7 +31,14 @@ conf = {
             'conf': {
                 'sampling_rate': 0.1,
             }
-        }
+        },
+        {
+            'name': 'dot_product_accuracy',
+            'compute_period': 10,
+            'conf': {
+                'sampling_rate': 0.1,
+            }
+        },
     ]
 }
 
@@ -79,7 +86,7 @@ for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
         *zip(*training_data),
         group_size=2,
-        num_groups=32,
+        num_groups=4,
     ).batch(64)
     with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):
