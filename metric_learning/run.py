@@ -17,11 +17,10 @@ conf = {
         'name': 'mnist',
     },
     'model': {
-        'name': 'simple_dense',
-        'k': 4,
-        'loss': {
-            'name': 'npair',
-            'n': 4,
+        'name': 'latent_position',
+        'child_model': {
+            'name': 'simple_dense',
+            'k': 4,
         },
     },
     'metrics': [
