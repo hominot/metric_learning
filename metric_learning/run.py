@@ -85,7 +85,8 @@ for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
         *zip(*training_data),
         group_size=2,
-        num_groups=4,
+        num_groups=8,
+        min_class_size=8,
     ).batch(64)
     with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):

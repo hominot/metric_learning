@@ -33,7 +33,7 @@ class DataLoader(object, metaclass=ClassRegistry):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_shuffled))
         return tf.data.Dataset.zip((images_ds, labels_ds))
 
-    def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2):
+    def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels))
         random.shuffle(data)
 
@@ -41,7 +41,7 @@ class DataLoader(object, metaclass=ClassRegistry):
         for image_file, label in data:
             data_map[label].append(image_file)
 
-        data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
+        data_map = dict(filter(lambda x: len(x[1]) >= max(group_size, min_class_size), data_map.items()))
         grouped_data = []
         while len(data_map) >= num_groups:
             sampled_labels = random.sample(data_map.keys(), num_groups)
