@@ -32,27 +32,21 @@ class NPairLossFunction(LossFunction):
     def loss(self, embeddings, labels):
         sampled_data = sample_npair(embeddings, labels, self.conf['n'])
         losses = []
-        reg = []
         for first_images, second_images in sampled_data:
             b = 1 - np.eye(int(first_images.shape[0]))
-            losses.append(tf.reduce_mean(
-                tf.log(
-                    1 + \
-                    tf.reduce_sum(
-                        tf.reshape(
-                            tf.boolean_mask(
-                                tf.exp(
-                                    tf.matmul(first_images, tf.transpose(second_images)) - \
-                                    tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True)
-                                ),
-                                b
-                            ),
-                            (self.conf['n'], self.conf['n'] - 1)
-                        ),
-                        axis=1
+            difference = tf.reshape(
+                tf.boolean_mask(
+                    tf.exp(
+                        tf.matmul(first_images, tf.transpose(second_images)) - \
+                        tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True)
                     ),
-                )
-            ))
-            reg.append(sum(tf.reduce_sum(tf.square(first_images), axis=1)) + sum(tf.reduce_sum(tf.square(second_images), axis=1)))
+                    b
+                ),
+                (self.conf['n'], self.conf['n'] - 1)
+            )
+            if self.conf.get('ovo', False):
+                loss = tf.reduce_sum(tf.log(1 + difference), axis=1)
+            else:
+                loss = tf.log(1 + tf.reduce_sum(difference, axis=1))
+            losses.append(tf.reduce_mean(loss))
         return sum(losses)
-
