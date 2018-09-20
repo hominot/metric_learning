@@ -1,12 +1,10 @@
 import tensorflow as tf
-import numpy as np
 
-import os
-
-from util.data_loader import DataLoader
+from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
-from util.model import Model
-from util.metric import Metric
+from util.registry.model import Model
+from util.registry.metric import Metric
+from util.tensorflow import set_tensorboard_writer
 
 
 tf.enable_eager_execution()
@@ -41,19 +39,15 @@ conf = {
     ]
 }
 
+set_tensorboard_writer(conf)
 
-tensorboard_dir = '/tmp/tensorflow/metric_learning'
-if not tf.gfile.Exists(tensorboard_dir):
-    tf.gfile.MakeDirs(tensorboard_dir)
 
 data_loader: DataLoader = DataLoader.create(conf['dataset'])
 image_files, labels = data_loader.load_image_files()
 training_data, testing_data = split_train_test_by_label(image_files, labels)
 
-num_labels = max(labels)
-
 extra_info = {
-    'num_labels': num_labels,
+    'num_labels': max(labels),
 }
 
 test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
@@ -64,22 +58,6 @@ model = Model.create(conf['model'], extra_info)
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-run_name = '{}_{}'.format(
-    conf['dataset']['name'],
-    conf['model']['name'],
-)
-run_dir = '{}_0001'.format(run_name)
-runs = list(filter(
-    lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
-    next(os.walk(tensorboard_dir))[1]
-))
-if runs:
-    next_run = int(max(runs).split('_')[-1]) + 1
-    run_dir = '{}_{:04d}'.format(run_name, next_run)
-writer = tf.contrib.summary.create_file_writer(
-    os.path.join(tensorboard_dir, run_dir),
-    flush_millis=10000)
-writer.set_as_default()
 
 for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(

@@ -1,4 +1,4 @@
-from util.metric import Metric
+from util.registry.metric import Metric
 from collections import defaultdict
 
 import random

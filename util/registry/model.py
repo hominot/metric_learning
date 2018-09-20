@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from util.class_registry import ClassRegistry
-from util.loss_function import LossFunction
+from util.registry.class_registry import ClassRegistry
+from util.registry.loss_function import LossFunction
 
 
 class Model(tf.keras.models.Model, metaclass=ClassRegistry):

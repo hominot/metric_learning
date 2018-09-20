@@ -1,4 +1,4 @@
-from util.class_registry import ClassRegistry
+from util.registry.class_registry import ClassRegistry
 
 
 class LossFunction(object, metaclass=ClassRegistry):

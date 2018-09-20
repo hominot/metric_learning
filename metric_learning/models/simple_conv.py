@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from util.model import Model
+from util.registry.model import Model
 
 
 layers = tf.keras.layers

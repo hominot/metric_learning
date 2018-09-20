@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 from collections import defaultdict
-from util.loss_function import LossFunction
+from util.registry.loss_function import LossFunction
 
 
 def sample_pairs(images, labels, num_positives, num_negatives):

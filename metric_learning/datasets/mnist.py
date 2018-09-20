@@ -1,4 +1,4 @@
-from util.data_loader import DataLoader
+from util.registry.data_loader import DataLoader
 
 import gzip
 import os

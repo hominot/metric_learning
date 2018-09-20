@@ -1,4 +1,4 @@
-from util.class_registry import ClassRegistry
+from util.registry.class_registry import ClassRegistry
 from util.dataset import create_dataset_from_directory
 from collections import defaultdict
 

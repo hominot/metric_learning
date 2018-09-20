@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 from collections import defaultdict
-from util.loss_function import LossFunction
+from util.registry.loss_function import LossFunction
 
 
 def sample_npair(images, labels, n):
