@@ -1,4 +1,4 @@
-import tensorboard as tf
+import tensorflow as tf
 import os
 
 tensorboard_dir = '/tmp/tensorflow/metric_learning'
@@ -22,4 +22,4 @@ def set_tensorboard_writer(conf):
     writer = tf.contrib.summary.create_file_writer(
         os.path.join(tensorboard_dir, run_dir),
         flush_millis=10000)
-    writer.set_as_default()
+    return writer

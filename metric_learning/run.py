@@ -13,13 +13,21 @@ tf.enable_eager_execution()
 conf = {
     'dataset': {
         'name': 'mnist',
+        'batch_size': 64,
+        'group_size': 2,
+        'num_groups': 8,
+        'min_class_size': 8,
+        'test': {
+            'num_negative_examples': 1,
+        },
     },
     'model': {
-        'name': 'latent_position',
-        'child_model': {
-            'name': 'simple_dense',
-            'k': 4,
-        },
+        'name': 'simple_dense',
+        'k': 4,
+        'loss': {
+            'name': 'npair',
+            'n': 4
+        }
     },
     'metrics': [
         {
@@ -29,17 +37,11 @@ conf = {
                 'sampling_rate': 0.1,
             }
         },
-        {
-            'name': 'dot_product_accuracy',
-            'compute_period': 10,
-            'conf': {
-                'sampling_rate': 0.1,
-            }
-        },
     ]
 }
 
-set_tensorboard_writer(conf)
+writer = set_tensorboard_writer(conf)
+writer.set_as_default()
 
 
 data_loader: DataLoader = DataLoader.create(conf['dataset'])
@@ -50,7 +52,7 @@ extra_info = {
     'num_labels': max(labels),
 }
 
-test_ds = data_loader.create_dataset(*zip(*testing_data)).batch(256)
+test_ds = data_loader.create_verification_test_dataset(*zip(*testing_data)).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
@@ -62,10 +64,10 @@ device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
         *zip(*training_data),
-        group_size=2,
-        num_groups=8,
-        min_class_size=8,
-    ).batch(64)
+        group_size=conf['dataset']['group_size'],
+        num_groups=conf['dataset']['num_groups'],
+        min_class_size=conf['dataset']['min_class_size'],
+    ).batch(conf['dataset']['batch_size'])
     with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):
             with tf.contrib.summary.record_summaries_every_n_global_steps(

@@ -33,6 +33,33 @@ class DataLoader(object, metaclass=ClassRegistry):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_shuffled))
         return tf.data.Dataset.zip((images_ds, labels_ds))
 
+    def create_verification_test_dataset(self, image_files, labels):
+        data = list(zip(image_files, labels))
+        random.shuffle(data)
+        data_map = defaultdict(list)
+        for image_file, label in data:
+            data_map[label].append(image_file)
+        data_map = dict(filter(lambda x: len(x[1]) >= 2, data_map.items()))
+        label_set = set(data_map.keys())
+        anchor_images = []
+        positive_images = []
+        negative_images = [[]] * self.conf['test']['num_negative_examples']
+        for label, images in data_map.items():
+            for anchor_index, anchor_image in enumerate(data_map[label]):
+                anchor_images.append(anchor_image)
+                positive_index = random.choice(list(set(range(len(data_map[label]))) - {anchor_index}))
+                positive_images.append(data_map[label][positive_index])
+                negative_labels = random.sample(label_set - {label}, self.conf['test']['num_negative_examples'])
+                for idx, negative_label in enumerate(negative_labels):
+                    negative_images[idx].append(random.choice(data_map[negative_label]))
+        anchor_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(anchor_images)) \
+            .map(self._image_parse_function)
+        positive_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(positive_images)) \
+            .map(self._image_parse_function)
+        negative_images_ds = [tf.data.Dataset.from_tensor_slices(tf.constant(x)).map(
+            self._image_parse_function) for x in negative_images]
+        return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds)))
+
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels))
         random.shuffle(data)
