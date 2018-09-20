@@ -8,6 +8,7 @@ import tensorflow as tf
 import os
 
 from collections import defaultdict
+from shutil import copyfile
 
 
 def download(url, directory, filename=None):
@@ -79,3 +80,11 @@ def split_train_test_by_label(images, labels, split_test_ratio=0.2):
     training_data = filter(lambda x: x[1] in training_labels, data)
     testing_data = filter(lambda x: x[1] in testing_labels, data)
     return list(training_data), list(testing_data)
+
+
+def save_image_files(image_files, save_dir):
+    for image_file in image_files:
+        dest = os.path.join(save_dir, '/'.join(image_file.split('/')[-2:]))
+        if not os.path.exists(os.path.dirname(dest)):
+            os.makedirs(os.path.dirname(dest))
+        copyfile(image_file, dest)

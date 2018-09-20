@@ -86,7 +86,6 @@ class DataLoader(object, metaclass=ClassRegistry):
 
     def load_image_files(self):
         self.prepare_files()
-
         image_files, labels = create_dataset_from_directory(
             os.path.join(self.data_directory, self.name))
         return image_files, labels

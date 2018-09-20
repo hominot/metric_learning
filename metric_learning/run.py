@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
+from util.dataset import create_dataset_from_directory
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.tensorflow import set_tensorboard_writer
@@ -13,11 +14,15 @@ tf.enable_eager_execution()
 conf = {
     'dataset': {
         'name': 'mnist',
-        'batch_size': 64,
-        'group_size': 2,
-        'num_groups': 8,
-        'min_class_size': 8,
+        'train': {
+            'data_directory': '/tmp/research/experiment/mnist/train',
+            'batch_size': 64,
+            'group_size': 2,
+            'num_groups': 8,
+            'min_class_size': 8,
+        },
         'test': {
+            'data_directory': '/tmp/research/experiment/mnist/test',
             'num_negative_examples': 1,
         },
     },
@@ -43,16 +48,25 @@ conf = {
 writer = set_tensorboard_writer(conf)
 writer.set_as_default()
 
-
 data_loader: DataLoader = DataLoader.create(conf['dataset'])
-image_files, labels = data_loader.load_image_files()
-training_data, testing_data = split_train_test_by_label(image_files, labels)
+if conf['dataset']['train']['data_directory'] and conf['dataset']['test']['data_directory']:
+    training_files, training_labels = create_dataset_from_directory(
+        conf['dataset']['train']['data_directory']
+    )
+    testing_files, testing_labels = create_dataset_from_directory(
+        conf['dataset']['test']['data_directory']
+    )
+else:
+    image_files, labels = data_loader.load_image_files()
+    training_data, testing_data = split_train_test_by_label(image_files, labels)
+    training_files, training_labels = zip(*training_data)
+    testing_files, ttesting_labels = zip(*testing_data)
 
 extra_info = {
-    'num_labels': max(labels),
+    'num_labels': max(training_labels),
 }
 
-test_ds = data_loader.create_verification_test_dataset(*zip(*testing_data)).batch(256)
+test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(256)
 
 step_counter = tf.train.get_or_create_global_step()
 optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
@@ -60,14 +74,13 @@ model = Model.create(conf['model'], extra_info)
 
 device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-
 for _ in range(10):
     train_ds = data_loader.create_grouped_dataset(
-        *zip(*training_data),
-        group_size=conf['dataset']['group_size'],
-        num_groups=conf['dataset']['num_groups'],
-        min_class_size=conf['dataset']['min_class_size'],
-    ).batch(conf['dataset']['batch_size'])
+        training_files, training_labels,
+        group_size=conf['dataset']['train']['group_size'],
+        num_groups=conf['dataset']['train']['num_groups'],
+        min_class_size=conf['dataset']['train']['min_class_size'],
+    ).batch(conf['dataset']['train']['batch_size'])
     with tf.device(device):
         for (batch, (images, labels)) in enumerate(train_ds):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
