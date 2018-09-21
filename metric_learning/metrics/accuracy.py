@@ -7,7 +7,7 @@ import tensorflow as tf
 def cosine_similarity(x, y, axis):
     x_norm = x / tf.norm(x, axis=len(x.shape) - 1, keep_dims=True)
     y_norm = y / tf.norm(y, axis=len(y.shape) - 1, keep_dims=True)
-    return tf.reduce_sum(tf.multiply(x_norm, y_norm), axis=axis)
+    return -tf.reduce_sum(tf.multiply(x_norm, y_norm), axis=axis)
 
 
 class Accuracy(Metric):
@@ -17,7 +17,7 @@ class Accuracy(Metric):
         'accuracy:euclidean': lambda x, y, axis: tf.norm(x - y, axis=axis),
         'accuracy:cosine_similarity': cosine_similarity,
         'accuracy:dot_product': lambda x, y, axis:
-            tf.reduce_sum(tf.multiply(x, y), axis=axis),
+            -tf.reduce_sum(tf.multiply(x, y), axis=axis),
     }
 
     def compute_metric(self, model, test_ds, *args, **kwargs):
