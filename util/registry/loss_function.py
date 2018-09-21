@@ -12,3 +12,5 @@ class LossFunction(object, metaclass=ClassRegistry):
     def loss(self, embeddings, labels):
         raise NotImplementedError
 
+    def __str__(self):
+        return self.conf['name']

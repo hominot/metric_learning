@@ -28,3 +28,6 @@ class LatentPositionModel(Model):
         negative = tf.reduce_sum(tf.log(1 + tf.exp(tf.boolean_mask(eta, ~b))))
 
         return -positive + negative
+
+    def __str__(self):
+        return self.name + '_' + self.child_model

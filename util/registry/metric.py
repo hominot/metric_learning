@@ -11,3 +11,6 @@ class Metric(object, metaclass=ClassRegistry):
 
     def compute_metric(self, model, test_ds):
         raise NotImplementedError
+
+    def __str__(self):
+        return self.conf['name']

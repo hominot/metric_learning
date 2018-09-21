@@ -19,3 +19,6 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
     def loss(self, images, labels):
         embeddings = self.call(images, training=True)
         return self.loss_function.loss(embeddings, labels)
+
+    def __str__(self):
+        return self.conf['name']
