@@ -1,7 +1,7 @@
 import tensorflow as tf
 import os
 
-tensorboard_dir = '/tmp/tensorflow/metric_learning'
+tensorboard_dir = 's3://hominot/research/metric_learning/tensorboard'
 
 
 def set_tensorboard_writer(model, data_loader):
@@ -11,7 +11,7 @@ def set_tensorboard_writer(model, data_loader):
     run_dir = '{}_0001'.format(run_name)
     runs = list(filter(
         lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
-        next(os.walk(tensorboard_dir))[1]
+        tf.gfile.ListDirectory(tensorboard_dir)
     ))
     if runs:
         next_run = int(max(runs).split('_')[-1]) + 1
