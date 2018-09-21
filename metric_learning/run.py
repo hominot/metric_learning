@@ -93,7 +93,11 @@ for _ in range(10):
                     if int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
                         metric = Metric.create(metric_conf)
                         score = metric.compute_metric(model, test_ds, **metric_conf['conf'])
-                        tf.contrib.summary.scalar(metric_conf['name'], score)
+                        if type(score) is dict:
+                            for metric, s in score.items():
+                                tf.contrib.summary.scalar(metric, s)
+                        else:
+                            tf.contrib.summary.scalar(metric_conf['name'], score)
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(
                     zip(grads, model.variables), global_step=step_counter)
