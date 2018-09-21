@@ -71,5 +71,5 @@ def train(conf):
 if __name__ == '__main__':
     tf.enable_eager_execution()
 
-    conf = configs['mnist_npair']
+    conf = configs['mnist_latent_position']
     train(conf)
