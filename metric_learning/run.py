@@ -31,7 +31,7 @@ def train(conf):
     test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(256)
 
     step_counter = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.00001)
     model = Model.create(conf['model'], extra_info)
 
     writer = set_tensorboard_writer(model, data_loader)
@@ -39,7 +39,7 @@ def train(conf):
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-    for _ in range(10):
+    for _ in range(50):
         train_ds = data_loader.create_grouped_dataset(
             training_files, training_labels,
             group_size=conf['dataset']['train']['group_size'],
@@ -57,7 +57,7 @@ def train(conf):
                     for metric_conf in conf['metrics']:
                         if int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
                             metric = Metric.create(metric_conf)
-                            score = metric.compute_metric(model, test_ds, **metric_conf['conf'])
+                            score = metric.compute_metric(model, test_ds)
                             if type(score) is dict:
                                 for metric, s in score.items():
                                     tf.contrib.summary.scalar(metric, s)
@@ -71,5 +71,5 @@ def train(conf):
 if __name__ == '__main__':
     tf.enable_eager_execution()
 
-    conf = configs['mnist_latent_position']
+    conf = configs['lfw_latent_position']
     train(conf)

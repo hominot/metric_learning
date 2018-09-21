@@ -5,8 +5,8 @@ import tensorflow as tf
 
 
 def cosine_similarity(x, y, axis):
-    x_norm = x / tf.norm(x, axis=axis, keep_dims=True)
-    y_norm = y / tf.norm(y, axis=axis, keep_dims=True)
+    x_norm = x / tf.norm(x, axis=len(x.shape) - 1, keep_dims=True)
+    y_norm = y / tf.norm(y, axis=len(y.shape) - 1, keep_dims=True)
     return tf.reduce_sum(tf.multiply(x_norm, y_norm), axis=axis)
 
 
@@ -30,7 +30,7 @@ class Accuracy(Metric):
             negative_embeddings = tf.stack([model(negative_images) for negative_images in negative_images_group])
             for metric, func in self.metric_functions.items():
                 p = func(anchor_embeddings, positive_embeddings, axis=1)
-                n = tf.reduce_min(tf.norm(negative_embeddings - anchor_embeddings, axis=2), axis=0)
+                n = tf.reduce_min(func(negative_embeddings, anchor_embeddings, axis=2), axis=0)
                 success_counts[metric] += float(sum(tf.cast(p < n, tf.float32)))
 
             total += int(anchor_images.shape[0])

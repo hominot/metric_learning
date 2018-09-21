@@ -25,43 +25,75 @@ configs = {
         'metrics': [
             {
                 'name': 'accuracy',
-                'compute_period': 10,
-                'conf': {
-                    'sampling_rate': 0.1,
-                }
+                'compute_period': 100,
             },
         ]
     },
-    'mnist_latent_position': {
+    'lfw_latent_position': {
         'dataset': {
-            'name': 'mnist',
+            'name': 'lfw',
             'train': {
-                'data_directory': '/tmp/research/experiment/mnist/train',
+                'data_directory': '/tmp/research/experiment/lfw/train',
                 'batch_size': 64,
-                'group_size': 2,
+                'group_size': 4,
                 'num_groups': 8,
                 'min_class_size': 8,
             },
             'test': {
-                'data_directory': '/tmp/research/experiment/mnist/test',
-                'num_negative_examples': 1,
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
             },
         },
         'model': {
             'name': 'latent_position',
             'method': 'projection',
             'child_model': {
-                'name': 'simple_dense',
-                'k': 4,
+                'name': 'simple_conv',
+                'k': 8,
             },
         },
         'metrics': [
             {
                 'name': 'accuracy',
-                'compute_period': 10,
-                'conf': {
-                    'sampling_rate': 0.1,
-                }
+                'compute_period': 100,
+            },
+            {
+                'name': 'norm',
+                'compute_period': 100,
+            },
+        ]
+    },
+    'lfw_npair': {
+        'dataset': {
+            'name': 'lfw',
+            'train': {
+                'data_directory': '/tmp/research/experiment/lfw/train',
+                'batch_size': 64,
+                'group_size': 2,
+                'num_groups': 8,
+                'min_class_size': 8,
+            },
+            'test': {
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
+            },
+        },
+        'model': {
+            'name': 'simple_conv',
+            'k': 8,
+            'loss': {
+                'name': 'npair',
+                'n': 8,
+            },
+        },
+        'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 100,
+            },
+            {
+                'name': 'norm',
+                'compute_period': 100,
             },
         ]
     },
