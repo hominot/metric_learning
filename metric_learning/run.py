@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+import argparse
+
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
 from util.dataset import create_dataset_from_directory
@@ -31,7 +33,7 @@ def train(conf):
     test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(256)
 
     step_counter = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.00001)
+    optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
     model = Model.create(conf['model'], extra_info)
 
     writer = set_tensorboard_writer(model, data_loader)
@@ -39,7 +41,7 @@ def train(conf):
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-    for _ in range(50):
+    for _ in range(conf['num_epochs']):
         train_ds = data_loader.create_grouped_dataset(
             training_files, training_labels,
             group_size=conf['dataset']['train']['group_size'],
@@ -71,5 +73,9 @@ def train(conf):
 if __name__ == '__main__':
     tf.enable_eager_execution()
 
-    conf = configs['lfw_latent_position']
-    train(conf)
+
+    parser = argparse.ArgumentParser(description='Train using a specified config')
+    parser.add_argument('--config', help='config to run')
+    args = parser.parse_args()
+
+    train(configs[args.config])

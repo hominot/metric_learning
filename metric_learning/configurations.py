@@ -1,35 +1,39 @@
 configs = {
-    'mnist_npair': {
+    'lfw_latent_position_distance': {
         'dataset': {
-            'name': 'mnist',
+            'name': 'lfw',
             'train': {
-                'data_directory': '/tmp/research/experiment/mnist/train',
+                'data_directory': '/tmp/research/experiment/lfw/train',
                 'batch_size': 64,
-                'group_size': 2,
+                'group_size': 4,
                 'num_groups': 8,
                 'min_class_size': 8,
             },
             'test': {
-                'data_directory': '/tmp/research/experiment/mnist/test',
-                'num_negative_examples': 1,
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
             },
         },
         'model': {
-            'name': 'simple_dense',
-            'k': 4,
-            'loss': {
-                'name': 'npair',
-                'n': 4
-            }
+            'name': 'latent_position',
+            'method': 'distance',
+            'child_model': {
+                'name': 'simple_conv',
+                'k': 8,
+            },
         },
         'metrics': [
             {
                 'name': 'accuracy',
-                'compute_period': 100,
+                'compute_period': 200,
             },
-        ]
+        ],
+        'optimizer': {
+            'learning_rate': 0.0001,
+        },
+        'num_epochs': 200,
     },
-    'lfw_latent_position': {
+    'lfw_latent_position_projection': {
         'dataset': {
             'name': 'lfw',
             'train': {
@@ -55,13 +59,13 @@ configs = {
         'metrics': [
             {
                 'name': 'accuracy',
-                'compute_period': 100,
+                'compute_period': 200,
             },
-            {
-                'name': 'norm',
-                'compute_period': 100,
-            },
-        ]
+        ],
+        'optimizer': {
+            'learning_rate': 0.0001,
+        },
+        'num_epochs': 200,
     },
     'lfw_npair': {
         'dataset': {
@@ -84,17 +88,17 @@ configs = {
             'loss': {
                 'name': 'npair',
                 'n': 8,
-            },
+            }
         },
         'metrics': [
             {
                 'name': 'accuracy',
-                'compute_period': 100,
+                'compute_period': 200,
             },
-            {
-                'name': 'norm',
-                'compute_period': 100,
-            },
-        ]
+        ],
+        'optimizer': {
+            'learning_rate': 0.0001,
+        },
+        'num_epochs': 200,
     },
 }

@@ -13,7 +13,10 @@ class LatentPositionModel(Model):
         super(LatentPositionModel, self).__init__(conf, extra_info)
 
         self.child_model = Model.create(conf['child_model'], extra_info)
-        self.alpha = tf.keras.backend.variable(value=0.0, dtype='float32')
+        if conf['method'] == 'distance':
+            self.alpha = tf.keras.backend.variable(value=1.0, dtype='float32')
+        else:
+            self.alpha = tf.keras.backend.variable(value=-3.0, dtype='float32')
 
     def call(self, inputs, training=None, mask=None):
         return self.child_model(inputs, training, mask)
@@ -37,4 +40,4 @@ class LatentPositionModel(Model):
         return -positive + negative
 
     def __str__(self):
-        return self.name + '_' + str(self.child_model)
+        return self.name + '_' + str(self.child_model) + '_' + self.conf['method']
