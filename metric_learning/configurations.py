@@ -101,4 +101,37 @@ configs = {
         },
         'num_epochs': 200,
     },
+    'lfw_inception': {
+        'dataset': {
+            'name': 'lfw',
+            'train': {
+                'data_directory': '/tmp/research/experiment/lfw/train',
+                'batch_size': 64,
+                'group_size': 2,
+                'num_groups': 8,
+                'min_class_size': 8,
+            },
+            'test': {
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
+            },
+        },
+        'model': {
+            'name': 'inception',
+            'loss': {
+                'name': 'npair',
+                'n': 8,
+            }
+        },
+        'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 200,
+            },
+        ],
+        'optimizer': {
+            'learning_rate': 0.0001,
+        },
+        'num_epochs': 200,
+    },
 }
