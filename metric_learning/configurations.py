@@ -117,11 +117,11 @@ configs = {
             },
         },
         'model': {
-            'name': 'inception',
-            'loss': {
-                'name': 'npair',
-                'n': 8,
-            }
+            'name': 'latent_position',
+            'method': 'distance',
+            'child_model': {
+                'name': 'inception',
+            },
         },
         'metrics': [
             {
@@ -130,7 +130,7 @@ configs = {
             },
         ],
         'optimizer': {
-            'learning_rate': 0.00000001,
+            'learning_rate': 0.001,
         },
         'num_epochs': 200,
     },

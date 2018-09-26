@@ -64,9 +64,6 @@ def train(conf):
                     loss_value = model.loss(images, labels)
                     tf.contrib.summary.scalar('loss', loss_value)
 
-                extra_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-                print(extra_ops)
-                #print(model.variables)
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(
                     zip(grads, model.variables), global_step=step_counter)
@@ -74,7 +71,6 @@ def train(conf):
 
 if __name__ == '__main__':
     tf.enable_eager_execution()
-
 
     parser = argparse.ArgumentParser(description='Train using a specified config')
     parser.add_argument('--config', help='config to run')
