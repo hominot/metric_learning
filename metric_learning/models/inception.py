@@ -12,4 +12,4 @@ class InceptionModel(Model):
         self.model = InceptionResNetV2(include_top=False, pooling='max', weights='imagenet')
 
     def call(self, inputs, training=None, mask=None):
-        return self.model(inputs, training, mask)
+        return self.model(inputs, training=training, mask=mask)

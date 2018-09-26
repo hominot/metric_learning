@@ -106,7 +106,7 @@ configs = {
             'name': 'lfw',
             'train': {
                 'data_directory': '/tmp/research/experiment/lfw/train',
-                'batch_size': 64,
+                'batch_size': 16,
                 'group_size': 2,
                 'num_groups': 8,
                 'min_class_size': 8,
@@ -130,7 +130,7 @@ configs = {
             },
         ],
         'optimizer': {
-            'learning_rate': 0.0001,
+            'learning_rate': 0.00000001,
         },
         'num_epochs': 200,
     },

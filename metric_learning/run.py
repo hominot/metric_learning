@@ -30,7 +30,7 @@ def train(conf):
         'num_labels': max(training_labels),
     }
 
-    test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(256)
+    test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(32)
 
     step_counter = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
@@ -41,33 +41,35 @@ def train(conf):
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-    for _ in range(conf['num_epochs']):
-        train_ds = data_loader.create_grouped_dataset(
-            training_files, training_labels,
-            group_size=conf['dataset']['train']['group_size'],
-            num_groups=conf['dataset']['train']['num_groups'],
-            min_class_size=conf['dataset']['train']['min_class_size'],
-        ).batch(conf['dataset']['train']['batch_size'])
-        with tf.device(device):
+    train_ds = data_loader.create_grouped_dataset(
+        training_files, training_labels,
+        group_size=conf['dataset']['train']['group_size'],
+        num_groups=conf['dataset']['train']['num_groups'],
+        min_class_size=conf['dataset']['train']['min_class_size'],
+    ).batch(conf['dataset']['train']['batch_size']).repeat(conf['num_epochs'])
+    with tf.device(device):
+        with tf.contrib.summary.record_summaries_every_n_global_steps(
+                10, global_step=step_counter):
             for (batch, (images, labels)) in enumerate(train_ds):
-                with tf.contrib.summary.record_summaries_every_n_global_steps(
-                        10, global_step=step_counter):
-                    with tf.GradientTape() as tape:
-                        loss_value = model.loss(images, labels)
-                        tf.contrib.summary.scalar('loss', loss_value)
+                for metric_conf in conf['metrics']:
+                    if False and int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
+                        metric = Metric.create(metric_conf)
+                        score = metric.compute_metric(model, test_ds)
+                        if type(score) is dict:
+                            for metric, s in score.items():
+                                tf.contrib.summary.scalar(metric, s)
+                        else:
+                            tf.contrib.summary.scalar(metric_conf['name'], score)
+                with tf.GradientTape() as tape:
+                    loss_value = model.loss(images, labels)
+                    tf.contrib.summary.scalar('loss', loss_value)
 
-                    for metric_conf in conf['metrics']:
-                        if int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
-                            metric = Metric.create(metric_conf)
-                            score = metric.compute_metric(model, test_ds)
-                            if type(score) is dict:
-                                for metric, s in score.items():
-                                    tf.contrib.summary.scalar(metric, s)
-                            else:
-                                tf.contrib.summary.scalar(metric_conf['name'], score)
-                    grads = tape.gradient(loss_value, model.variables)
-                    optimizer.apply_gradients(
-                        zip(grads, model.variables), global_step=step_counter)
+                extra_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                print(extra_ops)
+                #print(model.variables)
+                grads = tape.gradient(loss_value, model.variables)
+                optimizer.apply_gradients(
+                    zip(grads, model.variables), global_step=step_counter)
 
 
 if __name__ == '__main__':
