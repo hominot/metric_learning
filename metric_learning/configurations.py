@@ -158,9 +158,14 @@ configs = {
             }
         },
         'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 200,
+                'sampling_rate': 0.1,
+            },
         ],
         'optimizer': {
-            'learning_rate': 0.001,
+            'learning_rate': 0.0001,
         },
         'num_epochs': 200,
     },
