@@ -15,6 +15,3 @@ class SimpleDenseModel(Model):
             tf.keras.layers.Dropout(0.2),
             tf.keras.layers.Dense(conf['k'])
         ])
-
-    def call(self, inputs, training=None, mask=None):
-        return self.model(inputs, training, mask)

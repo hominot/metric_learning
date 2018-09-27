@@ -8,6 +8,7 @@ class LossFunction(object, metaclass=ClassRegistry):
         super(LossFunction, self).__init__()
         self.conf = conf
         self.extra_info = extra_info
+        self.extra_variables = {}
 
     def loss(self, embeddings, labels):
         raise NotImplementedError

@@ -9,7 +9,5 @@ class InceptionModel(Model):
     def __init__(self, conf, extra_info):
         super(InceptionModel, self).__init__(conf, extra_info)
 
-        self.model = InceptionResNetV2(include_top=False, pooling='max', weights='imagenet')
-
-    def call(self, inputs, training=None, mask=None):
-        return self.model(inputs, training=training, mask=mask)
+        self.model = InceptionResNetV2(
+            include_top=False, pooling='max', weights='imagenet')

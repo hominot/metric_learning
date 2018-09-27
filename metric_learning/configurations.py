@@ -106,8 +106,8 @@ configs = {
             'name': 'lfw',
             'train': {
                 'data_directory': '/tmp/research/experiment/lfw/train',
-                'batch_size': 16,
-                'group_size': 2,
+                'batch_size': 32,
+                'group_size': 4,
                 'num_groups': 8,
                 'min_class_size': 8,
             },
@@ -117,16 +117,17 @@ configs = {
             },
         },
         'model': {
-            'name': 'latent_position',
-            'method': 'distance',
-            'child_model': {
-                'name': 'inception',
-            },
+            'name': 'inception',
+            'loss': {
+                'name': 'latent_position',
+                'method': 'distance',
+            }
         },
         'metrics': [
             {
                 'name': 'accuracy',
                 'compute_period': 200,
+                'sampling_rate': 0.1,
             },
         ],
         'optimizer': {

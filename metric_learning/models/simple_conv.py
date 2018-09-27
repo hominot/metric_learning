@@ -38,6 +38,3 @@ class SimpleConvolutionModel(Model):
                 layers.Dropout(0.4),
                 layers.Dense(conf['k']),
             ])
-
-    def call(self, inputs, training=None, mask=None):
-        return self.model(inputs, training, mask)

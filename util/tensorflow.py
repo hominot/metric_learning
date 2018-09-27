@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 
 tensorboard_dir = 's3://hominot/research/metric_learning/tensorboard'
+tensorboard_dir = '/tmp/tensorflow/metric_learning'
 
 
 def set_tensorboard_writer(model, data_loader):

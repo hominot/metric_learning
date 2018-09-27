@@ -1,6 +1,7 @@
 from util.registry.metric import Metric
 from collections import defaultdict
 
+import random
 import tensorflow as tf
 
 
@@ -20,11 +21,13 @@ class Accuracy(Metric):
             -tf.reduce_sum(tf.multiply(x, y), axis=axis),
     }
 
-    def compute_metric(self, model, test_ds, *args, **kwargs):
+    def compute_metric(self, model, test_ds):
 
         total = 0.
         success_counts = defaultdict(float)
         for anchor_images, positive_images, negative_images_group in test_ds:
+            if random.random() > self.conf.get('sampling_rate', 1.0):
+                continue
             anchor_embeddings = model(anchor_images, training=False)
             positive_embeddings = model(positive_images, training=False)
             negative_embeddings = tf.stack([model(negative_images) for negative_images in negative_images_group])
