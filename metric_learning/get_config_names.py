@@ -1,4 +1,4 @@
-from configurations import configs
+from metric_learning.configurations import configs
 
 for config in configs:
     print(config)

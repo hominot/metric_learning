@@ -33,20 +33,10 @@ class NPairLossFunction(LossFunction):
         sampled_data = sample_npair(embeddings, labels, self.conf['n'])
         losses = []
         for first_images, second_images in sampled_data:
-            b = 1 - np.eye(int(first_images.shape[0]))
-            difference = tf.reshape(
-                tf.boolean_mask(
-                    tf.exp(
-                        tf.matmul(first_images, tf.transpose(second_images)) - \
-                        tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True)
-                    ),
-                    b
-                ),
-                (self.conf['n'], self.conf['n'] - 1)
+            loss = tf.reduce_logsumexp(
+                tf.matmul(first_images, tf.transpose(second_images)) - \
+                tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True),
+                axis=1,
             )
-            if self.conf.get('ovo', False):
-                loss = tf.reduce_sum(tf.log(1 + difference), axis=1)
-            else:
-                loss = tf.log(1 + tf.reduce_sum(difference, axis=1))
             losses.append(tf.reduce_mean(loss))
         return sum(losses)
