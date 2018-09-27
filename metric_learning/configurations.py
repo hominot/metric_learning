@@ -101,7 +101,7 @@ configs = {
         },
         'num_epochs': 200,
     },
-    'lfw_inception_latent_position': {
+    'lfw_inception_latent_position_bias': {
         'dataset': {
             'name': 'lfw',
             'train': {
@@ -121,6 +121,77 @@ configs = {
             'loss': {
                 'name': 'latent_position',
                 'method': 'distance',
+                'parametrization': 'bias',
+            }
+        },
+        'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 200,
+                'sampling_rate': 0.1,
+            },
+        ],
+        'optimizer': {
+            'learning_rate': 0.001,
+        },
+        'num_epochs': 200,
+    },
+    'lfw_inception_latent_position_linear': {
+        'dataset': {
+            'name': 'lfw',
+            'train': {
+                'data_directory': '/tmp/research/experiment/lfw/train',
+                'batch_size': 32,
+                'group_size': 4,
+                'num_groups': 8,
+                'min_class_size': 8,
+            },
+            'test': {
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
+            },
+        },
+        'model': {
+            'name': 'inception',
+            'loss': {
+                'name': 'latent_position',
+                'method': 'distance',
+                'parametrization': 'linear',
+            }
+        },
+        'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 200,
+                'sampling_rate': 0.1,
+            },
+        ],
+        'optimizer': {
+            'learning_rate': 0.001,
+        },
+        'num_epochs': 200,
+    },
+    'lfw_inception_latent_position_unit': {
+        'dataset': {
+            'name': 'lfw',
+            'train': {
+                'data_directory': '/tmp/research/experiment/lfw/train',
+                'batch_size': 32,
+                'group_size': 4,
+                'num_groups': 8,
+                'min_class_size': 8,
+            },
+            'test': {
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
+            },
+        },
+        'model': {
+            'name': 'inception',
+            'loss': {
+                'name': 'latent_position',
+                'method': 'distance',
+                'parametrization': 'unit',
             }
         },
         'metrics': [
