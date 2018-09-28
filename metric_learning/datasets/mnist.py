@@ -102,9 +102,12 @@ class MNISTDataLoader(DataLoader):
         prepare_image_files('train-images-idx3-ubyte', 'train-labels-idx1-ubyte')
 
     def _image_parse_function(self, filename):
+        width = self.conf['width']
+        height = self.conf['height']
+        channel = self.conf['channel']
         image_string = tf.read_file(filename)
-        image_decoded = tf.image.decode_png(image_string, channels=1)
-        image_resized = tf.image.resize_images(image_decoded, [28, 28])
+        image_decoded = tf.image.decode_png(image_string, channels=channel)
+        image_resized = tf.image.resize_images(image_decoded, [width, height])
         image_normalized = image_resized / 255.
-        image_normalized = tf.reshape(image_normalized, [28, 28, 1])
+        image_normalized = tf.reshape(image_normalized, [width, height, channel])
         return image_normalized

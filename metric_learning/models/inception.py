@@ -9,5 +9,8 @@ class InceptionModel(Model):
     def __init__(self, conf, extra_info):
         super(InceptionModel, self).__init__(conf, extra_info)
 
+        width = conf['image']['width']
+        height = conf['image']['height']
+        channel = conf['image']['channel']
         self.model = InceptionResNetV2(
-            include_top=False, pooling='max', weights='imagenet')
+            include_top=False, pooling='max', weights='imagenet', input_shape=(width, height, channel))

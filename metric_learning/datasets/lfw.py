@@ -25,9 +25,12 @@ class LFWDataLoader(DataLoader):
         extract(filepath, self.data_directory)
 
     def _image_parse_function(self, filename):
+        width = self.conf['image']['width']
+        height = self.conf['image']['height']
+        channel = self.conf['image']['channel']
         image_string = tf.read_file(filename)
-        image_decoded = tf.image.decode_jpeg(image_string)
-        image_resized = tf.image.resize_images(image_decoded, [250, 250])
+        image_decoded = tf.image.decode_jpeg(image_string, channels=channel)
+        image_resized = tf.image.resize_images(image_decoded, [width, height])
         image_normalized = image_resized / 255.
-        image_normalized = tf.reshape(image_normalized, [250, 250, 3])
+        image_normalized = tf.reshape(image_normalized, [width, height, channel])
         return image_normalized
