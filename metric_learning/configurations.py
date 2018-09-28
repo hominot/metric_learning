@@ -109,7 +109,7 @@ configs = {
                 'batch_size': 32,
                 'group_size': 4,
                 'num_groups': 8,
-                'min_class_size': 8,
+                'min_class_size': 4,
             },
             'test': {
                 'data_directory': '/tmp/research/experiment/lfw/test',
@@ -128,13 +128,12 @@ configs = {
             {
                 'name': 'accuracy',
                 'compute_period': 200,
-                'sampling_rate': 0.1,
             },
         ],
         'optimizer': {
             'learning_rate': 0.001,
         },
-        'num_epochs': 200,
+        'num_epochs': 50,
     },
     'lfw_inception_latent_position_linear': {
         'dataset': {
@@ -163,13 +162,12 @@ configs = {
             {
                 'name': 'accuracy',
                 'compute_period': 200,
-                'sampling_rate': 0.1,
             },
         ],
         'optimizer': {
             'learning_rate': 0.001,
         },
-        'num_epochs': 200,
+        'num_epochs': 50,
     },
     'lfw_inception_latent_position_unit': {
         'dataset': {
@@ -198,13 +196,46 @@ configs = {
             {
                 'name': 'accuracy',
                 'compute_period': 200,
-                'sampling_rate': 0.1,
             },
         ],
         'optimizer': {
             'learning_rate': 0.001,
         },
-        'num_epochs': 200,
+        'num_epochs': 50,
+    },
+    'lfw_inception_latent_position_projection_bias': {
+        'dataset': {
+            'name': 'lfw',
+            'train': {
+                'data_directory': '/tmp/research/experiment/lfw/train',
+                'batch_size': 32,
+                'group_size': 4,
+                'num_groups': 8,
+                'min_class_size': 4,
+            },
+            'test': {
+                'data_directory': '/tmp/research/experiment/lfw/test',
+                'num_negative_examples': 5,
+            },
+        },
+        'model': {
+            'name': 'inception',
+            'loss': {
+                'name': 'latent_position',
+                'method': 'projection',
+                'parametrization': 'bias',
+            }
+        },
+        'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 200,
+            },
+        ],
+        'optimizer': {
+            'learning_rate': 0.001,
+        },
+        'num_epochs': 50,
     },
     'lfw_inception_npair': {
         'dataset': {
@@ -213,8 +244,8 @@ configs = {
                 'data_directory': '/tmp/research/experiment/lfw/train',
                 'batch_size': 32,
                 'group_size': 2,
-                'num_groups': 8,
-                'min_class_size': 8,
+                'num_groups': 16,
+                'min_class_size': 4,
             },
             'test': {
                 'data_directory': '/tmp/research/experiment/lfw/test',
@@ -232,12 +263,11 @@ configs = {
             {
                 'name': 'accuracy',
                 'compute_period': 200,
-                'sampling_rate': 0.1,
             },
         ],
         'optimizer': {
-            'learning_rate': 0.0001,
+            'learning_rate': 0.001,
         },
-        'num_epochs': 200,
+        'num_epochs': 50,
     },
 }

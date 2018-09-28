@@ -39,8 +39,9 @@ class LatentPositionLoss(LossFunction):
             else:
                 raise Exception
         elif self.conf['method'] == 'projection':
+            product = tf.reshape(tf.multiply(embeddings[None], embeddings[:, None]), [-1, int(embeddings.shape[1])])
             if self.conf['parametrization'] == 'bias':
-                product = tf.reshape(tf.multiply(embeddings[None], embeddings[:, None]), [-1, int(embeddings.shape[1])])
+                eta = self.extra_variables['alpha'] + tf.reduce_sum(product, axis=1)
             elif self.conf['parametrization'] == 'linear':
                 eta = self.extra_variables['alpha'] + self.extra_variables['beta'] * tf.reduce_sum(product, axis=1)
         else:

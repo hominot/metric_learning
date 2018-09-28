@@ -65,6 +65,10 @@ def train(conf):
                         loss_value = model.loss(images, labels)
                         tf.contrib.summary.scalar('loss', loss_value)
 
+                    if hasattr(model, 'alpha'):
+                        tf.contrib.summary.scalar('alpha', model.alpha)
+                    if hasattr(model, 'beta'):
+                        tf.contrib.summary.scalar('beta', model.beta)
                     grads = tape.gradient(loss_value, model.variables)
                     optimizer.apply_gradients(
                         zip(grads, model.variables), global_step=step_counter)
