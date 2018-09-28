@@ -2,3 +2,5 @@
 __data__/
 *.pyc
 *.swp
+.DS_Store
+
