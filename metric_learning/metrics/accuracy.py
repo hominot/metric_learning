@@ -16,7 +16,7 @@ def euclidean_distance(x, y, axis):
 
 
 def dot_product(x, y, axis):
-    return -tf.reduce_sum(tf.multiply(x, y), axis=axis),
+    return -tf.reduce_sum(tf.multiply(x, y), axis=axis)
 
 
 def evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings):
