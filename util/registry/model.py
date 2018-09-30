@@ -15,7 +15,7 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         self.conf = conf
         self.extra_info = extra_info
 
-        self.loss_function = LossFunction.create(conf['loss'])
+        self.loss_function = LossFunction.create(conf['model']['loss']['name'], conf)
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
 
@@ -24,7 +24,7 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         return self.loss_function.loss(embeddings, labels)
 
     def __str__(self):
-        return self.conf['name'] + '_' + str(self.loss_function)
+        return self.conf['model']['name'] + '_' + str(self.loss_function)
 
     def call(self, inputs, training=None, mask=None):
         return self.model(inputs, training=training, mask=mask)

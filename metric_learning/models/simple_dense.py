@@ -13,5 +13,5 @@ class SimpleDenseModel(Model):
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(256, activation=tf.nn.relu),
             tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(conf['k'])
+            tf.keras.layers.Dense(conf['model']['k'])
         ])

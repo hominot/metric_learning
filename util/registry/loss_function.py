@@ -14,4 +14,4 @@ class LossFunction(object, metaclass=ClassRegistry):
         raise NotImplementedError
 
     def __str__(self):
-        return self.conf['name']
+        return self.name

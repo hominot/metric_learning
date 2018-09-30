@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 
 from collections import defaultdict
 from util.registry.loss_function import LossFunction
@@ -30,7 +29,7 @@ class NPairLossFunction(LossFunction):
     name = 'npair'
 
     def loss(self, embeddings, labels):
-        sampled_data = sample_npair(embeddings, labels, self.conf['n'])
+        sampled_data = sample_npair(embeddings, labels, self.conf['model']['loss']['n'])
         losses = []
         for first_images, second_images in sampled_data:
             loss = tf.reduce_logsumexp(

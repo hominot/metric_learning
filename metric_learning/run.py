@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import argparse
+import json
 
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
@@ -12,7 +13,7 @@ from metric_learning.configurations import configs
 
 
 def train(conf):
-    data_loader: DataLoader = DataLoader.create(conf['dataset'])
+    data_loader: DataLoader = DataLoader.create(conf['dataset']['name'], conf)
     if conf['dataset']['train']['data_directory'] and conf['dataset']['test']['data_directory']:
         training_files, training_labels = create_dataset_from_directory(
             conf['dataset']['train']['data_directory']
@@ -34,7 +35,7 @@ def train(conf):
 
     step_counter = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
-    model = Model.create(conf['model'], extra_info)
+    model = Model.create(conf['model']['name'], conf, extra_info)
 
     writer = set_tensorboard_writer(model, data_loader)
     writer.set_as_default()
@@ -56,7 +57,7 @@ def train(conf):
                     for metric_conf in conf['metrics']:
                         if current_step % metric_conf.get('compute_period', 10) == 0 and \
                             current_step >= metric_conf.get('skip_steps', 0):
-                            metric = Metric.create(metric_conf)
+                            metric = Metric.create(metric_conf['name'], conf)
                             score = metric.compute_metric(model, test_ds)
                             if type(score) is dict:
                                 for metric, s in score.items():

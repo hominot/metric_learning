@@ -134,4 +134,50 @@ configs = {
         },
         'num_epochs': 100,
     },
+    'mnist_simple_dense': {
+        'image': {
+            'width': 250,
+            'height': 250,
+            'channel': 3,
+            'random_crop': {
+                'width': 224,
+                'height': 224,
+                'n': 4,
+            }
+        },
+        'dataset': {
+            'name': 'mnist',
+            'train': {
+                'data_directory': '/tmp/research/experiment/mnist/train',
+                'batch_size': 32,
+                'group_size': 2,
+                'num_groups': 4,
+                'min_class_size': 2,
+            },
+            'test': {
+                'data_directory': '/tmp/research/experiment/mnist/test',
+                'num_negative_examples': 1,
+            },
+        },
+        'model': {
+            'name': 'inception',
+            'k': 8,
+            'loss': {
+                'name': 'latent_position',
+                'method': 'distance',
+                'parametrization': 'norm',
+                'alpha': 4.0,
+            },
+        },
+        'metrics': [
+            {
+                'name': 'accuracy',
+                'compute_period': 10,
+            },
+        ],
+        'optimizer': {
+            'learning_rate': 0.0000001,
+        },
+        'num_epochs': 100,
+    },
 }

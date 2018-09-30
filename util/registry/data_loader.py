@@ -24,6 +24,40 @@ class DataLoader(object, metaclass=ClassRegistry):
     def _image_parse_function(self, filename):
         raise NotImplementedError
 
+    def _random_crop(self, image):
+        width = self.conf['image']['random_crop']['width']
+        height = self.conf['image']['random_crop']['height']
+        channel = self.conf['image']['channel']
+        return tf.random_crop(image, [width, height, channel])
+
+    def _center_crop(self, image):
+        crop_width = self.conf['image']['random_crop']['width']
+        crop_height = self.conf['image']['random_crop']['height']
+        width = self.conf['image']['width']
+        height = self.conf['image']['height']
+        return tf.image.crop_to_bounding_box(
+            image,
+            (width - crop_width) // 2,
+            (height - crop_height) // 2,
+            crop_width,
+            crop_height)
+
+    def _parse_and_augment(self, dataset: tf.data.Dataset):
+        dataset = dataset.map(self._image_parse_function)
+        if 'random_crop' in self.conf['image']:
+            dataset = dataset.flat_map(self._random_crop)
+        return dataset
+
+    def _parse_and_center(self, dataset: tf.data.Dataset):
+        dataset = dataset.map(self._image_parse_function)
+        if 'random_crop' in self.conf['image']:
+            dataset = dataset.map(self._center_crop)
+        return dataset
+
+    def _repeat_label(self, label):
+        n = self.conf['image']['random_crop']['n']
+        return tf.data.Dataset.from_tensor_slices([label] * n)
+
     def create_dataset(self, image_files, labels):
         data = list(zip(image_files, labels))
         random.shuffle(data)
@@ -43,25 +77,30 @@ class DataLoader(object, metaclass=ClassRegistry):
         label_set = set(data_map.keys())
         anchor_images = []
         positive_images = []
-        negative_images = [[]] * self.conf['test']['num_negative_examples']
+        negative_images = [[]] * self.conf['dataset']['test']['num_negative_examples']
         for label, images in data_map.items():
             for anchor_index, anchor_image in enumerate(data_map[label]):
                 anchor_images.append(anchor_image)
                 positive_index = random.choice(list(set(range(len(data_map[label]))) - {anchor_index}))
                 positive_images.append(data_map[label][positive_index])
-                negative_labels = random.sample(label_set - {label}, self.conf['test']['num_negative_examples'])
+                negative_labels = random.sample(label_set - {label}, self.conf['dataset']['test']['num_negative_examples'])
                 for idx, negative_label in enumerate(negative_labels):
                     negative_images[idx].append(random.choice(data_map[negative_label]))
-        anchor_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(anchor_images)) \
-            .map(self._image_parse_function)
-        positive_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(positive_images)) \
-            .map(self._image_parse_function)
-        negative_images_ds = [tf.data.Dataset.from_tensor_slices(tf.constant(x)).map(
-            self._image_parse_function) for x in negative_images]
+        anchor_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(anchor_images)).map(self._image_parse_function)
+        positive_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(positive_images)).map(self._image_parse_function)
+        negative_images_ds = [tf.data.Dataset.from_tensor_slices(tf.constant(x)).map(self._image_parse_function)
+            for x in negative_images]
+
+        if 'random_crop' in self.conf['image']:
+            anchor_images_ds = anchor_images_ds.map(self._center_crop)
+            positive_images_ds = positive_images_ds.map(self._center_crop)
+            negative_images_ds = [x.map(self._center_crop) for x in negative_images_ds]
         return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds)))
 
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels))
+        if 'random_crop' in self.conf['image']:
+            data = data * self.conf['image']['random_crop']['n']
         random.shuffle(data)
 
         data_map = defaultdict(list)
@@ -79,9 +118,11 @@ class DataLoader(object, metaclass=ClassRegistry):
                     del data_map[label]
 
         image_files_grouped, labels_grouped = zip(*grouped_data)
-        images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_files_grouped)) \
-            .map(self._image_parse_function)
+        images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_files_grouped)).map(self._image_parse_function)
+        if 'random_crop' in self.conf['image']:
+            images_ds = images_ds.map(self._random_crop)
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_grouped))
+
         return tf.data.Dataset.zip((images_ds, labels_ds))
 
     def load_image_files(self):
@@ -91,4 +132,4 @@ class DataLoader(object, metaclass=ClassRegistry):
         return image_files, labels
 
     def __str__(self):
-        return self.conf['name']
+        return self.conf['dataset']['name']

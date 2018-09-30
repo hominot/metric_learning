@@ -12,20 +12,21 @@ class LatentPositionLoss(LossFunction):
     def __init__(self, conf, extra_info):
         super(LatentPositionLoss, self).__init__(conf, extra_info)
 
-        alpha = conf.get('alpha', 1.0)
-        if conf['parametrization'] == 'bias':
-            self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha, dtype='float32')
-        elif conf['parametrization'] == 'unit':
-            self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha, dtype='float32')
-        else:
-            raise Exception
+        loss_conf = conf['model']['loss']
+        alpha = loss_conf.get('alpha', 1.0)
+        self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha, dtype='float32')
 
     def loss(self, embeddings, labels):
         difference = tf.reshape(embeddings[None] - embeddings[:, None], [-1, int(embeddings.shape[1])])
-        if self.conf['parametrization'] == 'bias':
+        loss_conf = self.conf['model']['loss']
+        if loss_conf['parametrization'] == 'bias':
             eta = self.extra_variables['alpha'] - tf.reduce_sum(tf.square(difference), axis=1)
-        elif self.conf['parametrization'] == 'unit':
+        elif loss_conf['parametrization'] == 'unit':
             eta = self.extra_variables['alpha'] * (1 - tf.reduce_sum(tf.square(difference), axis=1))
+        elif loss_conf['parametrization'] == 'norm':
+            eta = self.extra_variables['alpha'] - tf.norm(difference, axis=1)
+        elif loss_conf['parametrization'] == 'norm_unit':
+            eta = self.extra_variables['alpha'] * (1 - tf.norm(difference, axis=1))
         else:
             raise Exception
 
@@ -37,4 +38,4 @@ class LatentPositionLoss(LossFunction):
         return -positive + negative
 
     def __str__(self):
-        return self.name + '_' + self.conf['parametrization']
+        return self.name + '_' + self.conf['model']['loss']['parametrization']
