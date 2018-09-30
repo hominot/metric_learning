@@ -1,3 +1,5 @@
+import tensorflow as tf
+
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
 from util.dataset import save_image_files
@@ -8,6 +10,8 @@ import os
 
 
 if __name__ == '__main__':
+    tf.enable_eager_execution()
+
     parser = argparse.ArgumentParser(
         description='Prepare dataset for training/testing models')
     parser.add_argument('--dataset', help='Name of the dataset')
