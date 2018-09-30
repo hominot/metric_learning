@@ -52,8 +52,10 @@ def train(conf):
             for (batch, (images, labels)) in enumerate(train_ds):
                 with tf.contrib.summary.record_summaries_every_n_global_steps(
                         10, global_step=step_counter):
+                    current_step = int(tf.train.get_global_step())
                     for metric_conf in conf['metrics']:
-                        if int(tf.train.get_global_step()) % metric_conf.get('compute_period', 10) == 0:
+                        if current_step % metric_conf.get('compute_period', 10) == 0 and \
+                            current_step >= metric_conf.get('skip_steps', 0):
                             metric = Metric.create(metric_conf)
                             score = metric.compute_metric(model, test_ds)
                             if type(score) is dict:
