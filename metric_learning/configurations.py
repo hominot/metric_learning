@@ -15,7 +15,7 @@ configs = {
             'train': {
                 'data_directory': '/tmp/research/experiment/lfw/train',
                 'batch_size': 32,
-                'group_size': 4,
+                'group_size': 2,
                 'num_groups': 8,
                 'min_class_size': 2,
             },
@@ -40,9 +40,9 @@ configs = {
             },
         ],
         'optimizer': {
-            'learning_rate': 0.0005,
+            'learning_rate': 0.001,
         },
-        'num_epochs': 100,
+        'num_epochs': 50,
     },
     'lfw_inception_npair': {
         'dataset': {

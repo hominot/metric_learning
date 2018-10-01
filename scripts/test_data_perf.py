@@ -11,37 +11,33 @@ import time
 
 tfe = tf.contrib.eager
 
-model_conf = {
-    'name': 'inception',
-    'loss': {
-        'name': 'latent_position',
-        'method': 'distance',
-        'parametrization': 'bias',
+conf = {
+    'model': {
+        'name': 'inception',
+        'loss': {
+            'name': 'latent_position',
+            'method': 'distance',
+            'parametrization': 'bias',
+        },
     },
     'image': {
         'width': 250,
         'height': 250,
         'channel': 3,
     },
-}
-
-dataset_conf = {
-    'name': 'lfw',
-    'train': {
-        'data_directory': '/tmp/research/experiment/lfw/train',
-        'batch_size': 16,
-        'group_size': 2,
-        'num_groups': 8,
-        'min_class_size': 8,
-    },
-    'test': {
-        'data_directory': '/tmp/research/experiment/lfw/test',
-        'num_negative_examples': 5,
-    },
-    'image': {
-        'width': 250,
-        'height': 250,
-        'channel': 3,
+    'dataset': {
+        'name': 'lfw',
+        'train': {
+            'data_directory': '/tmp/research/experiment/lfw/train',
+            'batch_size': 16,
+            'group_size': 2,
+            'num_groups': 8,
+            'min_class_size': 8,
+        },
+        'test': {
+            'data_directory': '/tmp/research/experiment/lfw/test',
+            'num_negative_examples': 5,
+        },
     },
 }
 
@@ -49,17 +45,17 @@ now = time.time()
 
 print(0, 'start')
 
-model = Model.create(model_conf, {})
+model = Model.create(conf['model']['name'], conf)
 model.call = tfe.defun(model.call)
 
 print(int(time.time() - now), 'model loaded')
 
-data_loader: DataLoader = DataLoader.create(dataset_conf)
+data_loader: DataLoader = DataLoader.create(conf['dataset']['name'], conf)
 
 testing_files, testing_labels = create_dataset_from_directory(
-    dataset_conf['test']['data_directory']
+    conf['dataset']['test']['data_directory']
 )
-test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).cache('/home/ec2-user/research/scripts/test_data').batch(32)
+test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(32).prefetch(32)
 
 print(int(time.time() - now), 'test data loaded')
 
@@ -68,7 +64,7 @@ for _ in range(3):
     for a, p, n in test_ds:
         a = model(a, training=False)
         p = model(p, training=False)
-        n = tf.stack([model(nn, training=False) for nn in n])
+        n = tf.stack([model(nn) for nn in n])
         count += 1
     print(int(time.time() - now), 'test data iteration done')
 

@@ -51,7 +51,6 @@ class Accuracy(Metric):
                 success_counts[metric] += float(sum(tf.cast(results, tf.float32)))
             positive_distance += float(tf.reduce_mean(tf.norm(anchor_embeddings - positive_embeddings, axis=1)))
             negative_distance += float(tf.reduce_mean(tf.reshape(tf.norm(anchor_embeddings - negative_embeddings, axis=2), [-1])))
-            print(positive_distance, negative_distance)
 
             total += int(anchor_images.shape[0])
             num_batches += 1
