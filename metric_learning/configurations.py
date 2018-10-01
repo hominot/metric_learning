@@ -114,12 +114,12 @@ configs = {
             },
         },
         'model': {
-            'name': 'inception',
+            'name': 'simple_dense',
             'k': 8,
             'loss': {
                 'name': 'latent_position',
                 'method': 'distance',
-                'parametrization': 'norm',
+                'parametrization': 'bias',
                 'alpha': 4.0,
             },
         },
@@ -130,7 +130,7 @@ configs = {
             },
         ],
         'optimizer': {
-            'learning_rate': 0.0000001,
+            'learning_rate': 0.0001,
         },
         'num_epochs': 100,
     },

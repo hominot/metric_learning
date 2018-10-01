@@ -37,16 +37,26 @@ class Accuracy(Metric):
     def compute_metric(self, model, test_ds):
         total = 0.
         success_counts = defaultdict(float)
+        positive_distance = 0.
+        negative_distance = 0.
+        num_batches = 0
         for anchor_images, positive_images, negative_images_group in test_ds:
             if random.random() > self.conf.get('sampling_rate', 1.0):
                 continue
             anchor_embeddings = model(anchor_images, training=False)
             positive_embeddings = model(positive_images, training=False)
-            negative_embeddings = tf.stack([model(negative_images) for negative_images in negative_images_group])
+            negative_embeddings = tf.stack([model(negative_images, training=False) for negative_images in negative_images_group])
             for metric, func in self.metric_functions.items():
                 results = evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings)
                 success_counts[metric] += float(sum(tf.cast(results, tf.float32)))
+            positive_distance += float(tf.reduce_mean(tf.norm(anchor_embeddings - positive_embeddings, axis=1)))
+            negative_distance += float(tf.reduce_mean(tf.reshape(tf.norm(anchor_embeddings - negative_embeddings, axis=2), [-1])))
+            print(positive_distance, negative_distance)
 
             total += int(anchor_images.shape[0])
+            num_batches += 1
 
-        return {metric: success / float(total) for metric, success in success_counts.items()}
+        ret = {metric: success / float(total) for metric, success in success_counts.items()}
+        ret['positive_distance'] = positive_distance / num_batches
+        ret['negative_distance'] = negative_distance / num_batches
+        return ret
