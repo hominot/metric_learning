@@ -28,9 +28,8 @@ configs = {
             'name': 'inception',
             'loss': {
                 'name': 'latent_position',
-                'method': 'distance',
                 'parametrization': 'bias',
-                'alpha': 8,
+                'alpha': 4,
             },
         },
         'metrics': [
@@ -118,9 +117,8 @@ configs = {
             'k': 8,
             'loss': {
                 'name': 'latent_position',
-                'method': 'distance',
-                'parametrization': 'bias',
-                'alpha': 4.0,
+                'parametrization': 'dot_product',
+                'alpha': -2.0,
             },
         },
         'metrics': [

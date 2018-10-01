@@ -9,6 +9,12 @@ def pairwise_euclidean_distance_squared(embeddings):
         axis=2)
 
 
+def pairwise_dot_product(embeddings):
+    return tf.reduce_sum(
+        tf.multiply(embeddings[None], embeddings[:, None]),
+        axis=2)
+
+
 def pairwise_matching_matrix(labels):
     return tf.cast(tf.equal(labels[None], labels[:, None]), tf.float32) * 2 - 1
 
@@ -33,6 +39,9 @@ class LatentPositionLoss(LossFunction):
         if loss_conf['parametrization'] == 'bias':
             pairwise_distance = pairwise_euclidean_distance_squared(embeddings)
             eta = self.extra_variables['alpha'] - pairwise_distance
+        elif loss_conf['parametrization'] == 'dot_product':
+            dot_products = pairwise_dot_product(embeddings)
+            eta = self.extra_variables['alpha'] + dot_products
         else:
             raise Exception
 
