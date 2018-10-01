@@ -90,13 +90,13 @@ configs = {
     },
     'mnist_simple_dense': {
         'image': {
-            'width': 250,
-            'height': 250,
-            'channel': 3,
+            'width': 28,
+            'height': 28,
+            'channel': 1,
             'random_crop': {
-                'width': 224,
-                'height': 224,
-                'n': 4,
+                'width': 26,
+                'height': 26,
+                'n': 2,
             }
         },
         'dataset': {

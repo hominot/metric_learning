@@ -3,7 +3,19 @@ import tensorflow as tf
 from util.registry.loss_function import LossFunction
 
 
-layers = tf.keras.layers
+def pairwise_euclidean_distance_squared(embeddings):
+    return tf.reduce_sum(
+        tf.square(embeddings[None] - embeddings[:, None]),
+        axis=2)
+
+
+def pairwise_matching_matrix(labels):
+    return tf.cast(tf.equal(labels[None], labels[:, None]), tf.float32) * 2 - 1
+
+
+def upper_triangular_part(matrix):
+    a = tf.linalg.band_part(tf.ones(matrix.shape), -1, 0)
+    return tf.boolean_mask(matrix, 1 - a)
 
 
 class LatentPositionLoss(LossFunction):
@@ -17,25 +29,18 @@ class LatentPositionLoss(LossFunction):
         self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha, dtype='float32')
 
     def loss(self, embeddings, labels):
-        difference = tf.reshape(embeddings[None] - embeddings[:, None], [-1, int(embeddings.shape[1])])
         loss_conf = self.conf['model']['loss']
         if loss_conf['parametrization'] == 'bias':
-            eta = self.extra_variables['alpha'] - tf.reduce_sum(tf.square(difference), axis=1)
-        elif loss_conf['parametrization'] == 'unit':
-            eta = self.extra_variables['alpha'] * (1 - tf.reduce_sum(tf.square(difference), axis=1))
-        elif loss_conf['parametrization'] == 'norm':
-            eta = self.extra_variables['alpha'] - tf.norm(difference, axis=1)
-        elif loss_conf['parametrization'] == 'norm_unit':
-            eta = self.extra_variables['alpha'] * (1 - tf.norm(difference, axis=1))
+            pairwise_distance = pairwise_euclidean_distance_squared(embeddings)
+            eta = self.extra_variables['alpha'] - pairwise_distance
         else:
             raise Exception
 
-        y = tf.reshape(tf.equal(labels[None], labels[:, None]), [-1])
-        b = tf.equal(tf.reshape(tf.eye(int(embeddings.shape[0])), [-1]), 1)
-        positive = sum(tf.boolean_mask(eta, y & ~b))
-        negative = tf.reduce_sum(tf.log(1 + tf.exp(tf.boolean_mask(eta, ~b))))
+        y = pairwise_matching_matrix(labels)
+        signed_eta = upper_triangular_part(tf.multiply(eta, -y))
+        padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])
 
-        return -positive + negative
+        return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
 
     def __str__(self):
         return self.name + '_' + self.conf['model']['loss']['parametrization']
