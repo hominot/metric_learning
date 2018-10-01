@@ -6,6 +6,7 @@ import requests
 import tarfile
 import tensorflow as tf
 import os
+import zipfile
 
 from collections import defaultdict
 from shutil import copyfile
@@ -36,10 +37,15 @@ def download(url, directory, filename=None):
     return filepath
 
 
-def extract(filepath, directory):
+def extract_tgz(filepath, directory):
     tar = tarfile.open(filepath, 'r')
     for item in tar:
         tar.extract(item, directory)
+
+
+def extract_zip(filepath, directory):
+    with zipfile.ZipFile(filepath, 'r') as zip_ref:
+        zip_ref.extractall(directory)
 
 
 def create_dataset_from_directory(directory):

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     if directory is None:
         directory = os.path.join('/tmp/research/experiment', args.dataset)
 
-    data_loader: DataLoader = DataLoader.create({'name': args.dataset}, None)
+    data_loader: DataLoader = DataLoader.create(args.dataset)
     data_loader.prepare_files()
 
     shutil.rmtree(os.path.join(directory, 'train'), ignore_errors=True)
