@@ -25,6 +25,11 @@ def sample_npair(images, labels, n):
     return ret
 
 
+def compute_exponents(first_images, second_images):
+    return tf.matmul(first_images, tf.transpose(second_images)) - \
+           tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True)
+
+
 class NPairLossFunction(LossFunction):
     name = 'npair'
 
@@ -32,10 +37,6 @@ class NPairLossFunction(LossFunction):
         sampled_data = sample_npair(embeddings, labels, self.conf['model']['loss']['n'])
         losses = []
         for first_images, second_images in sampled_data:
-            loss = tf.reduce_logsumexp(
-                tf.matmul(first_images, tf.transpose(second_images)) - \
-                tf.reduce_sum(tf.multiply(first_images, second_images), axis=1, keepdims=True),
-                axis=1,
-            )
+            loss = tf.reduce_logsumexp(compute_exponents(first_images, second_images), axis=1)
             losses.append(tf.reduce_mean(loss))
         return sum(losses)
