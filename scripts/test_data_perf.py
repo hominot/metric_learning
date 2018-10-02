@@ -55,7 +55,7 @@ data_loader: DataLoader = DataLoader.create(conf['dataset']['name'], conf)
 testing_files, testing_labels = create_dataset_from_directory(
     conf['dataset']['test']['data_directory']
 )
-test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(32).prefetch(32)
+test_ds = data_loader.create_identification_test_dataset(testing_files, testing_labels).batch(32).prefetch(32)
 
 print(int(time.time() - now), 'test data loaded')
 

@@ -67,7 +67,7 @@ class DataLoader(object, metaclass=ClassRegistry):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_shuffled))
         return tf.data.Dataset.zip((images_ds, labels_ds))
 
-    def create_verification_test_dataset(self, image_files, labels):
+    def create_identification_test_dataset(self, image_files, labels):
         data = list(zip(image_files, labels))
         random.shuffle(data)
         data_map = defaultdict(list)
@@ -77,13 +77,15 @@ class DataLoader(object, metaclass=ClassRegistry):
         label_set = set(data_map.keys())
         anchor_images = []
         positive_images = []
-        negative_images = [[]] * self.conf['dataset']['test']['num_negative_examples']
+
+        num_negative_examples = self.conf['dataset']['test']['identification']['num_negative_examples']
+        negative_images = [[]] * num_negative_examples
         for label, images in data_map.items():
             for anchor_index, anchor_image in enumerate(data_map[label]):
                 anchor_images.append(anchor_image)
                 positive_index = random.choice(list(set(range(len(data_map[label]))) - {anchor_index}))
                 positive_images.append(data_map[label][positive_index])
-                negative_labels = random.sample(label_set - {label}, self.conf['dataset']['test']['num_negative_examples'])
+                negative_labels = random.sample(label_set - {label}, num_negative_examples)
                 for idx, negative_label in enumerate(negative_labels):
                     negative_images[idx].append(random.choice(data_map[negative_label]))
         anchor_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(anchor_images)).map(self._image_parse_function)
@@ -96,6 +98,26 @@ class DataLoader(object, metaclass=ClassRegistry):
             positive_images_ds = positive_images_ds.map(self._center_crop)
             negative_images_ds = [x.map(self._center_crop) for x in negative_images_ds]
         return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds)))
+
+    def create_recall_test_dataset(self, image_files, labels):
+        data = list(zip(image_files, labels))
+        random.shuffle(data)
+        data_map = defaultdict(list)
+        for image_file, label in data:
+            data_map[label].append(image_file)
+        data_map = dict(filter(lambda x: len(x[1]) >= 5, data_map.items()))
+        test_images = []
+        test_labels = []
+        num_examples_per_class = self.conf['dataset']['test']['recall']['num_examples_per_class']
+        for label, images in data_map.items():
+            test_images += images[0:num_examples_per_class]
+            test_labels += [label] * num_examples_per_class
+        test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(self._image_parse_function)
+        test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels))
+
+        if 'random_crop' in self.conf['image']:
+            test_images_ds = test_images_ds.map(self._center_crop)
+        return tf.data.Dataset.zip((test_images_ds, test_labels_ds))
 
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels))

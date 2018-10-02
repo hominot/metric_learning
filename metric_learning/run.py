@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 import argparse
-import json
 
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
@@ -31,7 +30,12 @@ def train(conf):
         'num_labels': max(training_labels),
     }
 
-    test_ds = data_loader.create_verification_test_dataset(testing_files, testing_labels).batch(48).prefetch(48)
+    test_datasets = {
+        'identification': data_loader.create_identification_test_dataset(
+            testing_files, testing_labels).batch(48).prefetch(48),
+        'recall': data_loader.create_recall_test_dataset(
+            testing_files, testing_labels).batch(2).prefetch(2),
+    }
 
     step_counter = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
@@ -57,8 +61,8 @@ def train(conf):
                     for metric_conf in conf['metrics']:
                         if current_step % metric_conf.get('compute_period', 10) == 0 and \
                             current_step >= metric_conf.get('skip_steps', 0):
-                            metric = Metric.create(metric_conf['name'], conf)
-                            score = metric.compute_metric(model, test_ds)
+                            metric = Metric.create(metric_conf['name'], metric_conf)
+                            score = metric.compute_metric(model, test_datasets[metric.dataset])
                             if type(score) is dict:
                                 for metric, s in score.items():
                                     tf.contrib.summary.scalar(metric, s)

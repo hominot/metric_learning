@@ -1,7 +1,6 @@
 from util.registry.metric import Metric
 from collections import defaultdict
 
-import random
 import tensorflow as tf
 
 
@@ -27,6 +26,7 @@ def evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_emb
 
 class Accuracy(Metric):
     name = 'accuracy'
+    dataset = 'identification'
 
     metric_functions = {
         'accuracy:euclidean': euclidean_distance,
@@ -41,8 +41,6 @@ class Accuracy(Metric):
         negative_distance = 0.
         num_batches = 0
         for anchor_images, positive_images, negative_images_group in test_ds:
-            if random.random() > self.conf.get('sampling_rate', 1.0):
-                continue
             anchor_embeddings = model(anchor_images, training=False)
             positive_embeddings = model(positive_images, training=False)
             negative_embeddings = tf.stack([model(negative_images, training=False) for negative_images in negative_images_group])

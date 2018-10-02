@@ -21,7 +21,9 @@ configs = {
             },
             'test': {
                 'data_directory': '/tmp/research/experiment/lfw/test',
-                'num_negative_examples': 5,
+                'identification': {
+                    'num_negative_examples': 5,
+                },
             },
         },
         'model': {
@@ -60,7 +62,9 @@ configs = {
             },
             'test': {
                 'data_directory': '/tmp/research/experiment/lfw/test',
-                'num_negative_examples': 5,
+                'identification': {
+                    'num_negative_examples': 5,
+                },
             },
         },
         'model': {
@@ -79,7 +83,6 @@ configs = {
             {
                 'name': 'accuracy',
                 'compute_period': 200,
-                'skip_steps': 10000,
             },
         ],
         'optimizer': {
@@ -109,7 +112,12 @@ configs = {
             },
             'test': {
                 'data_directory': '/tmp/research/experiment/mnist/test',
-                'num_negative_examples': 1,
+                'identification': {
+                    'num_negative_examples': 1,
+                },
+                'recall': {
+                    'num_examples_per_class': 5,
+                },
             },
         },
         'model': {
@@ -124,6 +132,11 @@ configs = {
         'metrics': [
             {
                 'name': 'accuracy',
+                'compute_period': 10,
+            },
+            {
+                'name': 'recall',
+                'k': [1, 2],
                 'compute_period': 10,
             },
         ],
