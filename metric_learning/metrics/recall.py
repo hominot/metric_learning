@@ -39,10 +39,10 @@ class Recall(Metric):
                 all_labels += list(test_labels.numpy())
                 test_embeddings = model(test_images, training=False)
                 distances = tf.reduce_sum(
-                    tf.square(embeddings[None] - test_embeddings[:, None]),
+                    tf.square(test_embeddings[None] - embeddings[:, None]),
                     axis=2)
                 distance_blocks.append(distances)
-            tf.concat(distance_blocks, axis=1)
+
             values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.conf['k']) + 1)
             top_labels = tf.gather(tf.constant(all_labels), indices)[:, 1:]
             for k in self.conf['k']:
@@ -51,4 +51,5 @@ class Recall(Metric):
             total += int(images.shape[0])
 
         ret = {'recall@{}'.format(k): success / float(total) for k, success in successes.items()}
+        print(ret)
         return ret

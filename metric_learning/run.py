@@ -34,7 +34,7 @@ def train(conf):
         'identification': data_loader.create_identification_test_dataset(
             testing_files, testing_labels).batch(48).prefetch(48),
         'recall': data_loader.create_recall_test_dataset(
-            testing_files, testing_labels).batch(2).prefetch(2),
+            testing_files, testing_labels).batch(48).prefetch(48),
     }
 
     step_counter = tf.train.get_or_create_global_step()
