@@ -30,12 +30,13 @@ def train(conf):
         'num_labels': max(training_labels),
     }
 
-    test_datasets = {
-        'identification': data_loader.create_identification_test_dataset(
-            testing_files, testing_labels).batch(48).prefetch(48),
-        'recall': data_loader.create_recall_test_dataset(
-            testing_files, testing_labels).batch(48).prefetch(48),
-    }
+    test_datasets = {}
+    if 'identification' in conf['dataset']['test']:
+        test_datasets['identification'] = data_loader.create_identification_test_dataset(
+            testing_files, testing_labels).batch(48).prefetch(48)
+    if 'recall' in conf['dataset']['test']:
+        test_datasets['recall'] = data_loader.create_recall_test_dataset(
+            testing_files, testing_labels).batch(48).prefetch(48)
 
     step_counter = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
