@@ -113,7 +113,7 @@ class DataLoader(object, metaclass=ClassRegistry):
             test_images += images[0:num_examples_per_class]
             test_labels += [label] * num_examples_per_class
         test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(self._image_parse_function)
-        test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels))
+        test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels, tf.int64))
 
         if 'random_crop' in self.conf['image']:
             test_images_ds = test_images_ds.map(self._center_crop)

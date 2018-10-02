@@ -44,12 +44,11 @@ class Recall(Metric):
                 distance_blocks.append(distances)
 
             values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.conf['k']) + 1)
-            top_labels = tf.gather(tf.constant(all_labels), indices)[:, 1:]
+            top_labels = tf.gather(tf.constant(all_labels, tf.int64), indices)[:, 1:]
             for k in self.conf['k']:
                 score = tf.reduce_sum(tf.cast(tf.equal(tf.transpose(labels[None]), top_labels[:, 0:k]), tf.int32), axis=1)
                 successes[k] += int(sum(tf.cast(score >= 1, tf.int32)))
             total += int(images.shape[0])
 
         ret = {'recall@{}'.format(k): success / float(total) for k, success in successes.items()}
-        print(ret)
         return ret

@@ -38,7 +38,7 @@ class LatentPositionLoss(LossFunction):
         loss_conf = self.conf['model']['loss']
         if loss_conf['parametrization'] == 'bias':
             pairwise_distance = pairwise_euclidean_distance_squared(embeddings)
-            eta = self.extra_variables['alpha'] - pairwise_distance
+            eta = self.conf['model']['loss'].get('alpha', 4.0) - pairwise_distance
         elif loss_conf['parametrization'] == 'dot_product':
             dot_products = pairwise_dot_product(embeddings)
             eta = self.extra_variables['alpha'] + dot_products

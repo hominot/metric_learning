@@ -24,6 +24,9 @@ configs = {
                 'identification': {
                     'num_negative_examples': 5,
                 },
+                'recall': {
+                    'num_examples_per_class': 5,
+                },
             },
         },
         'model': {
@@ -31,17 +34,22 @@ configs = {
             'loss': {
                 'name': 'latent_position',
                 'parametrization': 'bias',
-                'alpha': 4,
+                'alpha': 8,
             },
         },
         'metrics': [
+            {
+                'name': 'recall',
+                'compute_period': 200,
+                'k': [1, 3, 5, 10],
+            },
             {
                 'name': 'accuracy',
                 'compute_period': 200,
             },
         ],
         'optimizer': {
-            'learning_rate': 0.001,
+            'learning_rate': 0.0001,
         },
         'num_epochs': 50,
     },
