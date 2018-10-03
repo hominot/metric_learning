@@ -25,23 +25,27 @@ def evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_emb
     return p < n
 
 
+
+
+
 class Recall(Metric):
     name = 'recall'
     dataset = 'recall'
 
     def compute_metric(self, model, test_ds, num_testcases):
+        def _compute_embeddings(images, labels):
+            return model(images, training=False), labels
+
         total = 0.
         successes = defaultdict(float)
         batch_size = self.conf['batch_size']
-        test_ds = test_ds.batch(batch_size).prefetch(batch_size)
-        for images, labels in tqdm(
-                test_ds, total=num_testcases // batch_size, desc=self.name):
+        embeddings_ds = test_ds.batch(batch_size).prefetch(batch_size).map(_compute_embeddings)
+        for embeddings, labels in tqdm(
+                embeddings_ds, total=num_testcases // batch_size, desc=self.name):
             all_labels = []
-            embeddings = model(images, training=False)
             distance_blocks = []
-            for test_images, test_labels in test_ds:
+            for test_embeddings, test_labels in embeddings_ds:
                 all_labels += list(test_labels.numpy())
-                test_embeddings = model(test_images, training=False)
                 distances = tf.reduce_sum(
                     tf.square(test_embeddings[None] - embeddings[:, None]),
                     axis=2)
@@ -52,7 +56,7 @@ class Recall(Metric):
             for k in self.conf['k']:
                 score = tf.reduce_sum(tf.cast(tf.equal(tf.transpose(labels[None]), top_labels[:, 0:k]), tf.int32), axis=1)
                 successes[k] += int(sum(tf.cast(score >= 1, tf.int32)))
-            total += int(images.shape[0])
+            total += int(embeddings.shape[0])
 
         ret = {'recall@{}'.format(k): success / float(total) for k, success in successes.items()}
         return ret
