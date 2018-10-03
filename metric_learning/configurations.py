@@ -24,10 +24,12 @@ configs = {
                 'identification': {
                     'num_negative_examples': 5,
                     'num_testcases': 10000,
+                    'batch_size': 48,
                 },
                 'recall': {
                     'num_examples_per_class': 5,
                     'num_testcases': 10000,
+                    'batch_size': 48,
                 },
             },
         },
@@ -75,10 +77,12 @@ configs = {
                 'identification': {
                     'num_testcases': 10000,
                     'num_negative_examples': 5,
+                    'batch_size': 48,
                 },
                 'recall': {
                     'num_examples_per_class': 5,
                     'num_testcases': 10000,
+                    'batch_size': 48,
                 },
             },
         },
@@ -155,11 +159,13 @@ configs = {
             {
                 'name': 'accuracy',
                 'compute_period': 10,
+                'batch_size': 48,
             },
             {
                 'name': 'recall',
                 'k': [1, 2],
                 'compute_period': 10,
+                'batch_size': 48,
             },
         ],
         'optimizer': {

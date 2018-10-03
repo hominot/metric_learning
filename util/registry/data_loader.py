@@ -99,7 +99,7 @@ class DataLoader(object, metaclass=ClassRegistry):
             anchor_images_ds = anchor_images_ds.map(self._center_crop)
             positive_images_ds = positive_images_ds.map(self._center_crop)
             negative_images_ds = [x.map(self._center_crop) for x in negative_images_ds]
-        return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds)))
+        return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds))), len(anchor_images)
 
     def create_recall_test_dataset(self, image_files, labels):
         data = list(zip(image_files, labels))
@@ -124,7 +124,7 @@ class DataLoader(object, metaclass=ClassRegistry):
 
         if 'random_crop' in self.conf['image']:
             test_images_ds = test_images_ds.map(self._center_crop)
-        return tf.data.Dataset.zip((test_images_ds, test_labels_ds))
+        return tf.data.Dataset.zip((test_images_ds, test_labels_ds)), len(test_labels)
 
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels))

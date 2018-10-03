@@ -1,4 +1,6 @@
 from util.registry.metric import Metric
+
+from tqdm import tqdm
 from collections import defaultdict
 
 import tensorflow as tf
@@ -34,13 +36,18 @@ class Accuracy(Metric):
         'accuracy:dot_product': dot_product,
     }
 
-    def compute_metric(self, model, test_ds):
+    def compute_metric(self, model, test_ds, num_testcases):
         total = 0.
         success_counts = defaultdict(float)
         positive_distance = 0.
         negative_distance = 0.
         num_batches = 0
-        for anchor_images, positive_images, negative_images_group in test_ds:
+        batch_size = self.conf['batch_size']
+        test_ds = test_ds.batch(batch_size).prefetch(batch_size)
+        for anchor_images, positive_images, negative_images_group in tqdm(
+                test_ds,
+                total=num_testcases // batch_size,
+                desc=self.name):
             anchor_embeddings = model(anchor_images, training=False)
             positive_embeddings = model(positive_images, training=False)
             negative_embeddings = tf.stack([model(negative_images, training=False) for negative_images in negative_images_group])

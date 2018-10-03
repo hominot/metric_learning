@@ -1,5 +1,6 @@
 from util.registry.metric import Metric
 from collections import defaultdict
+from tqdm import tqdm
 
 import tensorflow as tf
 
@@ -28,10 +29,13 @@ class Recall(Metric):
     name = 'recall'
     dataset = 'recall'
 
-    def compute_metric(self, model, test_ds):
+    def compute_metric(self, model, test_ds, num_testcases):
         total = 0.
         successes = defaultdict(float)
-        for images, labels in test_ds:
+        batch_size = self.conf['batch_size']
+        test_ds = test_ds.batch(batch_size).prefetch(batch_size)
+        for images, labels in tqdm(
+                test_ds, total=num_testcases // batch_size, desc=self.name):
             all_labels = []
             embeddings = model(images, training=False)
             distance_blocks = []

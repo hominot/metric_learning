@@ -32,11 +32,19 @@ def train(conf):
 
     test_datasets = {}
     if 'identification' in conf['dataset']['test']:
-        test_datasets['identification'] = data_loader.create_identification_test_dataset(
-            testing_files, testing_labels).batch(48).prefetch(48)
+        dataset, num_testcases = data_loader.create_identification_test_dataset(
+            testing_files, testing_labels)
+        test_datasets['identification'] = {
+            'dataset': dataset,
+            'num_testcases': num_testcases,
+        }
     if 'recall' in conf['dataset']['test']:
-        test_datasets['recall'] = data_loader.create_recall_test_dataset(
-            testing_files, testing_labels).batch(48).prefetch(48)
+        dataset, num_testcases = data_loader.create_recall_test_dataset(
+            testing_files, testing_labels)
+        test_datasets['recall'] = {
+            'dataset': dataset,
+            'num_testcases': num_testcases,
+        }
 
     step_counter = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
@@ -63,7 +71,7 @@ def train(conf):
                         if current_step % metric_conf.get('compute_period', 10) == 0 and \
                             current_step >= metric_conf.get('skip_steps', 0):
                             metric = Metric.create(metric_conf['name'], metric_conf)
-                            score = metric.compute_metric(model, test_datasets[metric.dataset])
+                            score = metric.compute_metric(model, test_datasets[metric.dataset]['dataset'], test_datasets[metric.dataset]['num_testcases'])
                             if type(score) is dict:
                                 for metric, s in score.items():
                                     tf.contrib.summary.scalar(metric, s)

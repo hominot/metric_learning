@@ -9,7 +9,7 @@ class Metric(object, metaclass=ClassRegistry):
         self.conf = conf
         self.extra_info = extra_info
 
-    def compute_metric(self, model, test_ds):
+    def compute_metric(self, model, test_ds, num_testcases):
         raise NotImplementedError
 
     def __str__(self):
