@@ -30,17 +30,14 @@ class Recall(Metric):
     dataset = 'recall'
 
     def compute_metric(self, model, dataset, num_testcases):
-        def _compute_embeddings(images):
-            return model(images, training=False)
-
         images_ds, labels_ds = dataset
         total = 0.
         successes = defaultdict(float)
-        batch_size = self.conf['batch_size']
+        batch_size = self.metric_conf['batch_size']
         ds = tf.data.Dataset.zip((images_ds, labels_ds)).batch(batch_size)
         data = []
         for images, labels in tqdm(ds, total=num_testcases // batch_size, desc='recall: embedding'):
-            embeddings = model(images)
+            embeddings = model(images, training=False)
             data.append((embeddings, labels))
 
         for embeddings, labels in tqdm(
@@ -54,12 +51,12 @@ class Recall(Metric):
                     axis=2)
                 distance_blocks.append(distances)
 
-            values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.conf['k']) + 1)
+            values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.metric_conf['k']) + 1)
             top_labels = tf.gather(tf.constant(all_labels, tf.int64), indices)[:, 1:]
-            for k in self.conf['k']:
+            for k in self.metric_conf['k']:
                 score = tf.reduce_sum(tf.cast(tf.equal(tf.transpose(labels[None]), top_labels[:, 0:k]), tf.int32), axis=1)
                 successes[k] += int(sum(tf.cast(score >= 1, tf.int32)))
-            total += int(images.shape[0])
+            total += int(embeddings.shape[0])
 
         ret = {'recall@{}'.format(k): success / float(total) for k, success in successes.items()}
         return ret

@@ -38,6 +38,7 @@ configs = {
                 'parametrization': 'bias',
                 'alpha': 8,
             },
+            'metric': 'euclidean_distance',
         },
         'metrics': [
             {
@@ -95,6 +96,7 @@ configs = {
                 'height': 250,
                 'channel': 3,
             },
+            'metric': 'cosine_similarity',
         },
         'metrics': [
             {
@@ -154,6 +156,7 @@ configs = {
                 'parametrization': 'bias',
                 'alpha': 4.0,
             },
+            'metric': 'euclidean_distance',
         },
         'metrics': [
             {

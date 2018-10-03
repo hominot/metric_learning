@@ -31,18 +31,18 @@ class Accuracy(Metric):
     dataset = 'identification'
 
     metric_functions = {
-        'accuracy:euclidean': euclidean_distance,
-        'accuracy:cosine_similarity': cosine_similarity,
-        'accuracy:dot_product': dot_product,
+        'euclidean_distance': euclidean_distance,
+        'cosine_similarity': cosine_similarity,
+        'dot_product': dot_product,
     }
 
     def compute_metric(self, model, test_ds, num_testcases):
         total = 0.
-        success_counts = defaultdict(float)
+        success_count = 0.
         positive_distance = 0.
         negative_distance = 0.
         num_batches = 0
-        batch_size = self.conf['batch_size']
+        batch_size = self.metric_conf['batch_size']
         test_ds = test_ds.batch(batch_size).prefetch(batch_size)
         for anchor_images, positive_images, negative_images_group in tqdm(
                 test_ds,
@@ -51,16 +51,17 @@ class Accuracy(Metric):
             anchor_embeddings = model(anchor_images, training=False)
             positive_embeddings = model(positive_images, training=False)
             negative_embeddings = tf.stack([model(negative_images, training=False) for negative_images in negative_images_group])
-            for metric, func in self.metric_functions.items():
-                results = evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings)
-                success_counts[metric] += float(sum(tf.cast(results, tf.float32)))
+            func = self.metric_functions[self.conf['model']['metric']]
+            results = evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings)
+            success_count += float(sum(tf.cast(results, tf.float32)))
             positive_distance += float(tf.reduce_mean(tf.norm(anchor_embeddings - positive_embeddings, axis=1)))
             negative_distance += float(tf.reduce_mean(tf.reshape(tf.norm(anchor_embeddings - negative_embeddings, axis=2), [-1])))
 
             total += int(anchor_images.shape[0])
             num_batches += 1
 
-        ret = {metric: success / float(total) for metric, success in success_counts.items()}
-        ret['positive_distance'] = positive_distance / num_batches
-        ret['negative_distance'] = negative_distance / num_batches
-        return ret
+        return {
+            'accuracy': success_count / total,
+            'positive_distance': positive_distance / num_batches,
+            'negative_distance': negative_distance / num_batches,
+        }

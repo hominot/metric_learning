@@ -70,7 +70,7 @@ def train(conf):
                     for metric_conf in conf['metrics']:
                         if current_step % metric_conf.get('compute_period', 10) == 0 and \
                             current_step >= metric_conf.get('skip_steps', 0):
-                            metric = Metric.create(metric_conf['name'], metric_conf)
+                            metric = Metric.create(metric_conf['name'], conf)
                             score = metric.compute_metric(model, test_datasets[metric.dataset]['dataset'], test_datasets[metric.dataset]['num_testcases'])
                             if type(score) is dict:
                                 for metric, s in score.items():
