@@ -1,6 +1,8 @@
 import tensorflow as tf
 import os
 
+import boto3
+
 tensorboard_dir = '/tmp/tensorflow/metric_learning'
 
 
@@ -20,3 +22,14 @@ def set_tensorboard_writer(model, data_loader):
         os.path.join(tensorboard_dir, run_dir),
         flush_millis=10000)
     return writer
+
+
+def upload_to_s3(run_name):
+    s3 = boto3.client('s3')
+    run_dir = os.path.join(tensorboard_dir, run_name)
+    for filename in os.listdir(run_dir):
+        s3.meta.client.upload_file(
+            filename,
+            'hominot',
+            'research/metric_learning/tensorboard/{}/{}'.format(run_name, filename))
+
