@@ -29,19 +29,26 @@ class Recall(Metric):
     name = 'recall'
     dataset = 'recall'
 
-    def compute_metric(self, model, test_ds, num_testcases):
+    def compute_metric(self, model, dataset, num_testcases):
+        def _compute_embeddings(images):
+            return model(images, training=False)
+
+        images_ds, labels_ds = dataset
         total = 0.
         successes = defaultdict(float)
         batch_size = self.conf['batch_size']
-        test_ds = test_ds.batch(batch_size).prefetch(batch_size)
-        for images, labels in tqdm(
-                test_ds, total=num_testcases // batch_size, desc=self.name):
+        ds = tf.data.Dataset.zip((images_ds, labels_ds)).batch(batch_size)
+        data = []
+        for images, labels in tqdm(ds, total=num_testcases // batch_size, desc='recall: embedding'):
+            embeddings = model(images)
+            data.append((embeddings, labels))
+
+        for embeddings, labels in tqdm(
+                data, total=len(data), desc=self.name):
             all_labels = []
-            embeddings = model(images, training=False)
             distance_blocks = []
-            for test_images, test_labels in test_ds:
+            for test_embeddings, test_labels in data:
                 all_labels += list(test_labels.numpy())
-                test_embeddings = model(test_images, training=False)
                 distances = tf.reduce_sum(
                     tf.square(test_embeddings[None] - embeddings[:, None]),
                     axis=2)

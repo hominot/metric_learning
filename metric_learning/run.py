@@ -39,10 +39,10 @@ def train(conf):
             'num_testcases': num_testcases,
         }
     if 'recall' in conf['dataset']['test']:
-        dataset, num_testcases = data_loader.create_recall_test_dataset(
+        images_ds, labels_ds, num_testcases = data_loader.create_recall_test_dataset(
             testing_files, testing_labels)
         test_datasets['recall'] = {
-            'dataset': dataset,
+            'dataset': (images_ds, labels_ds),
             'num_testcases': num_testcases,
         }
 

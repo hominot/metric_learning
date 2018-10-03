@@ -24,12 +24,10 @@ configs = {
                 'identification': {
                     'num_negative_examples': 5,
                     'num_testcases': 10000,
-                    'batch_size': 48,
                 },
                 'recall': {
                     'num_examples_per_class': 5,
                     'num_testcases': 10000,
-                    'batch_size': 48,
                 },
             },
         },
@@ -45,11 +43,13 @@ configs = {
             {
                 'name': 'recall',
                 'compute_period': 200,
-                'k': [1, 3, 5, 10],
+                'k': [1, 2, 4, 8],
+                'batch_size': 64,
             },
             {
                 'name': 'accuracy',
                 'compute_period': 200,
+                'batch_size': 64,
             },
         ],
         'optimizer': {
@@ -77,12 +77,10 @@ configs = {
                 'identification': {
                     'num_testcases': 10000,
                     'num_negative_examples': 5,
-                    'batch_size': 48,
                 },
                 'recall': {
                     'num_examples_per_class': 5,
                     'num_testcases': 10000,
-                    'batch_size': 48,
                 },
             },
         },
@@ -101,12 +99,14 @@ configs = {
         'metrics': [
             {
                 'name': 'recall',
-                'k': [1, 2, 4, 8],
                 'compute_period': 200,
+                'k': [1, 2, 4, 8],
+                'batch_size': 64,
             },
             {
                 'name': 'accuracy',
                 'compute_period': 200,
+                'batch_size': 64,
             },
         ],
         'optimizer': {

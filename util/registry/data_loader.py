@@ -124,7 +124,7 @@ class DataLoader(object, metaclass=ClassRegistry):
 
         if 'random_crop' in self.conf['image']:
             test_images_ds = test_images_ds.map(self._center_crop)
-        return tf.data.Dataset.zip((test_images_ds, test_labels_ds)), len(test_labels)
+        return test_images_ds, test_labels_ds, len(test_labels)
 
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels))
