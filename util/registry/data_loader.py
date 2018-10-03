@@ -75,19 +75,21 @@ class DataLoader(object, metaclass=ClassRegistry):
             data_map[label].append(image_file)
         data_map = dict(filter(lambda x: len(x[1]) >= 2, data_map.items()))
         label_set = set(data_map.keys())
+        labels = list(data_map.keys())
         anchor_images = []
         positive_images = []
 
         num_negative_examples = self.conf['dataset']['test']['identification']['num_negative_examples']
         negative_images = [[]] * num_negative_examples
-        for label, images in data_map.items():
-            for anchor_index, anchor_image in enumerate(data_map[label]):
-                anchor_images.append(anchor_image)
-                positive_index = random.choice(list(set(range(len(data_map[label]))) - {anchor_index}))
-                positive_images.append(data_map[label][positive_index])
-                negative_labels = random.sample(label_set - {label}, num_negative_examples)
-                for idx, negative_label in enumerate(negative_labels):
-                    negative_images[idx].append(random.choice(data_map[negative_label]))
+
+        while len(anchor_images) < self.conf['dataset']['test']['identification']['num_testcases']:
+            anchor_label = random.choice(labels)
+            anchor_image, positive_image = random.sample(data_map[anchor_label], 2)
+            anchor_images.append(anchor_image)
+            positive_images.append(positive_image)
+            negative_labels = random.choices(list(label_set - {anchor_label}), k=num_negative_examples)
+            for idx, negative_label in enumerate(negative_labels):
+                negative_images[idx].append(random.choice(data_map[negative_label]))
         anchor_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(anchor_images)).map(self._image_parse_function)
         positive_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(positive_images)).map(self._image_parse_function)
         negative_images_ds = [tf.data.Dataset.from_tensor_slices(tf.constant(x)).map(self._image_parse_function)
@@ -109,9 +111,14 @@ class DataLoader(object, metaclass=ClassRegistry):
         test_images = []
         test_labels = []
         num_examples_per_class = self.conf['dataset']['test']['recall']['num_examples_per_class']
-        for label, images in data_map.items():
-            test_images += images[0:num_examples_per_class]
-            test_labels += [label] * num_examples_per_class
+        labels = list(data_map.keys())
+        random.shuffle(labels)
+        for label in labels:
+            images = data_map[label]
+            test_images += images[0:min(num_examples_per_class, len(images))]
+            test_labels += [label] * min(num_examples_per_class, len(images))
+            if len(test_labels) >= self.conf['dataset']['test']['recall']['num_testcases']:
+                break
         test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(self._image_parse_function)
         test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels, tf.int64))
 

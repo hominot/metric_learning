@@ -23,9 +23,11 @@ configs = {
                 'data_directory': '/tmp/research/experiment/lfw/test',
                 'identification': {
                     'num_negative_examples': 5,
+                    'num_testcases': 10000,
                 },
                 'recall': {
                     'num_examples_per_class': 5,
+                    'num_testcases': 10000,
                 },
             },
         },
@@ -71,7 +73,12 @@ configs = {
             'test': {
                 'data_directory': '/tmp/research/experiment/lfw/test',
                 'identification': {
+                    'num_testcases': 10000,
                     'num_negative_examples': 5,
+                },
+                'recall': {
+                    'num_examples_per_class': 5,
+                    'num_testcases': 10000,
                 },
             },
         },
@@ -88,6 +95,11 @@ configs = {
             },
         },
         'metrics': [
+            {
+                'name': 'recall',
+                'k': [1, 2, 4, 8],
+                'compute_period': 200,
+            },
             {
                 'name': 'accuracy',
                 'compute_period': 200,
@@ -122,9 +134,11 @@ configs = {
                 'data_directory': '/tmp/research/experiment/mnist/test',
                 'identification': {
                     'num_negative_examples': 1,
+                    'num_testcases': 1000,
                 },
                 'recall': {
                     'num_examples_per_class': 5,
+                    'num_testcases': 1000,
                 },
             },
         },
@@ -133,8 +147,8 @@ configs = {
             'k': 8,
             'loss': {
                 'name': 'latent_position',
-                'parametrization': 'dot_product',
-                'alpha': -2.0,
+                'parametrization': 'bias',
+                'alpha': 4.0,
             },
         },
         'metrics': [
