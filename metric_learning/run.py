@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import argparse
+import json
 
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
@@ -8,7 +9,9 @@ from util.dataset import create_dataset_from_directory
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.logging import set_tensorboard_writer
-from util.logging import upload_to_s3
+from util.logging import upload_tensorboard_log_to_s3
+from util.logging import upload_checkpoint_to_s3
+from util.logging import upload_string_to_s3
 from metric_learning.configurations import configs
 from util.config import config
 
@@ -57,6 +60,12 @@ def train(conf):
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
+    if config['tensorboard']['s3_upload']:
+        upload_string_to_s3(
+            bucket=config['tensorboard']['s3_bucket'],
+            body=json.dumps(conf, indent=4),
+            key='{}/experiments/{}/config.json'.format(config['tensorboard']['s3_key'], run_name)
+        )
     for _ in range(conf['num_epochs']):
         train_ds = data_loader.create_grouped_dataset(
             training_files, training_labels,
@@ -68,7 +77,7 @@ def train(conf):
             for (batch, (images, labels)) in enumerate(train_ds):
                 with tf.contrib.summary.record_summaries_every_n_global_steps(
                         10, global_step=step_counter):
-                    current_step = int(tf.train.get_global_step())
+                    current_step = int(step_counter)
                     for metric_conf in conf['metrics']:
                         if current_step % metric_conf.get('compute_period', 10) == 0 and \
                             current_step >= metric_conf.get('skip_steps', 0):
@@ -90,8 +99,10 @@ def train(conf):
                     grads = tape.gradient(loss_value, model.variables)
                     optimizer.apply_gradients(
                         zip(grads, model.variables), global_step=step_counter)
-                    if config['tensorboard']['s3_upload'] and current_step % 100 == 0:
-                        upload_to_s3(run_name)
+                    if config['tensorboard']['s3_upload'] and int(step_counter) % int(config['tensorboard']['s3_upload_period']) == 0:
+                        upload_tensorboard_log_to_s3(run_name)
+                    if int(step_counter) % int(config['tensorboard']['checkpoint_period']) == 0:
+                        upload_checkpoint_to_s3(model, optimizer, step_counter, run_name)
 
 
 if __name__ == '__main__':
