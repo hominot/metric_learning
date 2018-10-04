@@ -1,5 +1,5 @@
 configs = {
-    'lfw_inception_latent_position_bias': {
+    'stanford_inception_latent_position_bias': {
         'image': {
             'width': 250,
             'height': 250,
@@ -11,16 +11,16 @@ configs = {
             },
         },
         'dataset': {
-            'name': 'lfw',
+            'name': 'stanford_online_product',
             'train': {
-                'data_directory': '/tmp/research/experiment/lfw/train',
+                'data_directory': '/tmp/research/experiment/stanford_online_product/train',
                 'batch_size': 32,
                 'group_size': 2,
                 'num_groups': 8,
                 'min_class_size': 2,
             },
             'test': {
-                'data_directory': '/tmp/research/experiment/lfw/test',
+                'data_directory': '/tmp/research/experiment/stanford_online_product/test',
                 'identification': {
                     'num_negative_examples': 5,
                     'num_testcases': 10000,
@@ -45,12 +45,12 @@ configs = {
                 'name': 'recall',
                 'compute_period': 200,
                 'k': [1, 2, 4, 8],
-                'batch_size': 64,
+                'batch_size': 48,
             },
             {
                 'name': 'accuracy',
                 'compute_period': 200,
-                'batch_size': 64,
+                'batch_size': 48,
             },
         ],
         'optimizer': {

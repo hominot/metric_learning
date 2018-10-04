@@ -34,7 +34,7 @@ def set_tensorboard_writer(model, data_loader):
             keys
         ))
     if runs:
-        next_run = int(max(runs).split('_')[-1]) + 1
+        next_run = max([int(run.split('_')[-1]) for run in runs]) + 1
         run_dir = '{}_{:04d}'.format(run_name, next_run)
 
     if config['tensorboard'].getboolean('s3_upload'):
