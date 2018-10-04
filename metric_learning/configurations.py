@@ -95,6 +95,7 @@ configs = {
             'loss': {
                 'name': 'npair',
                 'n': 16,
+                'parametrization': 'dot_product',
             },
             'metric': 'cosine_similarity',
         },
@@ -147,8 +148,9 @@ configs = {
             'name': 'simple_dense',
             'k': 8,
             'loss': {
-                'name': 'latent_position',
-                'parametrization': 'bias',
+                'name': 'npair',
+                'n': 4,
+                'parametrization': 'euclidean_distance',
                 'alpha': 4.0,
             },
             'metric': 'euclidean_distance',
