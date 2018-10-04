@@ -44,9 +44,9 @@ class NpairLossTest(tf.test.TestCase):
         exponents = compute_exponents(first_images, second_images)
         self.assertAllEqual(exponents, [
             [0., 2., 4., 6.],
-            [-6., 0., 6., 12.],
-            [-20., -10., 0., 10.],
-            [-42., -28., -14., 0.],
+            [0., -6., 6., 12.],
+            [0., -20., -10., 10.],
+            [0., -42., -28., -14.],
         ])
 
 

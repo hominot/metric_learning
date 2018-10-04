@@ -60,7 +60,7 @@ def train(conf):
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-    if config['tensorboard']['s3_upload']:
+    if config['tensorboard'].getboolean('s3_upload'):
         upload_string_to_s3(
             bucket=config['tensorboard']['s3_bucket'],
             body=json.dumps(conf, indent=4),
@@ -99,7 +99,7 @@ def train(conf):
                     grads = tape.gradient(loss_value, model.variables)
                     optimizer.apply_gradients(
                         zip(grads, model.variables), global_step=step_counter)
-                    if config['tensorboard']['s3_upload'] and int(step_counter) % int(config['tensorboard']['s3_upload_period']) == 0:
+                    if config['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(config['tensorboard']['s3_upload_period']) == 0:
                         upload_tensorboard_log_to_s3(run_name)
                     if int(step_counter) % int(config['tensorboard']['checkpoint_period']) == 0:
                         upload_checkpoint_to_s3(model, optimizer, step_counter, run_name)
