@@ -7,8 +7,10 @@ from util.dataset import split_train_test_by_label
 from util.dataset import create_dataset_from_directory
 from util.registry.model import Model
 from util.registry.metric import Metric
-from util.tensorflow import set_tensorboard_writer
+from util.logging import set_tensorboard_writer
+from util.logging import upload_to_s3
 from metric_learning.configurations import configs
+from util.config import config
 
 
 def train(conf):
@@ -50,7 +52,7 @@ def train(conf):
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
     model = Model.create(conf['model']['name'], conf, extra_info)
 
-    writer = set_tensorboard_writer(model, data_loader)
+    writer, run_name = set_tensorboard_writer(model, data_loader)
     writer.set_as_default()
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
@@ -88,6 +90,8 @@ def train(conf):
                     grads = tape.gradient(loss_value, model.variables)
                     optimizer.apply_gradients(
                         zip(grads, model.variables), global_step=step_counter)
+                    if config['tensorboard']['s3_upload'] and current_step % 100 == 0:
+                        upload_to_s3(run_name)
 
 
 if __name__ == '__main__':
