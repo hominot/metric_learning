@@ -69,6 +69,5 @@ class LatentPositionLoss(LossFunction):
 
         return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
 
-
     def __str__(self):
         return self.name + '_' + self.conf['model']['loss']['parametrization']

@@ -38,3 +38,6 @@ class NPairLossFunction(LossFunction):
             loss = tf.reduce_logsumexp(self.compute_exponents(first_images, second_images), axis=1)
             losses.append(tf.reduce_mean(loss))
         return sum(losses)
+
+    def __str__(self):
+        return self.name + '_' + self.conf['model']['loss']['parametrization']
