@@ -16,7 +16,7 @@ configs = {
                 'data_directory': '/tmp/research/experiment/stanford_online_product/train',
                 'batch_size': 32,
                 'group_size': 2,
-                'num_groups': 8,
+                'num_groups': 16,
                 'min_class_size': 2,
             },
             'test': {
@@ -36,6 +36,9 @@ configs = {
             'loss': {
                 'name': 'latent_position',
                 'parametrization': 'bias',
+                'npair': {
+                    'n': 16,
+                },
                 'alpha': 8,
             },
             'metric': 'euclidean_distance',
@@ -148,10 +151,12 @@ configs = {
             'name': 'simple_dense',
             'k': 8,
             'loss': {
-                'name': 'npair',
-                'n': 4,
-                'parametrization': 'euclidean_distance',
+                'name': 'latent_position',
+                'parametrization': 'bias',
                 'alpha': 4.0,
+                'npair': {
+                    'n': 4,
+                },
             },
             'metric': 'euclidean_distance',
         },
