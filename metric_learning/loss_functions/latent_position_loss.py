@@ -56,15 +56,19 @@ class LatentPositionLoss(LossFunction):
         # npair compatible loss for fair comparison with n-tuplet loss
         npairs = group_npairs(embeddings, labels, loss_conf['npair']['n'])
         if loss_conf['parametrization'] == 'bias':
-            pairwise_distance = [pairwise_euclidean_distance_squared(first, second) for first, second in npairs]
-            eta = self.extra_variables['alpha'] * 100. - pairwise_distance
+            pairwise_distances = tf.concat(
+                [pairwise_euclidean_distance_squared(first, second) for first, second in npairs],
+                axis=0)
+            eta = self.extra_variables['alpha'] * 100. - pairwise_distances
         elif loss_conf['parametrization'] == 'dot_product':
-            dot_products = [pairwise_dot_product(first, second) for first, second in npairs]
+            dot_products = tf.concat(
+                [pairwise_dot_product(first, second) for first, second in npairs],
+                axis=0)
             eta = self.extra_variables['alpha'] + dot_products
         else:
             raise Exception
         y = 1. - tf.eye(loss_conf['npair']['n']) * 2.
-        signed_eta = tf.reshape(tf.multiply(eta, y), [-1])
+        signed_eta = tf.reshape(tf.multiply(eta, tf.concat([y] * len(npairs), axis=0)), [-1])
         padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])
 
         return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
