@@ -15,7 +15,7 @@ class LatentPositionLossTest(tf.test.TestCase):
             [0, 2],
             [0, 3],
         ])
-        y = pairwise_euclidean_distance_squared(embeddings)
+        y = pairwise_euclidean_distance_squared(embeddings, embeddings)
         self.assertAllEqual(y, [
             [0, 1, 4],
             [1, 0, 1],
@@ -28,7 +28,7 @@ class LatentPositionLossTest(tf.test.TestCase):
             [0, 2],
             [0, 3],
         ])
-        y = pairwise_dot_product(embeddings)
+        y = pairwise_dot_product(embeddings, embeddings)
         self.assertAllEqual(y, [
             [1, 2, 3],
             [2, 4, 6],

@@ -94,3 +94,24 @@ def save_image_files(image_files, save_dir):
         if not os.path.exists(os.path.dirname(dest)):
             os.makedirs(os.path.dirname(dest))
         copyfile(image_file, dest)
+
+
+def group_npairs(images, labels, n):
+    ret = []
+    for batch in range(int(images.shape[0]) // (n * 2)):
+        cur_labels = labels[batch * n * 2: (batch + 1) * n * 2]
+        cur_images = images[batch * n * 2: (batch + 1) * n * 2]
+        data_map = defaultdict(list)
+        for index, label in enumerate(cur_labels):
+            data_map[int(label)].append(index)
+
+        first_images = []
+        second_images = []
+        for label in data_map.keys():
+            first_images.append(cur_images[data_map[label][0]])
+            second_images.append(cur_images[data_map[label][1]])
+        ret.append((
+            tf.stack(first_images),
+            tf.stack(second_images),
+        ))
+    return ret
