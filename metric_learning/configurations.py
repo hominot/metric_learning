@@ -128,7 +128,8 @@ configs = {
                 'width': 26,
                 'height': 26,
                 'n': 2,
-            }
+            },
+            'random_flip': True,
         },
         'dataset': {
             'name': 'mnist',

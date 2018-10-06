@@ -28,6 +28,9 @@ class DataLoader(object, metaclass=ClassRegistry):
         channel = self.conf['image']['channel']
         return tf.random_crop(image, [width, height, channel])
 
+    def _random_flip(self, image):
+        return tf.image.random_flip_left_right(image)
+
     def _center_crop(self, image):
         crop_width = self.conf['image']['random_crop']['width']
         crop_height = self.conf['image']['random_crop']['height']
@@ -146,6 +149,8 @@ class DataLoader(object, metaclass=ClassRegistry):
 
         image_files_grouped, labels_grouped = zip(*grouped_data)
         images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_files_grouped)).map(self._image_parse_function)
+        if 'random_flip' in self.conf['image'] and self.conf['image']['random_flip']:
+            images_ds = images_ds.map(self._random_flip)
         if 'random_crop' in self.conf['image']:
             images_ds = images_ds.map(self._random_crop)
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_grouped))
