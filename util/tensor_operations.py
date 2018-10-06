@@ -14,7 +14,7 @@ def pairwise_dot_product(first, second):
 
 
 def pairwise_matching_matrix(labels):
-    return tf.cast(tf.equal(labels[None], labels[:, None]), tf.float32)
+    return tf.equal(labels[None], labels[:, None])
 
 
 def upper_triangular_part(matrix):

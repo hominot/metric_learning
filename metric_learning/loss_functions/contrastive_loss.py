@@ -14,7 +14,7 @@ class ContrastiveLossFunction(LossFunction):
         pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
         matching_labels_matrix = upper_triangular_part(pairwise_matching_matrix(labels))
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
-        negative_distances = tf.boolean_mask(pairwise_distances, -matching_labels_matrix)
+        negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
         loss_value = sum(positive_distances) + sum(tf.maximum(0, alpha - negative_distances))
 
         return loss_value

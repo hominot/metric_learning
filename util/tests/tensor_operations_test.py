@@ -39,12 +39,12 @@ class TensorOperationsTest(tf.test.TestCase):
         labels = tf.constant([1, 1, 2, 2, 2, 1])
         y = pairwise_matching_matrix(labels)
         self.assertAllEqual(y, [
-            [ 1., 1., 0., 0., 0., 1.],
-            [ 1.,  1., 0., 0., 0., 1.],
-            [0., 0., 1., 1., 1., 0.],
-            [0., 0., 1., 1., 1., 0.],
-            [0., 0., 1., 1., 1., 0.],
-            [ 1., 1., 0., 0., 0., 1.],
+            [True, True, False, False, False, True],
+            [True, True, False, False, False, True],
+            [False, False, True, True, True, False],
+            [False, False, True, True, True, False],
+            [False, False, True, True, True, False],
+            [True, True, False, False, False, True],
         ])
 
     def testUpperTriangularPart(self):

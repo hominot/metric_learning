@@ -32,7 +32,7 @@ class LatentPositionLoss(LossFunction):
                 raise Exception
 
             y = pairwise_matching_matrix(labels)
-            signed_eta = upper_triangular_part(tf.multiply(eta, -2 * y + 1))
+            signed_eta = upper_triangular_part(tf.multiply(eta, -2 * tf.cast(y, tf.float32) + 1))
             padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])
 
             return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))

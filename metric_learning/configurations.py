@@ -134,7 +134,7 @@ configs = {
             'name': 'mnist',
             'train': {
                 'data_directory': '{}/mnist/train'.format(experiment_dir),
-                'batch_size': 32,
+                'batch_size': 8,
                 'group_size': 2,
                 'num_groups': 4,
                 'min_class_size': 2,
@@ -155,7 +155,7 @@ configs = {
             'name': 'simple_dense',
             'k': 8,
             'loss': {
-                'name': 'latent_position',
+                'name': 'contrastive',
                 'parametrization': 'bias',
                 'alpha': 4.0,
                 'npair': {
