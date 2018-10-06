@@ -1,3 +1,7 @@
+from util.config import CONFIG
+
+experiment_dir = CONFIG['dataset']['experiment_dir']
+
 configs = {
     'stanford_inception_latent_position_bias': {
         'image': {
@@ -13,14 +17,14 @@ configs = {
         'dataset': {
             'name': 'stanford_online_product',
             'train': {
-                'data_directory': '/tmp/research/experiment/stanford_online_product/train',
+                'data_directory': '{}/stanford_online_product/train'.format(experiment_dir),
                 'batch_size': 32,
                 'group_size': 2,
                 'num_groups': 16,
                 'min_class_size': 2,
             },
             'test': {
-                'data_directory': '/tmp/research/experiment/stanford_online_product/test',
+                'data_directory': '{}/stanford_online_product/test'.format(experiment_dir),
                 'identification': {
                     'num_negative_examples': 5,
                     'num_testcases': 10000,
@@ -75,14 +79,14 @@ configs = {
         'dataset': {
             'name': 'stanford_online_product',
             'train': {
-                'data_directory': '/tmp/research/experiment/stanford_online_product/train',
+                'data_directory': '{}/stanford_online_product/train'.format(experiment_dir),
                 'batch_size': 32,
                 'group_size': 2,
                 'num_groups': 16,
                 'min_class_size': 2,
             },
             'test': {
-                'data_directory': '/tmp/research/experiment/stanford_online_product/test',
+                'data_directory': '{}/stanford_online_product/test'.format(experiment_dir),
                 'identification': {
                     'num_testcases': 10000,
                     'num_negative_examples': 5,
@@ -129,14 +133,14 @@ configs = {
         'dataset': {
             'name': 'mnist',
             'train': {
-                'data_directory': '/tmp/research/experiment/mnist/train',
+                'data_directory': '{}/mnist/train'.format(experiment_dir),
                 'batch_size': 32,
                 'group_size': 2,
                 'num_groups': 4,
                 'min_class_size': 2,
             },
             'test': {
-                'data_directory': '/tmp/research/experiment/mnist/test',
+                'data_directory': '{}/mnist/test'.format(experiment_dir),
                 'identification': {
                     'num_negative_examples': 1,
                     'num_testcases': 1000,

@@ -1,5 +1,6 @@
 from util.dataset import download, extract_tgz
 from util.registry.data_loader import DataLoader
+from util.config import CONFIG
 
 import tensorflow as tf
 import os
@@ -9,7 +10,7 @@ class LFWDataLoader(DataLoader):
     name = 'lfw'
 
     def prepare_files(self):
-        data_directory = os.path.join(self.data_directory, self.name)
+        data_directory = os.path.join(CONFIG['dataset']['data_dir'], self.name)
         if tf.gfile.Exists(data_directory):
             count = 0
             for root, dirnames, filenames in os.walk(data_directory):
@@ -20,9 +21,9 @@ class LFWDataLoader(DataLoader):
                 return
         filepath = download(
             'http://vis-www.cs.umass.edu/lfw/lfw.tgz',
-            os.path.join(self.temp_directory, self.name)
+            os.path.join(CONFIG['dataset']['temp_dir'], self.name)
         )
-        extract_tgz(filepath, self.data_directory)
+        extract_tgz(filepath, CONFIG['dataset']['data_dir'])
 
     def _image_parse_function(self, filename):
         width = self.conf['image']['width']
