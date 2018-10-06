@@ -3,26 +3,10 @@ import tensorflow as tf
 from util.registry.loss_function import LossFunction
 from util.dataset import group_npairs
 
-
-def pairwise_euclidean_distance_squared(first, second):
-    return tf.reduce_sum(
-        tf.square(first[None] - second[:, None]),
-        axis=2)
-
-
-def pairwise_dot_product(first, second):
-    return tf.reduce_sum(
-        tf.multiply(first[None], second[:, None]),
-        axis=2)
-
-
-def pairwise_matching_matrix(labels):
-    return tf.cast(tf.equal(labels[None], labels[:, None]), tf.float32) * 2 - 1
-
-
-def upper_triangular_part(matrix):
-    a = tf.linalg.band_part(tf.ones(matrix.shape), -1, 0)
-    return tf.boolean_mask(matrix, 1 - a)
+from util.tensor_operations import pairwise_euclidean_distance_squared
+from util.tensor_operations import pairwise_matching_matrix
+from util.tensor_operations import upper_triangular_part
+from util.tensor_operations import pairwise_dot_product
 
 
 class LatentPositionLoss(LossFunction):
@@ -48,7 +32,7 @@ class LatentPositionLoss(LossFunction):
                 raise Exception
 
             y = pairwise_matching_matrix(labels)
-            signed_eta = upper_triangular_part(tf.multiply(eta, -y))
+            signed_eta = upper_triangular_part(tf.multiply(eta, -2 * y + 1))
             padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])
 
             return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
