@@ -10,6 +10,7 @@ from six.moves import urllib
 import tensorflow as tf
 
 from collections import defaultdict
+from util.config import CONFIG
 
 
 class MNISTDataLoader(DataLoader):
@@ -47,11 +48,11 @@ class MNISTDataLoader(DataLoader):
 
         def download(filename):
             """Download (and unzip) a file from the MNIST dataset if not already done."""
-            filepath = os.path.join(self.temp_directory, self.name, filename)
+            filepath = os.path.join(CONFIG['dataset']['temp_dir'], self.name, filename)
             if tf.gfile.Exists(filepath):
                 return filepath
-            if not tf.gfile.Exists(os.path.join(self.temp_directory, self.name)):
-                tf.gfile.MakeDirs(os.path.join(self.temp_directory, self.name))
+            if not tf.gfile.Exists(os.path.join(CONFIG['dataset']['temp_dir'], self.name)):
+                tf.gfile.MakeDirs(os.path.join(CONFIG['dataset']['temp_dir'], self.name))
             # CVDF mirror of http://yann.lecun.com/exdb/mnist/
             url = 'https://storage.googleapis.com/cvdf-datasets/mnist/' + filename + '.gz'
             _, zipped_filepath = tempfile.mkstemp(suffix='.gz')
@@ -66,7 +67,7 @@ class MNISTDataLoader(DataLoader):
         def prepare_image_files(images_file, labels_file):
             """Download and parse MNIST dataset."""
 
-            data_directory = os.path.join(self.data_directory, self.name)
+            data_directory = os.path.join(CONFIG['dataset']['data_dir'], self.name)
             if tf.gfile.Exists(data_directory):
                 count = 0
                 for root, dirnames, filenames in os.walk(data_directory):

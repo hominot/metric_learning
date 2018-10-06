@@ -1,6 +1,7 @@
 from util.dataset import download, extract_zip
 from util.registry.data_loader import DataLoader
 from shutil import copyfile
+from util.config import CONFIG
 
 import tensorflow as tf
 import os
@@ -10,7 +11,7 @@ class StanfordOnlineProductDataLoader(DataLoader):
     name = 'stanford_online_product'
 
     def prepare_files(self):
-        data_directory = os.path.join(self.data_directory, self.name)
+        data_directory = os.path.join(CONFIG['dataset']['data_dir'], self.name)
         if tf.gfile.Exists(data_directory):
             count = 0
             for root, dirnames, filenames in os.walk(data_directory):
@@ -21,10 +22,10 @@ class StanfordOnlineProductDataLoader(DataLoader):
                 return
         filepath = download(
             'https://s3-us-west-2.amazonaws.com/hominot/research/dataset/Stanford_Online_Products.zip',
-            os.path.join(self.temp_directory, self.name)
+            os.path.join(CONFIG['dataset']['temp_dir'], self.name)
         )
-        extract_zip(filepath, os.path.join(self.temp_directory, self.name))
-        extracted_path = os.path.join(self.temp_directory, self.name, 'Stanford_Online_Products')
+        extract_zip(filepath, os.path.join(CONFIG['dataset']['temp_dir'], self.name))
+        extracted_path = os.path.join(CONFIG['dataset']['temp_dir'], self.name, 'Stanford_Online_Products')
         for directory in next(os.walk(extracted_path))[1]:
             for filename in os.listdir(os.path.join(extracted_path, directory)):
                 object_id, index = filename.split('.')[0].split('_')

@@ -1,6 +1,7 @@
 from util.registry.class_registry import ClassRegistry
 from util.dataset import create_dataset_from_directory
 from collections import defaultdict
+from util.config import CONFIG
 
 import os
 import tensorflow as tf
@@ -9,9 +10,6 @@ import random
 
 class DataLoader(object, metaclass=ClassRegistry):
     module_path = 'metric_learning.datasets'
-
-    data_directory = '/tmp/research/data'
-    temp_directory = '/tmp/research/temp'
 
     def __init__(self, conf, extra_info):
         super(DataLoader, self).__init__()
@@ -157,7 +155,7 @@ class DataLoader(object, metaclass=ClassRegistry):
     def load_image_files(self):
         self.prepare_files()
         image_files, labels = create_dataset_from_directory(
-            os.path.join(self.data_directory, self.name))
+            os.path.join(CONFIG['dataset']['data_dir'], self.name))
         return image_files, labels
 
     def __str__(self):

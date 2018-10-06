@@ -13,7 +13,7 @@ from util.logging import upload_tensorboard_log_to_s3
 from util.logging import upload_checkpoint_to_s3
 from util.logging import upload_string_to_s3
 from metric_learning.configurations import configs
-from util.config import config
+from util.config import CONFIG
 
 
 def train(conf):
@@ -60,11 +60,11 @@ def train(conf):
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-    if config['tensorboard'].getboolean('s3_upload'):
+    if CONFIG['tensorboard'].getboolean('s3_upload'):
         upload_string_to_s3(
-            bucket=config['tensorboard']['s3_bucket'],
+            bucket=CONFIG['tensorboard']['s3_bucket'],
             body=json.dumps(conf, indent=4),
-            key='{}/experiments/{}/config.json'.format(config['tensorboard']['s3_key'], run_name)
+            key='{}/experiments/{}/config.json'.format(CONFIG['tensorboard']['s3_key'], run_name)
         )
     for _ in range(conf['num_epochs']):
         train_ds = data_loader.create_grouped_dataset(
@@ -99,9 +99,9 @@ def train(conf):
                     grads = tape.gradient(loss_value, model.variables)
                     optimizer.apply_gradients(
                         zip(grads, model.variables), global_step=step_counter)
-                    if config['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(config['tensorboard']['s3_upload_period']) == 0:
+                    if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                         upload_tensorboard_log_to_s3(run_name)
-                    if int(step_counter) % int(config['tensorboard']['checkpoint_period']) == 0:
+                    if int(step_counter) % int(CONFIG['tensorboard']['checkpoint_period']) == 0:
                         print('checkpoint: {}'.format(run_name))
                         upload_checkpoint_to_s3(model, optimizer, step_counter, run_name)
 

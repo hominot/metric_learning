@@ -3,6 +3,7 @@ import tensorflow as tf
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
 from util.dataset import save_image_files
+from util.config import CONFIG
 
 import argparse
 import shutil
@@ -21,7 +22,7 @@ if __name__ == '__main__':
 
     directory = args.dir
     if directory is None:
-        directory = os.path.join('/tmp/research/experiment', args.dataset)
+        directory = os.path.join(CONFIG['dataset']['experiment_dir'], args.dataset)
 
     data_loader: DataLoader = DataLoader.create(args.dataset)
     data_loader.prepare_files()
