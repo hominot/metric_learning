@@ -19,7 +19,7 @@ class TripletLossFunction(LossFunction):
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
 
-        first_labels = upper_triangular_part(repeat_columns(labels))
+        first_labels = upper_triangular_part(tf.cast(repeat_columns(labels), tf.int64))
         positive_labels = tf.boolean_mask(first_labels, matching_labels_matrix)
         negative_labels = tf.boolean_mask(first_labels, ~matching_labels_matrix)
 
