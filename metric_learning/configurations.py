@@ -156,7 +156,7 @@ configs = {
             'name': 'simple_dense',
             'k': 8,
             'loss': {
-                'name': 'contrastive',
+                'name': 'triplet',
                 'parametrization': 'bias',
                 'alpha': 4.0,
                 'npair': {
