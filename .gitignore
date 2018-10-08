@@ -3,4 +3,5 @@ __data__/
 *.pyc
 *.swp
 .DS_Store
+.ipynb_checkpoints
 
