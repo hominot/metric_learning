@@ -29,4 +29,4 @@ class TripletLossFunction(LossFunction):
             tf.maximum(0., self.conf['model']['loss'].get('alpha', 1.0) + pairwise_difference(positive_distances, negative_distances)),
             triplet_match)
 
-        return sum(triplet_loss)
+        return tf.reduce_mean(triplet_loss)

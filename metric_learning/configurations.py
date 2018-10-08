@@ -3,7 +3,7 @@ from util.config import CONFIG
 experiment_dir = CONFIG['dataset']['experiment_dir']
 
 configs = {
-    'stanford_inception_latent_position_bias': {
+    'stanford_inception_triplet': {
         'image': {
             'width': 250,
             'height': 250,
@@ -38,7 +38,7 @@ configs = {
         'model': {
             'name': 'inception',
             'loss': {
-                'name': 'latent_position',
+                'name': 'triplet',
                 'parametrization': 'bias',
                 'npair': {
                     'n': 16,
@@ -52,11 +52,6 @@ configs = {
                 'name': 'recall',
                 'compute_period': 200,
                 'k': [1, 2, 4, 8],
-                'batch_size': 48,
-            },
-            {
-                'name': 'accuracy',
-                'compute_period': 200,
                 'batch_size': 48,
             },
         ],

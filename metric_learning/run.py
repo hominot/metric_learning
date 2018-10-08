@@ -66,7 +66,7 @@ def train(conf):
             body=json.dumps(conf, indent=4),
             key='{}/experiments/{}/config.json'.format(CONFIG['tensorboard']['s3_key'], run_name)
         )
-    for _ in range(conf['num_epochs']):
+    for epoch in range(conf['num_epochs']):
         train_ds = data_loader.create_grouped_dataset(
             training_files, training_labels,
             group_size=conf['dataset']['train']['group_size'],
@@ -103,6 +103,7 @@ def train(conf):
                         upload_tensorboard_log_to_s3(run_name)
                     if int(step_counter) % int(CONFIG['tensorboard']['checkpoint_period']) == 0:
                         print('checkpoint: {}'.format(run_name))
+                        print('Epoch #{} | Batch #{}'.format(epoch + 1, batch + 1))
                         upload_checkpoint_to_s3(model, optimizer, step_counter, run_name)
 
 

@@ -82,10 +82,12 @@ def upload_checkpoint_to_s3(model, optimizer, step, run_name):
     if CONFIG['tensorboard'].getboolean('s3_upload'):
         for filename in os.listdir(os.path.dirname(save_path)):
             if filename.startswith(save_path.rsplit('/', 1)[1]):
+                full_filepath = os.path.join(os.path.dirname(save_path), filename)
                 s3.upload_file(
-                    os.path.join(os.path.dirname(save_path), filename),
+                    full_filepath,
                     CONFIG['tensorboard']['s3_bucket'],
                     '{}/experiments/{}/checkpoints/{}'.format(
                         CONFIG['tensorboard']['s3_key'],
                         run_name,
                         filename))
+                os.remove(full_filepath)
