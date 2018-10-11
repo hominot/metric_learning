@@ -1,8 +1,9 @@
-from util.dataset import download, extract_tgz
+from util.dataset import download, extract_tgz, extract_zip
 from util.registry.data_loader import DataLoader
 from util.config import CONFIG
 
 import tensorflow as tf
+import shutil
 import os
 
 
@@ -23,7 +24,23 @@ class LFWDataLoader(DataLoader):
             'http://vis-www.cs.umass.edu/lfw/lfw.tgz',
             os.path.join(CONFIG['dataset']['temp_dir'], self.name)
         )
-        extract_tgz(filepath, CONFIG['dataset']['data_dir'])
+        extract_path = os.path.join(CONFIG['dataset']['data_dir'], self.name, 'test')
+        extract_tgz(filepath, extract_path)
+        for root, dirnames, filenames in os.walk(os.path.join(extract_path, 'lfw')):
+            for dirname in dirnames:
+                shutil.move(os.path.join(root, dirname), os.path.join(extract_path, dirname))
+        os.rmdir(os.path.join(extract_path, 'lfw'))
+
+        webface_filepath = download(
+            'https://s3-us-west-2.amazonaws.com/hominot/research/dataset/CASIA-WebFace.zip',
+            os.path.join(CONFIG['dataset']['temp_dir'], 'webface')
+        )
+        extract_path = os.path.join(CONFIG['dataset']['data_dir'], self.name, 'train')
+        extract_zip(webface_filepath, extract_path)
+        for root, dirnames, filenames in os.walk(os.path.join(extract_path, 'CASIA-WebFace')):
+            for dirname in dirnames:
+                shutil.move(os.path.join(root, dirname), os.path.join(extract_path, dirname))
+        os.rmdir(os.path.join(extract_path, 'CASIA-WebFace'))
 
     def _image_parse_function(self, filename):
         width = self.conf['image']['width']
