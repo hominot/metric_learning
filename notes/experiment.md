@@ -1,0 +1,32 @@
+- Split into training dataset and testing dataset.
+  - Use the splits provided by the dataset provider if available.
+  - Otherwise, 80/20 split.
+  - For experiments with face data, use all of WebFace dataset as training, all of LFW dataset as testing (as done in other papers)
+- 5-fold experiments on the training dataset.
+  - Randomly split the training data into 5 groups.
+  - Use 4 groups for training the model and the remaining group for validation
+- Image preprocessing for training (Follow "Deep metric learning via facility location")
+  - If bounding box is available, crop by bounding box.
+  - Resize to 256x256 with 0 padding.
+  - Random crop by 227x227 (n = 4)
+  - Random horizontal flip
+- Image preprocessing for testing (Follow "Deep metric learning via facility location")
+  - If bounding box is available, crop by bounding box.
+  - Resize to 256x256 with 0 padding.
+  - Single center crop by 227x227
+- Validation
+  - Use Recall@8 for validation (stop when Recall@8 stabilizes & loss stabilizes)
+  - Use up to 10000 images for calculating Recall@8
+- Testing
+  - After the model is trained using training/validation datasets, use the test dataset for full evaluation.
+  - Recall@K. K=[1,2,4,8]
+    - Use ALL available test images for calculating recall@k.
+    - Classes with a single image should not be used for query. They should be used as candidates for retrieval.
+  - Verification (VRF metric in NIPS 2016 paper)
+    - VRF with k examples. k = [5, 20, 100]
+    - Randomly generate test set:
+      - Randomly choose a class with two ore more images
+      - Randomly sample a pair of images in the chosen class.
+      - Use one of the images as the query and the other as the positive example.
+      - Randomly sample k-1 negative examples
+    - Number of test cases = number of test images x 5

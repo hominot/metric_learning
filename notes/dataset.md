@@ -1,0 +1,26 @@
+- Stanford Online Product (stanford_online_product)
+  - 120,053 images / 22,634 classes
+  - Splits
+    - Training: 59,551 images / 11,318 classes
+    - Testing: 60,502 images / 11,316 classes
+  - No bounding box provided
+- Cars-196 (cars196)
+  - 16,185 images / 196 classes
+  - Splits
+    - Training: 8,144 images / roughly 100 classes
+    - Testing: 6041 images / roughly 100 classes
+  - Bounding box provided.
+- CUB200-2011 (cub200)
+  - 11,788 images / 200 classes
+  - Splits
+    - Training: 5794 images / ?? classes
+    - Testing: 5994 images / ?? classes
+  - Bounding box provided.
+- WebFace (webface)
+  - 494,414 images / 10,575 classes
+  - No train/test split provided
+  - No bounding box
+- LFW (lfw)
+  - 13,233 images / 5,749 classes
+  - No train/test split provided
+  - No bounding box
