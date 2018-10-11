@@ -95,7 +95,10 @@ class MNISTDataLoader(DataLoader):
                 label_count_map[label] += 1
                 image = tf.reshape(tf.constant(image), [28, 28, 1])
                 filename = '{:04d}.png'.format(label_count_map[label])
-                label_directory = os.path.join(data_directory, str(label))
+                if str(label) in ['5', '9']:
+                    label_directory = os.path.join(data_directory, 'test', str(label))
+                else:
+                    label_directory = os.path.join(data_directory, 'train', str(label))
                 if not tf.gfile.Exists(label_directory):
                     tf.gfile.MakeDirs(label_directory)
                 tf.write_file(os.path.join(label_directory, filename), tf.image.encode_png(image))

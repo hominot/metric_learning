@@ -26,12 +26,26 @@ class StanfordOnlineProductDataLoader(DataLoader):
         )
         extract_zip(filepath, os.path.join(CONFIG['dataset']['temp_dir'], self.name))
         extracted_path = os.path.join(CONFIG['dataset']['temp_dir'], self.name, 'Stanford_Online_Products')
+        training_files = set()
+        with open(os.path.join(extracted_path, 'Ebay_train.txt')) as f:
+            first_line = True
+            for line in f:
+                if first_line:
+                    first_line = False
+                    continue
+                _, _, _, filename = line.rstrip().split(' ')
+                training_files.add(filename.split('/')[1])
+
         for directory in next(os.walk(extracted_path))[1]:
             for filename in os.listdir(os.path.join(extracted_path, directory)):
+                if filename in training_files:
+                    dest_directory = os.path.join(data_directory, 'train')
+                else:
+                    dest_directory = os.path.join(data_directory, 'test')
                 object_id, index = filename.split('.')[0].split('_')
-                if not tf.gfile.Exists(os.path.join(data_directory, object_id)):
-                    tf.gfile.MakeDirs(os.path.join(data_directory, object_id))
-                copyfile(os.path.join(extracted_path, directory, filename), os.path.join(data_directory, object_id, filename))
+                if not tf.gfile.Exists(os.path.join(dest_directory, object_id)):
+                    tf.gfile.MakeDirs(os.path.join(dest_directory, object_id))
+                copyfile(os.path.join(extracted_path, directory, filename), os.path.join(dest_directory, object_id, filename))
 
     def _image_parse_function(self, filename):
         width = self.conf['image']['width']
