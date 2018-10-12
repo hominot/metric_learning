@@ -2,6 +2,7 @@ import tensorflow as tf
 
 import argparse
 import json
+import os
 
 from util.registry.data_loader import DataLoader
 from util.dataset import split_train_test_by_label
@@ -10,7 +11,7 @@ from util.registry.model import Model
 from util.registry.metric import Metric
 from util.logging import set_tensorboard_writer
 from util.logging import upload_tensorboard_log_to_s3
-from util.logging import upload_checkpoint_to_s3
+from util.logging import create_checkpoint
 from util.logging import upload_string_to_s3
 from metric_learning.configurations import configs
 from util.config import CONFIG
@@ -55,6 +56,10 @@ def train(conf):
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
     model = Model.create(conf['model']['name'], conf, extra_info)
 
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                     model=model,
+                                     optimizer_step=tf.train.get_or_create_global_step())
+
     writer, run_name = set_tensorboard_writer(model, data_loader)
     writer.set_as_default()
 
@@ -66,6 +71,12 @@ def train(conf):
             body=json.dumps(conf, indent=4),
             key='{}/experiments/{}/config.json'.format(CONFIG['tensorboard']['s3_key'], run_name)
         )
+    else:
+        config_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'experiments', run_name)
+        if not tf.gfile.Exists(config_dir):
+            tf.gfile.MakeDirs(config_dir)
+        with open(os.path.join(config_dir, 'config.json'), 'w') as f:
+            json.dump(conf, f, indent=4)
     for epoch in range(conf['num_epochs']):
         train_ds = data_loader.create_grouped_dataset(
             training_files, training_labels,
@@ -104,7 +115,7 @@ def train(conf):
                     if int(step_counter) % int(CONFIG['tensorboard']['checkpoint_period']) == 0:
                         print('checkpoint: {}'.format(run_name))
                         print('Epoch #{} | Batch #{}'.format(epoch + 1, batch + 1))
-                        upload_checkpoint_to_s3(model, optimizer, step_counter, run_name)
+                        create_checkpoint(checkpoint, run_name)
 
 
 if __name__ == '__main__':
