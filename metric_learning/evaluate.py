@@ -28,15 +28,22 @@ def get_config(experiment):
         return json.load(f)
 
 
-def get_checkpoint(experiment):
+def get_checkpoint(experiment, step=None):
     if CONFIG['tensorboard'].getboolean('s3_upload'):
-        return tf.train.latest_checkpoint(
-            's3://hominot/research/metric_learning/experiments/{}/checkpoints'.format(experiment))
+        if step is None:
+            return tf.train.latest_checkpoint(
+                's3://hominot/research/metric_learning/experiments/{}/checkpoints'.format(experiment))
+        return 's3://hominot/research/metric_learning/experiments/{}/checkpoints/ckpt-{}'.format(experiment, step)
 
-    prefix = '{}/experiments/{}/checkpoints'.format(
+    if step is None:
+        prefix = '{}/experiments/{}/checkpoints'.format(
+            CONFIG['tensorboard']['local_dir'],
+            experiment)
+        return tf.train.latest_checkpoint(prefix)
+    return '{}/experiments/{}/checkpoints/ckpt-{}'.format(
         CONFIG['tensorboard']['local_dir'],
-        experiment)
-    return tf.train.latest_checkpoint(prefix)
+        experiment,
+        step)
 
 
 METRICS = [
