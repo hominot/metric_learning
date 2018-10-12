@@ -13,7 +13,7 @@ def set_tensorboard_writer(model, data_loader):
     run_name = '{}_{}'.format(data_loader, model)
     run_dir = '{}_0001'.format(run_name)
 
-    local_tensorboard_dir = CONFIG['tensorboard']['local_dir']
+    local_tensorboard_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'tensorboard')
     if not tf.gfile.Exists(local_tensorboard_dir):
         tf.gfile.MakeDirs(local_tensorboard_dir)
     runs = list(filter(
@@ -52,7 +52,7 @@ def set_tensorboard_writer(model, data_loader):
 
 
 def upload_tensorboard_log_to_s3(run_name):
-    run_dir = os.path.join(CONFIG['tensorboard']['local_dir'], run_name)
+    run_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'tensorboard', run_name)
     for filename in os.listdir(run_dir):
         s3.upload_file(
             os.path.join(run_dir, filename),
@@ -68,26 +68,18 @@ def upload_string_to_s3(body, bucket, key):
     s3.put_object(Bucket=bucket, Body=body, Key=key)
 
 
-def upload_checkpoint_to_s3(model, optimizer, step, run_name):
-    root = tf.train.Checkpoint(optimizer=optimizer,
-                               model=model,
-                               optimizer_step=tf.train.get_or_create_global_step())
-    prefix = '{}/experiments/{}/checkpoints/step_{:08d}'.format(
-        CONFIG['tensorboard']['local_dir'],
-        run_name,
-        int(step))
-    if not tf.gfile.Exists(os.path.dirname(prefix)):
-        tf.gfile.MakeDirs(os.path.dirname(prefix))
-    save_path = root.save(file_prefix=prefix)
+def create_checkpoint(checkpoint, run_name):
     if CONFIG['tensorboard'].getboolean('s3_upload'):
-        for filename in os.listdir(os.path.dirname(save_path)):
-            if filename.startswith(save_path.rsplit('/', 1)[1]):
-                full_filepath = os.path.join(os.path.dirname(save_path), filename)
-                s3.upload_file(
-                    full_filepath,
-                    CONFIG['tensorboard']['s3_bucket'],
-                    '{}/experiments/{}/checkpoints/{}'.format(
-                        CONFIG['tensorboard']['s3_key'],
-                        run_name,
-                        filename))
-                os.remove(full_filepath)
+        s3_path = 's3://{}/{}/experiments/{}/checkpoints/ckpt'.format(
+            CONFIG['tensorboard']['s3_bucket'],
+            CONFIG['tensorboard']['s3_key'],
+            run_name
+        )
+        checkpoint.save(file_prefix=s3_path)
+    else:
+        prefix = '{}/experiments/{}/checkpoints/ckpt'.format(
+            CONFIG['tensorboard']['local_dir'],
+            run_name)
+        if not tf.gfile.Exists(os.path.dirname(prefix)):
+            tf.gfile.MakeDirs(os.path.dirname(prefix))
+        checkpoint.save(file_prefix=prefix)
