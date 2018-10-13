@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     # cross validation splits
     shutil.rmtree(os.path.join(directory, 'train'), ignore_errors=True)
-    splits = list(range(CONFIG['dataset']['cross_validation_splits']))
+    splits = list(range(CONFIG['dataset'].getint('cross_validation_splits')))
     for k in splits:
         if not tf.gfile.Exists(os.path.join(directory, 'train', str(k))):
             tf.gfile.MakeDirs(os.path.join(directory, 'train', str(k)))
