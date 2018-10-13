@@ -3,7 +3,7 @@ from util.config import CONFIG
 experiment_dir = CONFIG['dataset']['experiment_dir']
 
 configs = {
-    'stanford_inception_triplet': {
+    'stanford_inception_latent_position': {
         'image': {
             'width': 250,
             'height': 250,
@@ -37,12 +37,13 @@ configs = {
         'model': {
             'name': 'inception',
             'loss': {
-                'name': 'triplet',
+                'name': 'latent_position',
                 'parametrization': 'bias',
                 'npair': {
                     'n': 16,
                 },
-                'alpha': 8,
+                'alpha': 30.,
+                'alpha_learning_rate': 0.3,
             },
             'metric': 'euclidean_distance',
         },
@@ -149,9 +150,10 @@ configs = {
             'name': 'simple_dense',
             'k': 8,
             'loss': {
-                'name': 'triplet',
+                'name': 'latent_position',
                 'parametrization': 'bias',
                 'alpha': 4.0,
+                'alpha_learning_rate': 0.1,
                 'npair': {
                     'n': 4,
                 },

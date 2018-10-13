@@ -101,7 +101,9 @@ def train(conf):
                         tf.contrib.summary.scalar('loss', loss_value)
 
                     if hasattr(model, 'alpha'):
-                        tf.contrib.summary.scalar('alpha', model.alpha)
+                        alpha_learning_rate = conf['model']['loss'].get('alpha_learning_rate', conf['optimizer']['learning_rate'])
+                        alpha_ratio = conf['optimizer']['learning_rate'] / alpha_learning_rate
+                        tf.contrib.summary.scalar('alpha', model.alpha / alpha_ratio)
                     if hasattr(model, 'beta'):
                         tf.contrib.summary.scalar('beta', model.beta)
                     grads = tape.gradient(loss_value, model.variables)
