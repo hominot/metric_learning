@@ -1,5 +1,5 @@
 from util.registry.class_registry import ClassRegistry
-from util.dataset import create_dataset_from_directory
+from util.dataset import load_images_from_directory
 from collections import defaultdict
 from util.config import CONFIG
 
@@ -159,7 +159,7 @@ class DataLoader(object, metaclass=ClassRegistry):
 
     def load_image_files(self):
         self.prepare_files()
-        image_files, labels = create_dataset_from_directory(
+        image_files, labels = load_images_from_directory(
             os.path.join(CONFIG['dataset']['data_dir'], self.name))
         return image_files, labels
 

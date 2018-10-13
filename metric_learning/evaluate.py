@@ -6,7 +6,7 @@ import json
 import os
 
 from util.config import CONFIG
-from util.dataset import create_dataset_from_directory
+from util.dataset import load_images_from_directory
 
 from util.registry.model import Model
 from util.registry.metric import Metric
@@ -77,8 +77,8 @@ if __name__ == '__main__':
                                      optimizer_step=tf.train.get_or_create_global_step())
     checkpoint.restore(get_checkpoint(args.experiment))
 
-    testing_files, testing_labels = create_dataset_from_directory(
-        conf['dataset']['test']['data_directory']
+    testing_files, testing_labels = load_images_from_directory(
+        os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test'),
     )
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     test_datasets = {}
