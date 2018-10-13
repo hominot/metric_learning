@@ -1,12 +1,13 @@
 import tensorflow as tf
 
 import argparse
+import copy
 import json
 import os
+import random
 
 from util.registry.data_loader import DataLoader
-from util.dataset import split_train_test_by_label
-from util.dataset import create_dataset_from_directory
+from util.dataset import load_images_from_directory
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.logging import set_tensorboard_writer
@@ -18,19 +19,15 @@ from util.config import CONFIG
 
 
 def train(conf):
-    data_loader: DataLoader = DataLoader.create(conf['dataset']['name'], conf)
-    if conf['dataset']['train']['data_directory'] and conf['dataset']['test']['data_directory']:
-        training_files, training_labels = create_dataset_from_directory(
-            conf['dataset']['train']['data_directory']
-        )
-        testing_files, testing_labels = create_dataset_from_directory(
-            conf['dataset']['test']['data_directory']
-        )
-    else:
-        image_files, labels = data_loader.load_image_files()
-        training_data, testing_data = split_train_test_by_label(image_files, labels)
-        training_files, training_labels = zip(*training_data)
-        testing_files, testing_labels = zip(*testing_data)
+    data_loader = DataLoader.create(conf['dataset']['name'], conf)
+    training_files, training_labels = load_images_from_directory(
+        os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'train'),
+        splits=set(range(CONFIG['dataset'].getint('cross_validation_splits'))) - {conf['dataset']['cross_validation_split']},
+    )
+    testing_files, testing_labels = load_images_from_directory(
+        os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'train'),
+        splits={conf['dataset']['cross_validation_split']}
+    )
 
     extra_info = {
         'num_labels': max(training_labels),
@@ -123,6 +120,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train using a specified config')
     parser.add_argument('--config', help='config to run')
+    parser.add_argument('--split',
+                        help='cross validation split number to use as validation data',
+                        default=None,
+                        type=int)
     args = parser.parse_args()
+    conf = copy.deepcopy(configs[args.config])
+    if args.split is not None:
+        conf['dataset']['cross_validation_split'] = args.split
+    else:
+        conf['dataset']['cross_validation_split'] = random.choice(range(CONFIG['dataset'].getint('cross_validation_splits')))
 
-    train(configs[args.config])
+    train(conf)

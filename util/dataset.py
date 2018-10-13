@@ -48,12 +48,16 @@ def extract_zip(filepath, directory):
         zip_ref.extractall(directory)
 
 
-def create_dataset_from_directory(directory):
+def load_images_from_directory(directory, splits=None):
     label_map = {}
     labels = []
     image_files = []
     for subdir, dirs, files in os.walk(directory):
         for file in files:
+            if splits:
+                split = int(subdir.split('/')[-2])
+                if split not in splits:
+                    continue
             label = subdir.split('/')[-1]
             if label not in label_map:
                 label_map[label] = len(label_map) + 1
