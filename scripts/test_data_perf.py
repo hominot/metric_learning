@@ -5,7 +5,7 @@ tf.enable_eager_execution()
 from util.registry.model import Model
 from util.registry.data_loader import DataLoader
 
-from util.dataset import create_dataset_from_directory
+from util.dataset import load_images_from_directory
 
 import time
 
@@ -52,7 +52,7 @@ print(int(time.time() - now), 'model loaded')
 
 data_loader: DataLoader = DataLoader.create(conf['dataset']['name'], conf)
 
-testing_files, testing_labels = create_dataset_from_directory(
+testing_files, testing_labels = load_images_from_directory(
     conf['dataset']['test']['data_directory']
 )
 test_ds = data_loader.create_identification_test_dataset(testing_files, testing_labels).batch(32).prefetch(32)

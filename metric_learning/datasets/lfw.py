@@ -18,7 +18,7 @@ class LFWDataLoader(DataLoader):
                 for filename in filenames:
                     if filename.endswith('.jpg'):
                         count += 1
-            if count == 13233:
+            if count == 507647:
                 return
         filepath = download(
             'http://vis-www.cs.umass.edu/lfw/lfw.tgz',

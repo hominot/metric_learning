@@ -3,7 +3,7 @@ from util.config import CONFIG
 experiment_dir = CONFIG['dataset']['experiment_dir']
 
 configs = {
-    'stanford_inception_triplet': {
+    'stanford_inception_latent_position': {
         'image': {
             'width': 250,
             'height': 250,
@@ -13,18 +13,17 @@ configs = {
                 'height': 224,
                 'n': 8,
             },
+            'random_flip': True,
         },
         'dataset': {
             'name': 'stanford_online_product',
             'train': {
-                'data_directory': '{}/stanford_online_product/train'.format(experiment_dir),
                 'batch_size': 32,
                 'group_size': 2,
                 'num_groups': 16,
                 'min_class_size': 2,
             },
             'test': {
-                'data_directory': '{}/stanford_online_product/test'.format(experiment_dir),
                 'identification': {
                     'num_negative_examples': 5,
                     'num_testcases': 10000,
@@ -38,12 +37,13 @@ configs = {
         'model': {
             'name': 'inception',
             'loss': {
-                'name': 'triplet',
+                'name': 'latent_position',
                 'parametrization': 'bias',
                 'npair': {
                     'n': 16,
                 },
-                'alpha': 8,
+                'alpha': 30.,
+                'alpha_learning_rate': 0.3,
             },
             'metric': 'euclidean_distance',
         },
@@ -70,6 +70,7 @@ configs = {
                 'height': 224,
                 'n': 8,
             },
+            'random_flip': True,
         },
         'dataset': {
             'name': 'stanford_online_product',
@@ -129,14 +130,12 @@ configs = {
         'dataset': {
             'name': 'mnist',
             'train': {
-                'data_directory': '{}/mnist/train'.format(experiment_dir),
                 'batch_size': 8,
                 'group_size': 2,
                 'num_groups': 4,
                 'min_class_size': 2,
             },
             'test': {
-                'data_directory': '{}/mnist/test'.format(experiment_dir),
                 'identification': {
                     'num_negative_examples': 1,
                     'num_testcases': 1000,
@@ -151,9 +150,10 @@ configs = {
             'name': 'simple_dense',
             'k': 8,
             'loss': {
-                'name': 'triplet',
+                'name': 'latent_position',
                 'parametrization': 'bias',
                 'alpha': 4.0,
+                'alpha_learning_rate': 0.1,
                 'npair': {
                     'n': 4,
                 },

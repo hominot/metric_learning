@@ -17,17 +17,19 @@ class LatentPositionLoss(LossFunction):
 
         loss_conf = conf['model']['loss']
         alpha = loss_conf.get('alpha', 1.0)
-        self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha, dtype='float32')
+        alpha_learning_rate = loss_conf.get('alpha_learning_rate', conf['optimizer']['learning_rate'])
+        self.alpha_ratio = conf['optimizer']['learning_rate'] / alpha_learning_rate
+        self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha * self.alpha_ratio, dtype='float32')
 
     def loss(self, embeddings, labels):
         loss_conf = self.conf['model']['loss']
         if 'npair' not in loss_conf:
             if loss_conf['parametrization'] == 'bias':
                 pairwise_distance = pairwise_euclidean_distance_squared(embeddings, embeddings)
-                eta = self.extra_variables['alpha'] * 100. - pairwise_distance
+                eta = self.extra_variables['alpha'] / self.alpha_ratio - pairwise_distance
             elif loss_conf['parametrization'] == 'dot_product':
                 dot_products = pairwise_dot_product(embeddings, embeddings)
-                eta = self.extra_variables['alpha'] + dot_products
+                eta = self.extra_variables['alpha'] / self.alpha_ratio + dot_products
             else:
                 raise Exception
 
