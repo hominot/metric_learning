@@ -24,9 +24,22 @@ class TripletLossFunction(LossFunction):
         negative_labels = tf.boolean_mask(first_labels, ~matching_labels_matrix)
 
         triplet_match = pairwise_matching_matrix(positive_labels, negative_labels)
+        differences = pairwise_difference(positive_distances, negative_distances)
 
-        triplet_loss = tf.boolean_mask(
-            tf.maximum(0., self.conf['model']['loss'].get('alpha', 1.0) + pairwise_difference(positive_distances, negative_distances)),
-            triplet_match)
+        alpha = self.conf['model']['loss'].get('alpha', 1.0)
+        semi_hard_candidate_mask = triplet_match & \
+                                   (differences < 0) & \
+                                   (alpha + differences > 0)
+        semi_hard_candidates = tf.multiply(
+            tf.cast(semi_hard_candidate_mask, tf.float32),
+            alpha + differences) + \
+            tf.multiply(
+                1 - tf.cast(semi_hard_candidate_mask, tf.float32),
+                alpha)
+        semi_hards = tf.reduce_min(semi_hard_candidates, axis=1)
 
-        return tf.reduce_mean(triplet_loss)
+        semi_hard_triplet_loss = tf.boolean_mask(
+            semi_hards,
+            (semi_hards > 1e-12) & (semi_hards < alpha - 1e-12))
+
+        return tf.reduce_mean(semi_hard_triplet_loss)

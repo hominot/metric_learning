@@ -11,7 +11,7 @@ tf.enable_eager_execution()
 
 
 class TensorOperationsTest(tf.test.TestCase):
-    def testPairwiseDifference(self):
+    def testPairwiseEuclideanDifference(self):
         embeddings = tf.constant([
             [0, 1],
             [0, 2],
