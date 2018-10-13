@@ -69,17 +69,22 @@ def upload_string_to_s3(body, bucket, key):
 
 
 def create_checkpoint(checkpoint, run_name):
+    prefix = '{}/experiments/{}/checkpoints/ckpt'.format(
+        CONFIG['tensorboard']['local_dir'],
+        run_name)
+    if not tf.gfile.Exists(os.path.dirname(prefix)):
+        tf.gfile.MakeDirs(os.path.dirname(prefix))
+    checkpoint.save(file_prefix=prefix)
     if CONFIG['tensorboard'].getboolean('s3_upload'):
-        s3_path = 's3://{}/{}/experiments/{}/checkpoints/ckpt'.format(
-            CONFIG['tensorboard']['s3_bucket'],
-            CONFIG['tensorboard']['s3_key'],
-            run_name
-        )
-        checkpoint.save(file_prefix=s3_path)
-    else:
-        prefix = '{}/experiments/{}/checkpoints/ckpt'.format(
-            CONFIG['tensorboard']['local_dir'],
-            run_name)
-        if not tf.gfile.Exists(os.path.dirname(prefix)):
-            tf.gfile.MakeDirs(os.path.dirname(prefix))
-        checkpoint.save(file_prefix=prefix)
+        for root, dirnames, filenames in os.walk(os.path.dirname(prefix)):
+            for filename in filenames:
+                s3.upload_file(
+                    os.path.join(root, filename),
+                    CONFIG['tensorboard']['s3_bucket'],
+                    '{}/experiments/{}/checkpoints/{}'.format(
+                        CONFIG['tensorboard']['s3_key'],
+                        run_name,
+                        filename
+                    )
+                )
+                os.remove(os.path.join(root, filename))
