@@ -13,6 +13,7 @@ configs = {
                 'height': 224,
                 'n': 8,
             },
+            'random_flip': True,
         },
         'dataset': {
             'name': 'stanford_online_product',
@@ -68,6 +69,7 @@ configs = {
                 'height': 224,
                 'n': 8,
             },
+            'random_flip': True,
         },
         'dataset': {
             'name': 'stanford_online_product',
