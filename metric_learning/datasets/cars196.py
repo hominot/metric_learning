@@ -6,6 +6,7 @@ from util.config import CONFIG
 import tensorflow as tf
 import os
 import scipy.io
+import shutil
 
 
 class Cars196DataLoader(DataLoader):
@@ -52,26 +53,25 @@ class Cars196DataLoader(DataLoader):
         for root, dirnames, filenames in os.walk(os.path.join(CONFIG['dataset']['temp_dir'], self.name, 'car_ims')):
             for filename in filenames:
                 class_id, x1, y1, x2, y2, is_training = annotations[filename]
-                image_string = tf.read_file(os.path.join(root, filename))
-                image_decoded = tf.image.decode_jpeg(image_string)
-                image_cropped = tf.image.crop_to_bounding_box(
-                    image_decoded,
-                    y1, x1,
-                    y2 - y1, x2 - x1)
-                image_encoded = tf.image.encode_png(image_cropped)
-                png_filename = '{}.png'.format(filename.rsplit('.', 1)[0])
-
                 if class_id <= 98:
-                    tf.write_file(os.path.join(train_data_directory, str(class_id), png_filename), image_encoded)
+                    if not tf.gfile.Exists(os.path.join(train_data_directory, str(class_id))):
+                        tf.gfile.MakeDirs(os.path.join(train_data_directory, str(class_id)))
+                    shutil.copyfile(
+                        os.path.join(root, filename),
+                        os.path.join(train_data_directory, str(class_id), filename))
                 else:
-                    tf.write_file(os.path.join(test_data_directory, str(class_id), png_filename), image_encoded)
+                    if not tf.gfile.Exists(os.path.join(test_data_directory, str(class_id))):
+                        tf.gfile.MakeDirs(os.path.join(test_data_directory, str(class_id)))
+                    shutil.copyfile(
+                        os.path.join(root, filename),
+                        os.path.join(test_data_directory, str(class_id), filename))
 
     def _image_parse_function(self, filename):
         width = self.conf['image']['width']
         height = self.conf['image']['height']
         channel = self.conf['image']['channel']
         image_string = tf.read_file(filename)
-        image_decoded = tf.image.decode_png(image_string, channels=channel)
+        image_decoded = tf.image.decode_jpeg(image_string, channels=channel)
         image_resized = tf.image.resize_image_with_pad(image_decoded, target_height=height, target_width=width)
         image_normalized = (image_resized / 255. - 0.5) * 2
         image_normalized = tf.reshape(image_normalized, [width, height, channel])
