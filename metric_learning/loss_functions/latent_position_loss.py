@@ -17,8 +17,8 @@ class LatentPositionLoss(LossFunction):
 
         loss_conf = conf['model']['loss']
         alpha = loss_conf.get('alpha', 1.0)
-        alpha_learning_rate = loss_conf.get('alpha_learning_rate', conf['optimizer']['learning_rate'])
-        self.alpha_ratio = conf['optimizer']['learning_rate'] / alpha_learning_rate
+        alpha_learning_rate = loss_conf.get('alpha_learning_rate', conf['trainer']['learning_rate'])
+        self.alpha_ratio = conf['trainer']['learning_rate'] / alpha_learning_rate
         self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha * self.alpha_ratio, dtype='float32')
 
     def loss(self, embeddings, labels):

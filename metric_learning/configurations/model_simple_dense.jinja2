@@ -1,0 +1,14 @@
+{
+    'name': 'simple_dense',
+    'k': 8,
+    'loss': {
+        'name': 'latent_position',
+        'parametrization': 'bias',
+        'alpha': 4.0,
+        'alpha_learning_rate': 0.01,
+        'npair': {
+            'n': 4,
+        },
+    },
+    'metric': 'euclidean_distance',
+}
