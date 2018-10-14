@@ -14,7 +14,7 @@ from util.logging import set_tensorboard_writer
 from util.logging import upload_tensorboard_log_to_s3
 from util.logging import create_checkpoint
 from util.logging import upload_string_to_s3
-from metric_learning.configurations import configs
+from metric_learning.example_configurations import configs
 from util.config import CONFIG
 
 
@@ -50,7 +50,7 @@ def train(conf):
         }
 
     step_counter = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
+    optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
     model = Model.create(conf['model']['name'], conf, extra_info)
 
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
@@ -74,7 +74,7 @@ def train(conf):
             tf.gfile.MakeDirs(config_dir)
         with open(os.path.join(config_dir, 'config.json'), 'w') as f:
             json.dump(conf, f, indent=4)
-    for epoch in range(conf['num_epochs']):
+    for epoch in range(conf['trainer']['num_epochs']):
         train_ds = data_loader.create_grouped_dataset(
             training_files, training_labels,
             group_size=conf['dataset']['train']['group_size'],
@@ -101,8 +101,8 @@ def train(conf):
                         tf.contrib.summary.scalar('loss', loss_value)
 
                     if hasattr(model, 'alpha'):
-                        alpha_learning_rate = conf['model']['loss'].get('alpha_learning_rate', conf['optimizer']['learning_rate'])
-                        alpha_ratio = conf['optimizer']['learning_rate'] / alpha_learning_rate
+                        alpha_learning_rate = conf['model']['loss'].get('alpha_learning_rate', conf['trainer']['learning_rate'])
+                        alpha_ratio = conf['trainer']['learning_rate'] / alpha_learning_rate
                         tf.contrib.summary.scalar('alpha', model.alpha / alpha_ratio)
                     if hasattr(model, 'beta'):
                         tf.contrib.summary.scalar('beta', model.beta)
