@@ -75,16 +75,26 @@ def create_checkpoint(checkpoint, run_name):
     if not tf.gfile.Exists(os.path.dirname(prefix)):
         tf.gfile.MakeDirs(os.path.dirname(prefix))
     checkpoint.save(file_prefix=prefix)
+    g = open(os.path.join(os.path.dirname(prefix), 'checkpoint_compat'), 'w')
+    with open(os.path.join(os.path.dirname(prefix), 'checkpoint'), 'r') as f:
+        for line in f:
+            print(line.rstrip('\n').replace(os.path.dirname(prefix) + '/', ''), file=g)
+    g.close()
     if CONFIG['tensorboard'].getboolean('s3_upload'):
         for root, dirnames, filenames in os.walk(os.path.dirname(prefix)):
             for filename in filenames:
+                if filename == 'checkpoint':
+                    continue
+                dest_filename = filename
+                if filename == 'checkpoint_compat':
+                    dest_filename = 'checkpoint'
                 s3.upload_file(
                     os.path.join(root, filename),
                     CONFIG['tensorboard']['s3_bucket'],
                     '{}/experiments/{}/checkpoints/{}'.format(
                         CONFIG['tensorboard']['s3_key'],
                         run_name,
-                        filename
+                        dest_filename
                     )
                 )
                 os.remove(os.path.join(root, filename))
