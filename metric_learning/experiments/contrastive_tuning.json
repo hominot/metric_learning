@@ -4,7 +4,7 @@
     {"dataset": "cub200", "group_size": 2, "num_groups": 16},
     {"dataset": "cub200", "group_size": 4, "num_groups": 8}
   ],
-  "model": [{"name": "inception"}],
+  "model": [{"name": "resnet50"}],
   "loss": [
     {"name": "contrastive", "alpha": 1.0},
     {"name": "contrastive", "alpha": 2.0},
