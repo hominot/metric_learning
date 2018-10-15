@@ -36,10 +36,11 @@ if __name__ == '__main__':
         if not tf.gfile.Exists(os.path.join(directory, 'train', str(k))):
             tf.gfile.MakeDirs(os.path.join(directory, 'train', str(k)))
     for root, dirnames, filenames in os.walk(os.path.join(CONFIG['dataset']['data_dir'], args.dataset, 'train')):
-        for filename in filenames:
-            split = random.choice(splits)
-            dest_filename = os.path.join(root.split('/')[-1], filename)
-            dest_dir = os.path.join(directory, 'train', str(split))
-            if not tf.gfile.Exists(os.path.dirname(os.path.join(dest_dir, dest_filename))):
-                tf.gfile.MakeDirs(os.path.dirname(os.path.join(dest_dir, dest_filename)))
-            shutil.copy(os.path.join(root, filename), os.path.join(directory, 'train', str(split), dest_filename))
+        dirnames = list(dirnames)
+        random.shuffle(dirnames)
+        for split in splits:
+            start = int(split * len(dirnames) / len(splits))
+            end = int((split + 1) * len(dirnames) / len(splits))
+            for dirname in dirnames[start:end]:
+                dest_dir = os.path.join(directory, 'train', str(split), dirname)
+                shutil.copytree(os.path.join(root, dirname), dest_dir)
