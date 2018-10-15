@@ -26,7 +26,7 @@ class TripletLossFunction(LossFunction):
         triplet_match = pairwise_matching_matrix(positive_labels, negative_labels)
         differences = pairwise_difference(positive_distances, negative_distances)
 
-        alpha = self.conf['model']['loss'].get('alpha', 1.0)
+        alpha = self.conf['loss']['alpha']
         semi_hard_candidate_mask = triplet_match & \
                                    (differences < 0) & \
                                    (alpha + differences > 0)

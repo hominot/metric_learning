@@ -46,9 +46,14 @@ class Recall(Metric):
             distance_blocks = []
             for test_embeddings, test_labels in data:
                 all_labels += list(test_labels.numpy())
-                distances = tf.reduce_sum(
-                    tf.square(test_embeddings[None] - embeddings[:, None]),
-                    axis=2)
+                if self.conf['loss']['parametrization'] == 'dot_product':
+                    x_norm = test_embeddings / tf.norm(test_embeddings, axis=len(test_embeddings.shape) - 1, keep_dims=True)
+                    y_norm = embeddings / tf.norm(embeddings, axis=len(embeddings.shape) - 1, keep_dims=True)
+                    distances = -tf.reduce_sum(tf.multiply(x_norm[None], y_norm[:, None]), axis=2)
+                else:
+                    distances = tf.reduce_sum(
+                        tf.square(test_embeddings[None] - embeddings[:, None]),
+                        axis=2)
                 distance_blocks.append(distances)
 
             values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.metric_conf['k']) + 1)

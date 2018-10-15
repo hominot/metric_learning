@@ -1,0 +1,30 @@
+{% if name == 'contrastive' %}
+{
+    'name': '{{ name }}',
+    'alpha': {{ alpha | default(16.0) }},
+    'parametrization': 'euclidean_distance',
+}
+{% elif name == 'triplet' %}
+{
+    'name': '{{ name }}',
+    'alpha': '{{ alpha | default(4.0) }},
+    'parametrization': 'euclidean_distance',
+}
+{% elif name == 'latent_position' %}
+{
+    'name': '{{ name }}',
+    'parametrization': '{{ parametrization | default('euclidean_distance') }}',
+    {% if npair %}
+    'npair': {
+        'n': {{ n | default(16) }},
+    },
+    {% endif %}
+    'alpha': {{ alpha | default(16.0) }},
+}
+{% elif name == 'npair' %}
+{
+    'name': '{{ name }}',
+    'parametrization': '{{ parametrization | default('euclidean_distance') }}',
+    'n': {{ n | default(16) }},
+}
+{% endif %}

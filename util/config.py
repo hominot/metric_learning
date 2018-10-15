@@ -23,5 +23,5 @@ def render_jinja_config(config_name, **kwargs):
 
 def generate_config(parameters):
     return {
-        x: render_jinja_config(y, **z) for x, y, z in parameters
+        x: render_jinja_config(x, **y) for x, y in parameters
     }

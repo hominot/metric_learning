@@ -1,0 +1,6 @@
+{
+    'name': '{{ name }}',
+    {% if name == 'simple_dense' %}
+    'k': {{ k | default(8) }},
+    {% endif %}
+}

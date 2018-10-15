@@ -12,24 +12,15 @@ from util.tensor_operations import pairwise_dot_product
 class LatentPositionLoss(LossFunction):
     name = 'latent_position'
 
-    def __init__(self, conf, extra_info):
-        super(LatentPositionLoss, self).__init__(conf, extra_info)
-
-        loss_conf = conf['model']['loss']
-        alpha = loss_conf.get('alpha', 1.0)
-        alpha_learning_rate = loss_conf.get('alpha_learning_rate', conf['trainer']['learning_rate'])
-        self.alpha_ratio = conf['trainer']['learning_rate'] / alpha_learning_rate
-        self.extra_variables['alpha'] = tf.keras.backend.variable(value=alpha * self.alpha_ratio, dtype='float32')
-
     def loss(self, embeddings, labels):
-        loss_conf = self.conf['model']['loss']
+        loss_conf = self.conf['loss']
         if 'npair' not in loss_conf:
-            if loss_conf['parametrization'] == 'bias':
+            if loss_conf['parametrization'] == 'euclidean_distance':
                 pairwise_distance = pairwise_euclidean_distance_squared(embeddings, embeddings)
-                eta = self.extra_variables['alpha'] / self.alpha_ratio - pairwise_distance
+                eta = loss_conf['alpha'] - pairwise_distance
             elif loss_conf['parametrization'] == 'dot_product':
                 dot_products = pairwise_dot_product(embeddings, embeddings)
-                eta = self.extra_variables['alpha'] / self.alpha_ratio + dot_products
+                eta = loss_conf['alpha'] + dot_products
             else:
                 raise Exception
 
@@ -41,16 +32,16 @@ class LatentPositionLoss(LossFunction):
 
         # npair compatible loss for fair comparison with n-tuplet loss
         npairs = group_npairs(embeddings, labels, loss_conf['npair']['n'])
-        if loss_conf['parametrization'] == 'bias':
+        if loss_conf['parametrization'] == 'euclidean_distance':
             pairwise_distances = tf.concat(
                 [pairwise_euclidean_distance_squared(first, second) for first, second in npairs],
                 axis=0)
-            eta = self.extra_variables['alpha'] * 100. - pairwise_distances
+            eta = loss_conf['alpha'] * 100. - pairwise_distances
         elif loss_conf['parametrization'] == 'dot_product':
             dot_products = tf.concat(
                 [pairwise_dot_product(first, second) for first, second in npairs],
                 axis=0)
-            eta = self.extra_variables['alpha'] + dot_products
+            eta = loss_conf['alpha'] + dot_products
         else:
             raise Exception
         y = 1. - tf.eye(loss_conf['npair']['n']) * 2.
@@ -60,4 +51,4 @@ class LatentPositionLoss(LossFunction):
         return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
 
     def __str__(self):
-        return self.name + '_' + self.conf['model']['loss']['parametrization']
+        return self.name + '_' + self.conf['loss']['parametrization']
