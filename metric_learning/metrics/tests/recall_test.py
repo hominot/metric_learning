@@ -44,6 +44,28 @@ class RecallMetricTest(tf.test.TestCase):
             {1: 1.0, 2: 1.0, 3: 1.0}
         )
 
+    def testRecallMultipleBlocks(self):
+        pass
+        embeddings1 = tf.constant([
+            [1., 0.],
+            [4., 0.],
+        ])
+        embeddings2 = tf.constant([
+            [0., 1.],
+            [1., 2.],
+        ])
+        labels1 = tf.constant([1, 1], tf.int64)
+        labels2 = tf.constant([2, 2], tf.int64)
+        data = [(embeddings1, labels1), (embeddings2, labels2)]
+        self.assertEqual(
+            compute_recall(data, [1, 2, 3], 'euclidean_distance'),
+            {1: 0.5, 2: 0.75, 3: 1.0}
+        )
+        self.assertEqual(
+            compute_recall(data, [1, 2, 3], 'dot_product'),
+            {1: 1.0, 2: 1.0, 3: 1.0}
+        )
+
     def testRecallWithSingleton(self):
         embeddings = tf.constant([
             [1., 0.],

@@ -19,16 +19,17 @@ def compute_recall(data, k_list, parametrization):
     successes = defaultdict(float)
     total = 0.
     num_singletons = 0
-    for embeddings, labels in tqdm(data, total=len(data), desc='recall'):
+    for i, (embeddings, labels) in enumerate(tqdm(data, total=len(data), desc='recall')):
         all_labels = []
         distance_blocks = []
-        for test_embeddings, test_labels in data:
+        for j, (test_embeddings, test_labels) in enumerate(data):
             all_labels += list(test_labels.numpy())
             if parametrization == 'dot_product':
                 distances = -pairwise_cosine_similarity(embeddings, test_embeddings)
             else:
                 distances = pairwise_euclidean_distance_squared(embeddings, test_embeddings)
-            distances = distances + tf.eye(int(distances.shape[0])) * 1e6
+            if i == j:
+                distances = distances + tf.eye(int(distances.shape[0])) * 1e6
             distance_blocks.append(distances)
 
         values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(k_list))

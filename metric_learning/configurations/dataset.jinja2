@@ -9,11 +9,10 @@
     'test': {
         'identification': {
             'num_negative_examples': 5,
-            'num_testcases': {{ num_testcases | default(10000) }},
+            'num_testcases': {{ num_identification_testcases | default(10000) }},
         },
         'recall': {
-            'num_examples_per_class': 1,
-            'num_testcases': {{ num_testcases | default(20000) }},
+            'num_testcases': {{ num_recall_testcases | default(20000) }},
         },
     },
 }

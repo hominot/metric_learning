@@ -103,23 +103,26 @@ class DataLoader(object, metaclass=ClassRegistry):
         return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds))), len(anchor_images)
 
     def create_recall_test_dataset(self, image_files, labels):
-        data = list(zip(image_files, labels))
-        random.shuffle(data)
-        data_map = defaultdict(list)
-        for image_file, label in data:
-            data_map[label].append(image_file)
-        data_map = dict(filter(lambda x: len(x[1]) >= 5, data_map.items()))
-        test_images = []
-        test_labels = []
-        num_examples_per_class = self.conf['dataset']['test']['recall']['num_examples_per_class']
-        labels = list(data_map.keys())
-        random.shuffle(labels)
-        for label in labels:
-            images = data_map[label]
-            test_images += images[0:min(num_examples_per_class, len(images))]
-            test_labels += [label] * min(num_examples_per_class, len(images))
-            if len(test_labels) >= self.conf['dataset']['test']['recall']['num_testcases']:
-                break
+        if self.conf['dataset']['test']['recall']['num_testcases'] == 0:
+            test_images = image_files
+            test_labels = labels
+        else:
+            data = list(zip(image_files, labels))
+            random.shuffle(data)
+            data_map = defaultdict(list)
+            for image_file, label in data:
+                data_map[label].append(image_file)
+            test_images = []
+            test_labels = []
+            while len(test_images) < self.conf['dataset']['test']['recall']['num_testcases'] and data_map:
+                label = random.choice(list(data_map.keys()))
+                if len(data_map[label]) < 2:
+                    del data_map[label]
+                    continue
+                test_images.append(data_map[label].pop())
+                test_images.append(data_map[label].pop())
+                test_labels.append(label)
+                test_labels.append(label)
         test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(self._image_parse_function)
         test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels, tf.int64))
 
