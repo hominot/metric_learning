@@ -8,24 +8,37 @@ from util.tensor_operations import pairwise_cosine_similarity
 import tensorflow as tf
 
 
-def cosine_similarity(x, y, axis):
-    x_norm = x / tf.maximum(1e-8, tf.norm(x, axis=len(x.shape) - 1, keep_dims=True))
-    y_norm = y / tf.maximum(1e-8, tf.norm(y, axis=len(y.shape) - 1, keep_dims=True))
-    return -tf.reduce_sum(tf.multiply(x_norm, y_norm), axis=axis)
+def count_singletons(all_labels):
+    counts = defaultdict(int)
+    for label in all_labels:
+        counts[label] += 1
+    return len(list(filter(lambda x: x == 1, counts.values())))
 
 
-def euclidean_distance(x, y, axis):
-    return tf.norm(x - y, axis=axis)
+def compute_recall(data, k_list, parametrization):
+    successes = defaultdict(float)
+    total = 0.
+    num_singletons = 0
+    for embeddings, labels in tqdm(data, total=len(data), desc='recall'):
+        all_labels = []
+        distance_blocks = []
+        for test_embeddings, test_labels in data:
+            all_labels += list(test_labels.numpy())
+            if parametrization == 'dot_product':
+                distances = -pairwise_cosine_similarity(embeddings, test_embeddings)
+            else:
+                distances = pairwise_euclidean_distance_squared(embeddings, test_embeddings)
+            distances = distances + tf.eye(int(distances.shape[0])) * 1e6
+            distance_blocks.append(distances)
 
-
-def dot_product(x, y, axis):
-    return -tf.reduce_sum(tf.multiply(x, y), axis=axis)
-
-
-def evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings):
-    p = func(anchor_embeddings, positive_embeddings, axis=1)
-    n = tf.reduce_min(func(negative_embeddings, anchor_embeddings, axis=2), axis=0)
-    return p < n
+        values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(k_list))
+        top_labels = tf.gather(tf.constant(all_labels, tf.int64), indices)
+        for k in k_list:
+            score = tf.reduce_sum(tf.cast(tf.equal(tf.transpose(labels[None]), top_labels[:, 0:k]), tf.int32), axis=1)
+            successes[k] += int(sum(tf.cast(score >= 1, tf.int32)))
+        total += int(embeddings.shape[0])
+        num_singletons = count_singletons(all_labels)
+    return {k: success / float(total - num_singletons) for k, success in successes.items()}
 
 
 class Recall(Metric):
@@ -34,8 +47,6 @@ class Recall(Metric):
 
     def compute_metric(self, model, dataset, num_testcases):
         images_ds, labels_ds = dataset
-        total = 0.
-        successes = defaultdict(float)
         batch_size = self.metric_conf['batch_size']
         ds = tf.data.Dataset.zip((images_ds, labels_ds)).batch(batch_size)
         data = []
@@ -43,24 +54,5 @@ class Recall(Metric):
             embeddings = model(images, training=False)
             data.append((embeddings, labels))
 
-        for embeddings, labels in tqdm(
-                data, total=len(data), desc=self.name):
-            all_labels = []
-            distance_blocks = []
-            for test_embeddings, test_labels in data:
-                all_labels += list(test_labels.numpy())
-                if self.conf['loss']['parametrization'] == 'dot_product':
-                    distances = -pairwise_cosine_similarity(embeddings, test_embeddings)
-                else:
-                    distances = pairwise_euclidean_distance_squared(embeddings, test_embeddings)
-                distance_blocks.append(distances)
-
-            values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.metric_conf['k']) + 1)
-            top_labels = tf.gather(tf.constant(all_labels, tf.int64), indices)[:, 1:]
-            for k in self.metric_conf['k']:
-                score = tf.reduce_sum(tf.cast(tf.equal(tf.transpose(labels[None]), top_labels[:, 0:k]), tf.int32), axis=1)
-                successes[k] += int(sum(tf.cast(score >= 1, tf.int32)))
-            total += int(embeddings.shape[0])
-
-        ret = {'recall@{}'.format(k): success / float(total) for k, success in successes.items()}
-        return ret
+        ret = compute_recall(data, self.metric_conf['k'], self.conf['loss']['parametrization'])
+        return {'recall@{}'.format(k): score for k, score in ret.items()}
