@@ -10,7 +10,7 @@ class ContrastiveLossFunction(LossFunction):
     name = 'contrastive'
 
     def loss(self, embeddings, labels, *args, **kwargs):
-        alpha = self.conf['model']['loss'].get('alpha', 8.)
+        alpha = self.conf['loss'].get('alpha')
         pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
         matching_labels_matrix = tf.cast(
             upper_triangular_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),

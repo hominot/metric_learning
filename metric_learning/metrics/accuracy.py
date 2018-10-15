@@ -1,7 +1,6 @@
 from util.registry.metric import Metric
 
 from tqdm import tqdm
-from collections import defaultdict
 
 import tensorflow as tf
 
@@ -14,10 +13,6 @@ def cosine_similarity(x, y, axis):
 
 def euclidean_distance(x, y, axis):
     return tf.norm(x - y, axis=axis)
-
-
-def dot_product(x, y, axis):
-    return -tf.reduce_sum(tf.multiply(x, y), axis=axis)
 
 
 def evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings):
@@ -33,7 +28,7 @@ class Accuracy(Metric):
     metric_functions = {
         'euclidean_distance': euclidean_distance,
         'cosine_similarity': cosine_similarity,
-        'dot_product': dot_product,
+        'dot_product': cosine_similarity,
     }
 
     def compute_metric(self, model, test_ds, num_testcases):
@@ -51,7 +46,7 @@ class Accuracy(Metric):
             anchor_embeddings = model(anchor_images, training=False)
             positive_embeddings = model(positive_images, training=False)
             negative_embeddings = tf.stack([model(negative_images, training=False) for negative_images in negative_images_group])
-            func = self.metric_functions[self.conf['model']['metric']]
+            func = self.metric_functions[self.conf['loss']['parametrization']]
             results = evaluate_accuracy(func, anchor_embeddings, positive_embeddings, negative_embeddings)
             success_count += float(sum(tf.cast(results, tf.float32)))
             positive_distance += float(tf.reduce_mean(tf.norm(anchor_embeddings - positive_embeddings, axis=1)))

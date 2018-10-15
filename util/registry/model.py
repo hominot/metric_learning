@@ -15,7 +15,7 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         self.conf = conf
         self.extra_info = extra_info
 
-        self.loss_function = LossFunction.create(conf['model']['loss']['name'], conf)
+        self.loss_function = LossFunction.create(conf['loss']['name'], conf)
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
 

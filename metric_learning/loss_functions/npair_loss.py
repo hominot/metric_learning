@@ -28,11 +28,11 @@ class NPairLossFunction(LossFunction):
     def __init__(self, conf, extra_info):
         super(NPairLossFunction, self).__init__(conf, extra_info)
         self.compute_exponents = compute_euclidean_distance_exponents \
-            if conf['model']['loss']['parametrization'] == 'euclidean_distance' \
+            if conf['loss']['parametrization'] == 'euclidean_distance' \
             else compute_dot_product_exponents
 
     def loss(self, embeddings, labels):
-        sampled_data = group_npairs(embeddings, labels, self.conf['model']['loss']['n'])
+        sampled_data = group_npairs(embeddings, labels, self.conf['loss']['n'])
         losses = []
         for first_images, second_images in sampled_data:
             loss = tf.reduce_logsumexp(self.compute_exponents(first_images, second_images), axis=1)
@@ -40,4 +40,4 @@ class NPairLossFunction(LossFunction):
         return sum(losses)
 
     def __str__(self):
-        return self.name + '_' + self.conf['model']['loss']['parametrization']
+        return self.name + '_' + self.conf['loss']['parametrization']
