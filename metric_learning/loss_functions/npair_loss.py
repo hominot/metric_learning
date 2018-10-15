@@ -37,6 +37,11 @@ class NPairLossFunction(LossFunction):
         for first_images, second_images in sampled_data:
             loss = tf.reduce_logsumexp(self.compute_exponents(first_images, second_images), axis=1)
             losses.append(tf.reduce_mean(loss))
+            if self.conf['loss']['parametrization'] == 'dot_product':
+                losses.append(
+                    (tf.reduce_mean(tf.reduce_sum(tf.square(first_images), axis=1)) +
+                    tf.reduce_mean(tf.reduce_sum(tf.square(second_images), axis=1))) * self.conf['loss']['lambda']
+                )
         return sum(losses)
 
     def __str__(self):
