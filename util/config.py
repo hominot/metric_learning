@@ -1,6 +1,8 @@
 import configparser
+import json
 import os
 
+from itertools import product
 from jinja2 import Template
 
 
@@ -23,5 +25,14 @@ def render_jinja_config(config_name, **kwargs):
 
 def generate_config(parameters):
     return {
-        x: render_jinja_config(x, **y) for x, y in parameters
+        x: render_jinja_config(x, **y) for x, y in parameters.items()
     }
+
+
+def generate_configs_from_experiment(experiment):
+    with open('{}/../metric_learning/experiments/{}.json'.format(
+        os.path.dirname(__file__), experiment
+    )) as f:
+        parameters = json.load(f)
+    for value in product(*parameters.values()):
+        yield dict(zip(parameters.keys(), value))

@@ -12,7 +12,8 @@
             'num_testcases': {{ num_identification_testcases | default(10000) }},
         },
         'recall': {
-            'num_testcases': {{ num_recall_testcases | default(20000) }},
+            'num_testcases': {{ num_recall_testcases | default(0) }},
         },
     },
+    'cross_validation_split': {{ cross_validation_split | default(0) }}
 }

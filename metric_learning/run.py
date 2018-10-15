@@ -4,7 +4,6 @@ import argparse
 import copy
 import json
 import os
-import random
 
 from util.registry.data_loader import DataLoader
 from util.dataset import load_images_from_directory
@@ -124,7 +123,5 @@ if __name__ == '__main__':
     conf = copy.deepcopy(configs[args.config])
     if args.split is not None:
         conf['dataset']['cross_validation_split'] = args.split
-    else:
-        conf['dataset']['cross_validation_split'] = random.choice(range(CONFIG['dataset'].getint('cross_validation_splits')))
 
     train(conf)

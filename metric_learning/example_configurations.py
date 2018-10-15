@@ -18,12 +18,12 @@ configs = {
         'metrics': render_jinja_config('metrics'),
         'trainer': render_jinja_config('trainer'),
     },
-    'mnist_simple_dense': generate_config([
-        ('image', {}),
-        ('dataset', {'dataset': 'mnist', 'num_groups': 4, 'num_testcases': 1000}),
-        ('model', {'name': 'simple_dense'}),
-        ('loss', {'name': 'contrastive'}),
-        ('metrics', {'accuracy': True, 'compute_period': 10, 'recall_k': [1, 2]}),
-        ('trainer', {}),
-    ]),
+    'mnist_simple_dense': generate_config({
+        'image': {},
+        'dataset': {'dataset': 'mnist', 'num_groups': 4},
+        'model': {'name': 'simple_dense'},
+        'loss': {'name': 'contrastive'},
+        'metrics': {'accuracy': True, 'compute_period': 10, 'recall_k': [1, 2]},
+        'trainer': {},
+    }),
 }
