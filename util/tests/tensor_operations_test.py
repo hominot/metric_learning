@@ -6,6 +6,7 @@ from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import pairwise_dot_product
 from util.tensor_operations import repeat_columns
 from util.tensor_operations import pairwise_difference
+from util.tensor_operations import pairwise_cosine_similarity
 
 tf.enable_eager_execution()
 
@@ -99,6 +100,17 @@ class TensorOperationsTest(tf.test.TestCase):
             [0, -1],
             [1, 0],
             [2, 1],
+        ])
+
+    def testPairwiseCosineSimilarity(self):
+        embeddings = tf.constant([
+            [0., 1.],
+            [1., 0.],
+        ])
+        c = pairwise_cosine_similarity(embeddings, embeddings)
+        self.assertAllEqual(c, [
+            [1., 0.],
+            [0., 1.],
         ])
 
 

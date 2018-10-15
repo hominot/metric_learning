@@ -13,6 +13,12 @@ def pairwise_dot_product(first, second):
         axis=2)
 
 
+def pairwise_cosine_similarity(first, second):
+    first_norm = first / tf.norm(first, axis=1, keep_dims=True)
+    second_norm = second / tf.norm(second, axis=1, keep_dims=True)
+    return pairwise_dot_product(first_norm, second_norm)
+
+
 def pairwise_difference(first, second):
     return -second[None] + first[:, None]
 

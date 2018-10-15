@@ -1,13 +1,16 @@
 from util.registry.metric import Metric
+
 from collections import defaultdict
 from tqdm import tqdm
+from util.tensor_operations import pairwise_euclidean_distance_squared
+from util.tensor_operations import pairwise_cosine_similarity
 
 import tensorflow as tf
 
 
 def cosine_similarity(x, y, axis):
-    x_norm = x / tf.norm(x, axis=len(x.shape) - 1, keep_dims=True)
-    y_norm = y / tf.norm(y, axis=len(y.shape) - 1, keep_dims=True)
+    x_norm = x / tf.maximum(1e-8, tf.norm(x, axis=len(x.shape) - 1, keep_dims=True))
+    y_norm = y / tf.maximum(1e-8, tf.norm(y, axis=len(y.shape) - 1, keep_dims=True))
     return -tf.reduce_sum(tf.multiply(x_norm, y_norm), axis=axis)
 
 
@@ -47,13 +50,9 @@ class Recall(Metric):
             for test_embeddings, test_labels in data:
                 all_labels += list(test_labels.numpy())
                 if self.conf['loss']['parametrization'] == 'dot_product':
-                    x_norm = test_embeddings / tf.norm(test_embeddings, axis=len(test_embeddings.shape) - 1, keep_dims=True)
-                    y_norm = embeddings / tf.norm(embeddings, axis=len(embeddings.shape) - 1, keep_dims=True)
-                    distances = -tf.reduce_sum(tf.multiply(x_norm[None], y_norm[:, None]), axis=2)
+                    distances = -pairwise_cosine_similarity(embeddings, test_embeddings)
                 else:
-                    distances = tf.reduce_sum(
-                        tf.square(test_embeddings[None] - embeddings[:, None]),
-                        axis=2)
+                    distances = pairwise_euclidean_distance_squared(embeddings, test_embeddings)
                 distance_blocks.append(distances)
 
             values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(self.metric_conf['k']) + 1)
