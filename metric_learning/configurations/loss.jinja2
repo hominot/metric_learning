@@ -7,7 +7,14 @@
 {% elif name == 'triplet' %}
 {
     'name': '{{ name }}',
-    'alpha': '{{ alpha | default(4.0) }},
+    'alpha': {{ alpha | default(4.0) }},
+    'parametrization': 'euclidean_distance',
+}
+{% elif name == 'margin' %}
+{
+    'name': '{{ name }}',
+    'alpha': {{ alpha | default(0.2) }},
+    'beta': {{ alpha | default(1.2) }},
     'parametrization': 'euclidean_distance',
 }
 {% elif name == 'latent_position' %}
