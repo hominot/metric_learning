@@ -58,13 +58,8 @@ def get_checkpoint(temp_dir, experiment, step=None):
 
 METRICS = [
     {
-        'name': 'accuracy',
-        'compute_period': 10,
-        'batch_size': 48,
-    },
-    {
         'name': 'recall',
-        'k': [1, 2],
+        'k': [1, 2, 4, 8],
         'compute_period': 10,
         'batch_size': 48,
     },
@@ -79,14 +74,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     conf = get_config(args.experiment)
-    optimizer = tf.train.AdamOptimizer(learning_rate=conf['optimizer']['learning_rate'])
+    optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
     model = Model.create(conf['model']['name'], conf)
 
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                      model=model,
                                      optimizer_step=tf.train.get_or_create_global_step())
     with tempfile.TemporaryDirectory() as temp_dir:
-        c = get_checkpoint(temp_dir, args.experiment)
+        c = get_checkpoint(temp_dir, args.experiment, args.step)
         checkpoint.restore(c)
 
         testing_files, testing_labels = load_images_from_directory(
