@@ -22,7 +22,7 @@ configs = {
         'image': {},
         'dataset': {'dataset': 'mnist', 'num_groups': 4},
         'model': {'name': 'simple_dense', 'dimension': 2},
-        'loss': {'name': 'contrastive'},
+        'loss': {'name': 'margin'},
         'metrics': {'compute_period': 10, 'recall_k': [1, 2]},
         'trainer': {},
     }),

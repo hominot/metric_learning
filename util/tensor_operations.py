@@ -34,3 +34,7 @@ def repeat_columns(labels):
 def upper_triangular_part(matrix):
     a = tf.linalg.band_part(tf.ones(matrix.shape), -1, 0)
     return tf.boolean_mask(matrix, 1 - a)
+
+
+def off_diagonal_part(matrix):
+    return tf.boolean_mask(matrix, 1 - tf.eye(int(matrix.shape[0])))

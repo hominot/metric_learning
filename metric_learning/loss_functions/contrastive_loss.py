@@ -9,7 +9,7 @@ from util.tensor_operations import upper_triangular_part
 class ContrastiveLossFunction(LossFunction):
     name = 'contrastive'
 
-    def loss(self, embeddings, labels, *args, **kwargs):
+    def loss(self, embeddings, labels, image_ids, *args, **kwargs):
         alpha = self.conf['loss']['alpha']
         pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
         matching_labels_matrix = tf.cast(

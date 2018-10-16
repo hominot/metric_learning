@@ -11,7 +11,7 @@ from util.tensor_operations import pairwise_difference
 class TripletLossFunction(LossFunction):
     name = 'triplet'
 
-    def loss(self, embeddings, labels):
+    def loss(self, embeddings, labels, image_ids):
         pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
         matching_labels_matrix = tf.cast(
             upper_triangular_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),

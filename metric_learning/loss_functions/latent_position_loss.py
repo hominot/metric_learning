@@ -12,7 +12,7 @@ from util.tensor_operations import pairwise_dot_product
 class LatentPositionLoss(LossFunction):
     name = 'latent_position'
 
-    def loss(self, embeddings, labels):
+    def loss(self, embeddings, labels, image_ids):
         loss_conf = self.conf['loss']
         if 'npair' not in loss_conf:
             if loss_conf['parametrization'] == 'euclidean_distance':

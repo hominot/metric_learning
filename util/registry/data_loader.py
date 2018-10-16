@@ -55,19 +55,6 @@ class DataLoader(object, metaclass=ClassRegistry):
             dataset = dataset.map(self._center_crop)
         return dataset
 
-    def _repeat_label(self, label):
-        n = self.conf['image']['random_crop']['n']
-        return tf.data.Dataset.from_tensor_slices([label] * n)
-
-    def create_dataset(self, image_files, labels):
-        data = list(zip(image_files, labels))
-        random.shuffle(data)
-        image_files_shuffled, labels_shuffled = zip(*data)
-        images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_files_shuffled)) \
-            .map(self._image_parse_function)
-        labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_shuffled))
-        return tf.data.Dataset.zip((images_ds, labels_ds))
-
     def create_identification_test_dataset(self, image_files, labels):
         data = list(zip(image_files, labels))
         random.shuffle(data)
@@ -131,14 +118,14 @@ class DataLoader(object, metaclass=ClassRegistry):
         return test_images_ds, test_labels_ds, len(test_labels)
 
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
-        data = list(zip(image_files, labels))
+        data = list(zip(image_files, labels, range(len(image_files))))
         if 'random_crop' in self.conf['image']:
             data = data * self.conf['image']['random_crop']['n']
         random.shuffle(data)
 
         data_map = defaultdict(list)
-        for image_file, label in data:
-            data_map[label].append(image_file)
+        for image_file, label, image_id in data:
+            data_map[label].append((image_file, image_id))
 
         data_map = dict(filter(lambda x: len(x[1]) >= max(group_size, min_class_size), data_map.items()))
         grouped_data = []
@@ -146,19 +133,21 @@ class DataLoader(object, metaclass=ClassRegistry):
             sampled_labels = random.sample(data_map.keys(), num_groups)
             for label in sampled_labels:
                 for _ in range(group_size):
-                    grouped_data.append((data_map[label].pop(), label))
+                    image_file, image_id = data_map[label].pop()
+                    grouped_data.append((image_file, label, image_id))
                 if len(data_map[label]) < group_size:
                     del data_map[label]
 
-        image_files_grouped, labels_grouped = zip(*grouped_data)
+        image_files_grouped, labels_grouped, image_ids_grouped = zip(*grouped_data)
         images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_files_grouped)).map(self._image_parse_function)
         if 'random_flip' in self.conf['image'] and self.conf['image']['random_flip']:
             images_ds = images_ds.map(self._random_flip)
         if 'random_crop' in self.conf['image']:
             images_ds = images_ds.map(self._random_crop)
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_grouped))
+        image_ids_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_ids_grouped))
 
-        return tf.data.Dataset.zip((images_ds, labels_ds))
+        return tf.data.Dataset.zip((images_ds, labels_ds, image_ids_ds))
 
     def load_image_files(self):
         self.prepare_files()
