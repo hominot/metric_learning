@@ -16,15 +16,15 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         self.conf = conf
         self.extra_info = extra_info
 
-        self.loss_function = LossFunction.create(conf['loss']['name'], conf)
+        self.loss_function = LossFunction.create(conf['loss']['name'], conf, extra_info)
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
         if 'dimension' in conf['model']:
             self.dense_layer = Dense(conf['model']['dimension'])
 
-    def loss(self, images, labels):
+    def loss(self, images, labels, image_ids):
         embeddings = self.call(images, training=True)
-        return self.loss_function.loss(embeddings, labels)
+        return self.loss_function.loss(embeddings, labels, image_ids)
 
     def __str__(self):
         return self.conf['model']['name'] + '_' + str(self.loss_function)

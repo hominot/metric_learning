@@ -7,6 +7,7 @@ from util.tensor_operations import pairwise_dot_product
 from util.tensor_operations import repeat_columns
 from util.tensor_operations import pairwise_difference
 from util.tensor_operations import pairwise_cosine_similarity
+from util.tensor_operations import off_diagonal_part
 
 tf.enable_eager_execution()
 
@@ -112,6 +113,15 @@ class TensorOperationsTest(tf.test.TestCase):
             [1., 0.],
             [0., 1.],
         ])
+
+    def testOffDiagonalPart(self):
+        a = tf.constant([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9],
+        ])
+        b = off_diagonal_part(a)
+        self.assertAllEqual(b, [2, 3, 4, 6, 7, 8])
 
 
 if __name__ == '__main__':

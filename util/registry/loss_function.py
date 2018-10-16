@@ -10,7 +10,7 @@ class LossFunction(object, metaclass=ClassRegistry):
         self.extra_info = extra_info
         self.extra_variables = {}
 
-    def loss(self, embeddings, labels):
+    def loss(self, embeddings, labels, image_ids):
         raise NotImplementedError
 
     def __str__(self):

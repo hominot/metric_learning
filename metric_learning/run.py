@@ -29,7 +29,8 @@ def train(conf):
     )
 
     extra_info = {
-        'num_labels': max(training_labels),
+        'num_labels': max(training_labels) + 1,
+        'num_images': len(training_files),
     }
 
     test_datasets = {}
@@ -81,7 +82,7 @@ def train(conf):
             min_class_size=conf['dataset']['train']['min_class_size'],
         ).batch(conf['dataset']['train']['batch_size'])
         with tf.device(device):
-            for (batch, (images, labels)) in enumerate(train_ds):
+            for (batch, (images, labels, image_ids)) in enumerate(train_ds):
                 with tf.contrib.summary.record_summaries_every_n_global_steps(
                         10, global_step=step_counter):
                     current_step = int(step_counter)
@@ -96,7 +97,7 @@ def train(conf):
                             else:
                                 tf.contrib.summary.scalar(metric_conf['name'], score)
                     with tf.GradientTape() as tape:
-                        loss_value = model.loss(images, labels)
+                        loss_value = model.loss(images, labels, image_ids)
                         tf.contrib.summary.scalar('loss', loss_value)
 
                     grads = tape.gradient(loss_value, model.variables)

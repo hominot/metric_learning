@@ -60,7 +60,7 @@ def load_images_from_directory(directory, splits=None):
                     continue
             label = subdir.split('/')[-1]
             if label not in label_map:
-                label_map[label] = len(label_map) + 1
+                label_map[label] = len(label_map)
             image_files.append(os.path.join(subdir, file))
             labels.append(label_map[label])
     return image_files, labels
