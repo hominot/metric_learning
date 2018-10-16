@@ -55,40 +55,6 @@ class DataLoader(object, metaclass=ClassRegistry):
             dataset = dataset.map(self._center_crop)
         return dataset
 
-    def create_identification_test_dataset(self, image_files, labels):
-        data = list(zip(image_files, labels))
-        random.shuffle(data)
-        data_map = defaultdict(list)
-        for image_file, label in data:
-            data_map[label].append(image_file)
-        data_map = dict(filter(lambda x: len(x[1]) >= 2, data_map.items()))
-        label_set = set(data_map.keys())
-        labels = list(data_map.keys())
-        anchor_images = []
-        positive_images = []
-
-        num_negative_examples = self.conf['dataset']['test']['identification']['num_negative_examples']
-        negative_images = [[]] * num_negative_examples
-
-        while len(anchor_images) < self.conf['dataset']['test']['identification']['num_testcases']:
-            anchor_label = random.choice(labels)
-            anchor_image, positive_image = random.sample(data_map[anchor_label], 2)
-            anchor_images.append(anchor_image)
-            positive_images.append(positive_image)
-            negative_labels = random.choices(list(label_set - {anchor_label}), k=num_negative_examples)
-            for idx, negative_label in enumerate(negative_labels):
-                negative_images[idx].append(random.choice(data_map[negative_label]))
-        anchor_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(anchor_images)).map(self._image_parse_function)
-        positive_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(positive_images)).map(self._image_parse_function)
-        negative_images_ds = [tf.data.Dataset.from_tensor_slices(tf.constant(x)).map(self._image_parse_function)
-            for x in negative_images]
-
-        if 'random_crop' in self.conf['image']:
-            anchor_images_ds = anchor_images_ds.map(self._center_crop)
-            positive_images_ds = positive_images_ds.map(self._center_crop)
-            negative_images_ds = [x.map(self._center_crop) for x in negative_images_ds]
-        return tf.data.Dataset.zip((anchor_images_ds, positive_images_ds, tuple(negative_images_ds))), len(anchor_images)
-
     def create_recall_test_dataset(self, image_files, labels):
         if self.conf['dataset']['test']['recall']['num_testcases'] == 0:
             test_images = image_files

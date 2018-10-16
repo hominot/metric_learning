@@ -17,15 +17,42 @@ from metric_learning.example_configurations import configs
 from util.config import CONFIG
 
 
+def evaluate(model, test_datasets, validation_datasets):
+    conf = model.conf
+    with tf.contrib.summary.always_record_summaries():
+        for metric_conf in conf['metrics']:
+            metric = Metric.create(metric_conf['name'], conf)
+            score = metric.compute_metric(model,
+                                          test_datasets[metric.dataset]['dataset'],
+                                          test_datasets[metric.dataset]['num_testcases'])
+            if type(score) is dict:
+                for metric, s in score.items():
+                    tf.contrib.summary.scalar('test ' + metric, s)
+            else:
+                tf.contrib.summary.scalar('test ' + metric_conf['name'], score)
+        for metric_conf in conf['metrics']:
+            metric = Metric.create(metric_conf['name'], conf)
+            score = metric.compute_metric(model,
+                                          validation_datasets[metric.dataset]['dataset'],
+                                          validation_datasets[metric.dataset]['num_testcases'])
+            if type(score) is dict:
+                for metric, s in score.items():
+                    tf.contrib.summary.scalar('validation ' + metric, s)
+            else:
+                tf.contrib.summary.scalar('validation ' + metric_conf['name'], score)
+
 def train(conf):
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     training_files, training_labels = load_images_from_directory(
         os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'train'),
         splits=set(range(CONFIG['dataset'].getint('cross_validation_splits'))) - {conf['dataset']['cross_validation_split']},
     )
-    testing_files, testing_labels = load_images_from_directory(
+    validation_files, validation_labels = load_images_from_directory(
         os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'train'),
         splits={conf['dataset']['cross_validation_split']}
+    )
+    testing_files, testing_labels = load_images_from_directory(
+        os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test')
     )
 
     extra_info = {
@@ -34,17 +61,18 @@ def train(conf):
     }
 
     test_datasets = {}
-    if 'identification' in conf['dataset']['test']:
-        dataset, num_testcases = data_loader.create_identification_test_dataset(
-            testing_files, testing_labels)
-        test_datasets['identification'] = {
-            'dataset': dataset,
-            'num_testcases': num_testcases,
-        }
     if 'recall' in conf['dataset']['test']:
         images_ds, labels_ds, num_testcases = data_loader.create_recall_test_dataset(
             testing_files, testing_labels)
         test_datasets['recall'] = {
+            'dataset': (images_ds, labels_ds),
+            'num_testcases': num_testcases,
+        }
+    validation_datasets = {}
+    if 'recall' in conf['dataset']['test']:
+        images_ds, labels_ds, num_testcases = data_loader.create_recall_test_dataset(
+            validation_files, validation_labels)
+        validation_datasets['recall'] = {
             'dataset': (images_ds, labels_ds),
             'num_testcases': num_testcases,
         }
@@ -81,21 +109,11 @@ def train(conf):
             num_groups=conf['dataset']['train']['num_groups'],
             min_class_size=conf['dataset']['train']['min_class_size'],
         ).batch(conf['dataset']['train']['batch_size'])
+        evaluate(model, test_datasets, validation_datasets)
         with tf.device(device):
             for (batch, (images, labels, image_ids)) in enumerate(train_ds):
                 with tf.contrib.summary.record_summaries_every_n_global_steps(
                         10, global_step=step_counter):
-                    current_step = int(step_counter)
-                    for metric_conf in conf['metrics']:
-                        if current_step % metric_conf.get('compute_period', 10) == 0 and \
-                            current_step >= metric_conf.get('skip_steps', 0):
-                            metric = Metric.create(metric_conf['name'], conf)
-                            score = metric.compute_metric(model, test_datasets[metric.dataset]['dataset'], test_datasets[metric.dataset]['num_testcases'])
-                            if type(score) is dict:
-                                for metric, s in score.items():
-                                    tf.contrib.summary.scalar(metric, s)
-                            else:
-                                tf.contrib.summary.scalar(metric_conf['name'], score)
                     with tf.GradientTape() as tape:
                         loss_value = model.loss(images, labels, image_ids)
                         tf.contrib.summary.scalar('loss', loss_value)
@@ -105,10 +123,8 @@ def train(conf):
                         zip(grads, model.variables), global_step=step_counter)
                     if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                         upload_tensorboard_log_to_s3(run_name)
-                    if int(step_counter) % int(CONFIG['tensorboard']['checkpoint_period']) == 0:
-                        print('checkpoint: {}'.format(run_name))
-                        print('Epoch #{} | Batch #{}'.format(epoch + 1, batch + 1))
-                        create_checkpoint(checkpoint, run_name)
+            print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
+            create_checkpoint(checkpoint, run_name)
 
 
 if __name__ == '__main__':
