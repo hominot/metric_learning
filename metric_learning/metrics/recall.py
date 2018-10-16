@@ -5,6 +5,7 @@ from tqdm import tqdm
 from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_cosine_similarity
 
+import math
 import tensorflow as tf
 
 
@@ -51,7 +52,7 @@ class Recall(Metric):
         batch_size = self.metric_conf['batch_size']
         ds = tf.data.Dataset.zip((images_ds, labels_ds)).batch(batch_size)
         data = []
-        for images, labels in tqdm(ds, total=num_testcases // batch_size, desc='recall: embedding'):
+        for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='recall: embedding'):
             embeddings = model(images, training=False)
             data.append((embeddings, labels))
 

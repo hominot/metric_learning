@@ -3,8 +3,10 @@ import tensorflow as tf
 import argparse
 import copy
 import json
+import math
 import os
 
+from tqdm import tqdm
 from util.registry.data_loader import DataLoader
 from util.dataset import load_images_from_directory
 from util.registry.model import Model
@@ -102,16 +104,22 @@ def train(conf):
             tf.gfile.MakeDirs(config_dir)
         with open(os.path.join(config_dir, 'config.json'), 'w') as f:
             json.dump(conf, f, indent=4)
+
+    train_conf = conf['dataset']['train']
     for epoch in range(conf['trainer']['num_epochs']):
-        train_ds = data_loader.create_grouped_dataset(
+        train_ds, num_examples = data_loader.create_grouped_dataset(
             training_files, training_labels,
-            group_size=conf['dataset']['train']['group_size'],
-            num_groups=conf['dataset']['train']['num_groups'],
-            min_class_size=conf['dataset']['train']['min_class_size'],
-        ).batch(conf['dataset']['train']['batch_size'])
+            group_size=train_conf['group_size'],
+            num_groups=train_conf['num_groups'],
+            min_class_size=train_conf['min_class_size'],
+        )
+        train_ds = train_ds.batch(train_conf['batch_size'])
         evaluate(model, test_datasets, validation_datasets)
         with tf.device(device):
-            for (batch, (images, labels, image_ids)) in enumerate(train_ds):
+            batches = tqdm(train_ds,
+                           total=math.ceil(num_examples / train_conf['batch_size']),
+                           desc='epoch #{}'.format(epoch + 1))
+            for (batch, (images, labels, image_ids)) in enumerate(batches):
                 with tf.contrib.summary.record_summaries_every_n_global_steps(
                         10, global_step=step_counter):
                     with tf.GradientTape() as tape:

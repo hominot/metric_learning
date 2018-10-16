@@ -113,7 +113,7 @@ class DataLoader(object, metaclass=ClassRegistry):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_grouped))
         image_ids_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_ids_grouped))
 
-        return tf.data.Dataset.zip((images_ds, labels_ds, image_ids_ds))
+        return tf.data.Dataset.zip((images_ds, labels_ds, image_ids_ds)), len(image_files_grouped)
 
     def load_image_files(self):
         self.prepare_files()
