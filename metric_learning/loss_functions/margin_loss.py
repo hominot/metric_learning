@@ -40,8 +40,8 @@ class MarginLoss(LossFunction):
             )
         )
 
-        label_regularizers = off_diagonal_part(repeat_columns(labels))
-        image_regularizers = off_diagonal_part(repeat_columns(image_ids))
+        label_regularizers = off_diagonal_part(tf.cast(repeat_columns(labels), tf.int64))
+        image_regularizers = off_diagonal_part(tf.cast(repeat_columns(image_ids), tf.int64))
         nu = self.conf['loss']['nu']
 
         regularizers = self.conf['loss']['beta'] + tf.gather(self.extra_variables['beta_class'], label_regularizers) + tf.gather(self.extra_variables['beta_image'], image_regularizers)
