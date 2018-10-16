@@ -16,12 +16,13 @@ class MarginLoss(LossFunction):
 
         loss_conf = conf['loss']
         beta = loss_conf['beta']
-        beta_class = tf.ones(extra_info['num_labels']) * loss_conf['beta_class']
-        beta_image = tf.ones(extra_info['num_images']) * loss_conf['beta_image']
+        if 'num_labels' in extra_info and 'num_images' in extra_info:
+            beta_class = tf.ones(extra_info['num_labels']) * loss_conf['beta_class']
+            beta_image = tf.ones(extra_info['num_images']) * loss_conf['beta_image']
 
-        self.extra_variables['beta'] = tf.keras.backend.variable(value=beta, dtype='float32')
-        self.extra_variables['beta_class'] = tf.keras.backend.variable(value=beta_class, dtype='float32')
-        self.extra_variables['beta_image'] = tf.keras.backend.variable(value=beta_image, dtype='float32')
+            self.extra_variables['beta'] = tf.keras.backend.variable(value=beta, dtype='float32')
+            self.extra_variables['beta_class'] = tf.keras.backend.variable(value=beta_class, dtype='float32')
+            self.extra_variables['beta_image'] = tf.keras.backend.variable(value=beta_image, dtype='float32')
 
     def loss(self, embeddings, labels, image_ids):
         pairwise_distances_squared = off_diagonal_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
