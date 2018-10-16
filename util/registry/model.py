@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from util.registry.class_registry import ClassRegistry
 from util.registry.loss_function import LossFunction
+from tensorflow.keras.layers import Dense
 
 
 class Model(tf.keras.models.Model, metaclass=ClassRegistry):
@@ -18,6 +19,8 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         self.loss_function = LossFunction.create(conf['loss']['name'], conf)
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
+        if 'dimension' in conf['model']:
+            self.dense_layer = Dense(conf['model']['dimension'])
 
     def loss(self, images, labels):
         embeddings = self.call(images, training=True)
@@ -27,4 +30,7 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         return self.conf['model']['name'] + '_' + str(self.loss_function)
 
     def call(self, inputs, training=None, mask=None):
-        return self.model(inputs, training=training, mask=mask)
+        ret = self.model(inputs, training=training, mask=mask)
+        if 'dimension' in self.conf['model']:
+            ret = self.dense_layer(ret)
+        return ret

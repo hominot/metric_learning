@@ -21,9 +21,9 @@ configs = {
     'mnist_simple_dense': generate_config({
         'image': {},
         'dataset': {'dataset': 'mnist', 'num_groups': 4},
-        'model': {'name': 'simple_dense'},
+        'model': {'name': 'simple_dense', 'dimension': 2},
         'loss': {'name': 'contrastive'},
-        'metrics': {'accuracy': True, 'compute_period': 10, 'recall_k': [1, 2]},
+        'metrics': {'compute_period': 10, 'recall_k': [1, 2]},
         'trainer': {},
     }),
 }
