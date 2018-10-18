@@ -7,10 +7,6 @@
         'min_class_size': 2,
     },
     'test': {
-        'identification': {
-            'num_negative_examples': 5,
-            'num_testcases': {{ num_identification_testcases | default(10000) }},
-        },
         'recall': {
             'num_testcases': {{ num_recall_testcases | default(0) }},
         },

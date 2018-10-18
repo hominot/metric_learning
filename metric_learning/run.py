@@ -43,6 +43,7 @@ def evaluate(model, test_datasets, validation_datasets):
             else:
                 tf.contrib.summary.scalar('validation ' + metric_conf['name'], score)
 
+
 def train(conf):
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     training_files, training_labels = load_images_from_directory(
