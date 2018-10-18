@@ -33,4 +33,6 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         ret = self.model(inputs, training=training, mask=mask)
         if 'dimension' in self.conf['model']:
             ret = self.dense_layer(ret)
+        if self.conf['model']['l2_normalize']:
+            ret = tf.nn.l2_normalize(self.dense_layer(ret))
         return ret
