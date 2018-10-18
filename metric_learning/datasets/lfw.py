@@ -49,6 +49,4 @@ class LFWDataLoader(DataLoader):
         image_string = tf.read_file(filename)
         image_decoded = tf.image.decode_jpeg(image_string, channels=channel)
         image_resized = tf.image.resize_images(image_decoded, [width, height])
-        image_normalized = (image_resized / 255. - 0.5) * 2
-        image_normalized = tf.reshape(image_normalized, [width, height, channel])
-        return image_normalized
+        return image_resized

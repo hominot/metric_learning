@@ -1,4 +1,5 @@
 from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.applications.resnet50 import preprocess_input
 
 from util.registry.model import Model
 
@@ -14,3 +15,6 @@ class Resnet50Model(Model):
         channel = conf['image']['channel']
         self.model = ResNet50(
             include_top=False, pooling='max', weights='imagenet', input_shape=(width, height, channel))
+
+    def preprocess_image(self, image):
+        return preprocess_input(image)

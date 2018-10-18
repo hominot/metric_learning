@@ -68,6 +68,4 @@ class Cub200DataLoader(DataLoader):
         image_string = tf.read_file(filename)
         image_decoded = tf.image.decode_jpeg(image_string, channels=channel)
         image_resized = tf.image.resize_image_with_pad(image_decoded, target_height=height, target_width=width)
-        image_normalized = (image_resized / 255. - 0.5) * 2
-        image_normalized = tf.reshape(image_normalized, [width, height, channel])
-        return image_normalized
+        return image_resized

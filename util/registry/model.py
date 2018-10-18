@@ -29,8 +29,13 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
     def __str__(self):
         return self.conf['model']['name'] + '_' + str(self.loss_function)
 
+    def preprocess_image(self, image):
+        return (image / 255. - 0.5) * 2
+
     def call(self, inputs, training=None, mask=None):
-        ret = self.model(inputs, training=training, mask=mask)
+        ret = self.model(self.preprocess_image(inputs),
+                         training=training,
+                         mask=mask)
         if 'dimension' in self.conf['model']:
             ret = self.dense_layer(ret)
         if self.conf['model']['l2_normalize']:

@@ -1,4 +1,5 @@
 from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
+from tensorflow.keras.applications.inception_resnet_v2 import preprocess_input
 
 from util.registry.model import Model
 
@@ -14,3 +15,6 @@ class InceptionModel(Model):
         channel = conf['image']['channel']
         self.model = InceptionResNetV2(
             include_top=False, pooling='max', weights='imagenet', input_shape=(width, height, channel))
+
+    def preprocess_image(self, image):
+        return preprocess_input(image)
