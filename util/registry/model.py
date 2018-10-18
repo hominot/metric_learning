@@ -11,6 +11,8 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
     loss_function = None
     model = None
 
+    variable_names = []
+
     def __init__(self, conf, extra_info):
         super(Model, self).__init__()
         self.conf = conf
@@ -19,9 +21,11 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         self.loss_function = LossFunction.create(conf['loss']['name'], conf, extra_info)
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
+            self.variable_names.append(k)
         if 'dimension' in conf['model']:
-            self.dense_layer = Dense(conf['model']['dimension'],
-                                     name='dimension_reduction')
+            self.embedding = Dense(conf['model']['dimension'],
+                                   name='dimension_reduction')
+            self.variable_names.append('embedding')
 
     def loss(self, images, labels, image_ids):
         embeddings = self.call(images, training=True)
@@ -34,24 +38,19 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         return (image / 255. - 0.5) * 2
 
     def learning_rates(self):
-        all_variables = set(self.variables)
-        if hasattr(self, 'dense_layer'):
-            return {
-                'default': (1.0, set(self.dense_layer.variables)),
-                'slow': (0.01, all_variables - set(self.dense_layer.variables)),
-            }
-        else:
-            return {
-                'default': (1.0, set()),
-                'slow': (0.01, all_variables),
-            }
+        return {
+            k: (
+                self.conf['trainer'].get('lr_{}'.format(k), self.conf['trainer']['learning_rate']),
+                getattr(self, k).variables if hasattr(getattr(self, k), 'variables') else getattr(self, k)
+            ) for k in self.variable_names
+        }
 
     def call(self, inputs, training=None, mask=None):
         ret = self.model(self.preprocess_image(inputs),
                          training=training,
                          mask=mask)
         if 'dimension' in self.conf['model']:
-            ret = self.dense_layer(ret)
+            ret = self.embedding(ret)
         if self.conf['model']['l2_normalize']:
             ret = tf.nn.l2_normalize(ret)
         return ret
