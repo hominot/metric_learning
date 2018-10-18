@@ -151,3 +151,16 @@ def create_test_dataset(conf, data_loader, image_dir):
         test_images_ds = test_images_ds.map(data_loader._center_crop)
     ds = tf.data.Dataset.zip((test_images_ds, test_labels_ds))
     return ds, len(test_labels)
+
+
+def get_training_files_labels(conf):
+    cv_splits = CONFIG['dataset'].getint('cross_validation_splits')
+    cv_split = CONFIG['dataset'].getint('cross_validation_split')
+    train_dir = os.path.join(
+        CONFIG['dataset']['experiment_dir'],
+        conf['dataset']['name'],
+        'train')
+    return load_images_from_directory(
+        train_dir,
+        splits=set(range(cv_splits)) - {cv_split}
+    )

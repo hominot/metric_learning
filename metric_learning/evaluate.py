@@ -8,6 +8,7 @@ import tempfile
 
 from util.config import CONFIG
 from util.dataset import load_images_from_directory
+from util.dataset import create_test_dataset
 
 from util.registry.model import Model
 from util.registry.metric import Metric
@@ -84,26 +85,12 @@ if __name__ == '__main__':
         c = get_checkpoint(temp_dir, args.experiment, args.step)
         checkpoint.restore(c)
 
-        testing_files, testing_labels = load_images_from_directory(
-            os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test'),
-        )
+        test_dir = os.path.join(
+            CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test')
         data_loader = DataLoader.create(conf['dataset']['name'], conf)
-        test_datasets = {}
-        if 'identification' in conf['dataset']['test']:
-            dataset, num_testcases = data_loader.create_identification_test_dataset(
-                testing_files, testing_labels)
-            test_datasets['identification'] = {
-                'dataset': dataset,
-                'num_testcases': num_testcases,
-            }
-        if 'recall' in conf['dataset']['test']:
-            images_ds, labels_ds, num_testcases = data_loader.create_recall_test_dataset(
-                testing_files, testing_labels)
-            test_datasets['recall'] = {
-                'dataset': (images_ds, labels_ds),
-                'num_testcases': num_testcases,
-            }
+        test_dataset, test_num_testcases = create_test_dataset(
+            conf, data_loader, test_dir)
         for metric_conf in METRICS:
             metric = Metric.create(metric_conf['name'], conf)
-            score = metric.compute_metric(model, test_datasets[metric.dataset]['dataset'], test_datasets[metric.dataset]['num_testcases'])
+            score = metric.compute_metric(model, test_dataset, test_num_testcases)
             print(metric_conf['name'], score)
