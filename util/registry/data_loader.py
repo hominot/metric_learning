@@ -55,34 +55,6 @@ class DataLoader(object, metaclass=ClassRegistry):
             dataset = dataset.map(self._center_crop)
         return dataset
 
-    def create_recall_test_dataset(self, image_files, labels):
-        if self.conf['dataset']['test']['recall']['num_testcases'] == 0:
-            test_images = image_files
-            test_labels = labels
-        else:
-            data = list(zip(image_files, labels))
-            random.shuffle(data)
-            data_map = defaultdict(list)
-            for image_file, label in data:
-                data_map[label].append(image_file)
-            test_images = []
-            test_labels = []
-            while len(test_images) < self.conf['dataset']['test']['recall']['num_testcases'] and data_map:
-                label = random.choice(list(data_map.keys()))
-                if len(data_map[label]) < 2:
-                    del data_map[label]
-                    continue
-                test_images.append(data_map[label].pop())
-                test_images.append(data_map[label].pop())
-                test_labels.append(label)
-                test_labels.append(label)
-        test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(self._image_parse_function)
-        test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels, tf.int64))
-
-        if 'random_crop' in self.conf['image']:
-            test_images_ds = test_images_ds.map(self._center_crop)
-        return test_images_ds, test_labels_ds, len(test_labels)
-
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels, range(len(image_files))))
         if 'random_crop' in self.conf['image']:

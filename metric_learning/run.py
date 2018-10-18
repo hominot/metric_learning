@@ -2,46 +2,35 @@ import tensorflow as tf
 
 import argparse
 import copy
-import json
 import math
 import os
 
 from tqdm import tqdm
 from util.registry.data_loader import DataLoader
 from util.dataset import load_images_from_directory
+from util.dataset import create_test_dataset
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.logging import set_tensorboard_writer
 from util.logging import upload_tensorboard_log_to_s3
 from util.logging import create_checkpoint
-from util.logging import upload_string_to_s3
+from util.logging import save_config
 from metric_learning.example_configurations import configs
 from util.config import CONFIG
 
 
-def evaluate(model, test_datasets, validation_datasets):
-    conf = model.conf
+def evaluate(model, test_dataset, num_testcases, desc='test'):
     with tf.contrib.summary.always_record_summaries():
-        for metric_conf in conf['metrics']:
+        for metric_conf in model.conf['metrics']:
             metric = Metric.create(metric_conf['name'], conf)
-            score = metric.compute_metric(model,
-                                          test_datasets[metric.dataset]['dataset'],
-                                          test_datasets[metric.dataset]['num_testcases'])
+            score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():
                     tf.contrib.summary.scalar('test ' + metric, s)
+                    print('{} {}: {}'.format(desc, metric, s))
             else:
-                tf.contrib.summary.scalar('test ' + metric_conf['name'], score)
-        for metric_conf in conf['metrics']:
-            metric = Metric.create(metric_conf['name'], conf)
-            score = metric.compute_metric(model,
-                                          validation_datasets[metric.dataset]['dataset'],
-                                          validation_datasets[metric.dataset]['num_testcases'])
-            if type(score) is dict:
-                for metric, s in score.items():
-                    tf.contrib.summary.scalar('validation ' + metric, s)
-            else:
-                tf.contrib.summary.scalar('validation ' + metric_conf['name'], score)
+                tf.contrib.summary.scalar('{} {}'.format(desc, metric_conf['name']), score)
+                print('{} {}: {}'.format(desc, metric_conf['name'], score))
 
 
 def train(conf):
@@ -50,35 +39,23 @@ def train(conf):
         os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'train'),
         splits=set(range(CONFIG['dataset'].getint('cross_validation_splits'))) - {conf['dataset']['cross_validation_split']},
     )
-    validation_files, validation_labels = load_images_from_directory(
-        os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'train'),
-        splits={conf['dataset']['cross_validation_split']}
-    )
-    testing_files, testing_labels = load_images_from_directory(
-        os.path.join(CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test')
-    )
 
     extra_info = {
         'num_labels': max(training_labels) + 1,
         'num_images': len(training_files),
     }
 
-    test_datasets = {}
-    if 'recall' in conf['dataset']['test']:
-        images_ds, labels_ds, num_testcases = data_loader.create_recall_test_dataset(
-            testing_files, testing_labels)
-        test_datasets['recall'] = {
-            'dataset': (images_ds, labels_ds),
-            'num_testcases': num_testcases,
-        }
-    validation_datasets = {}
-    if 'recall' in conf['dataset']['test']:
-        images_ds, labels_ds, num_testcases = data_loader.create_recall_test_dataset(
-            validation_files, validation_labels)
-        validation_datasets['recall'] = {
-            'dataset': (images_ds, labels_ds),
-            'num_testcases': num_testcases,
-        }
+    test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
+                            conf['dataset']['name'],
+                            'test')
+    validation_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
+                                  conf['dataset']['name'],
+                                  'train',
+                                  str(conf['dataset']['cross_validation_split']))
+    test_dataset, test_num_testcases = create_test_dataset(
+        conf, data_loader, test_dir)
+    validation_dataset, validation_num_testcases = create_test_dataset(
+        conf, data_loader, validation_dir)
 
     step_counter = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
@@ -88,25 +65,16 @@ def train(conf):
                                      model=model,
                                      optimizer_step=tf.train.get_or_create_global_step())
 
-    writer, run_name = set_tensorboard_writer(model, data_loader)
+    writer, run_name = set_tensorboard_writer(conf)
     writer.set_as_default()
 
     device = '/gpu:0' if tf.test.is_gpu_available() else '/cpu:0'
 
-    if CONFIG['tensorboard'].getboolean('s3_upload'):
-        upload_string_to_s3(
-            bucket=CONFIG['tensorboard']['s3_bucket'],
-            body=json.dumps(conf, indent=4),
-            key='{}/experiments/{}/config.json'.format(CONFIG['tensorboard']['s3_key'], run_name)
-        )
-    else:
-        config_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'experiments', run_name)
-        if not tf.gfile.Exists(config_dir):
-            tf.gfile.MakeDirs(config_dir)
-        with open(os.path.join(config_dir, 'config.json'), 'w') as f:
-            json.dump(conf, f, indent=4)
+    save_config(conf, run_name)
 
     train_conf = conf['dataset']['train']
+    evaluate(model, test_dataset, test_num_testcases, 'test')
+    evaluate(model, validation_dataset, validation_num_testcases, 'validate')
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = data_loader.create_grouped_dataset(
             training_files, training_labels,
@@ -115,7 +83,6 @@ def train(conf):
             min_class_size=train_conf['min_class_size'],
         )
         train_ds = train_ds.batch(train_conf['batch_size'], drop_remainder=True)
-        evaluate(model, test_datasets, validation_datasets)
         with tf.device(device):
             batches = tqdm(train_ds,
                            total=math.ceil(num_examples / train_conf['batch_size']),
@@ -135,6 +102,8 @@ def train(conf):
             print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
             if CONFIG['tensorboard'].getboolean('enable_checkpoint'):
                 create_checkpoint(checkpoint, run_name)
+        evaluate(model, test_dataset, test_num_testcases, 'test')
+        evaluate(model, validation_dataset, validation_num_testcases, 'validate')
 
 
 if __name__ == '__main__':

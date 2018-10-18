@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 
 import boto3
+import json
 
 from util.config import CONFIG
 
@@ -9,8 +10,16 @@ from util.config import CONFIG
 s3 = boto3.client('s3')
 
 
-def set_tensorboard_writer(model, data_loader):
-    run_name = '{}_{}'.format(data_loader, model)
+def get_run_name(conf):
+    return '_'.join([
+        conf['dataset']['name'],
+        conf['model']['name'],
+        conf['loss']['name'],
+    ])
+
+
+def set_tensorboard_writer(conf):
+    run_name = get_run_name(conf)
     run_dir = '{}_0001'.format(run_name)
 
     local_tensorboard_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'tensorboard')
@@ -58,6 +67,21 @@ def upload_tensorboard_log_to_s3(run_name):
             os.path.join(run_dir, filename),
             CONFIG['tensorboard']['s3_bucket'],
             '{}/tensorboard/{}/{}'.format(CONFIG['tensorboard']['s3_key'], run_name, filename))
+
+
+def save_config(conf, run_name):
+    if CONFIG['tensorboard'].getboolean('s3_upload'):
+        upload_string_to_s3(
+            bucket=CONFIG['tensorboard']['s3_bucket'],
+            body=json.dumps(conf, indent=4),
+            key='{}/experiments/{}/config.json'.format(CONFIG['tensorboard']['s3_key'], run_name)
+        )
+    else:
+        config_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'experiments', run_name)
+        if not tf.gfile.Exists(config_dir):
+            tf.gfile.MakeDirs(config_dir)
+        with open(os.path.join(config_dir, 'config.json'), 'w') as f:
+            json.dump(conf, f, indent=4)
 
 
 def upload_file_to_s3(file_path, bucket, key):

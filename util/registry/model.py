@@ -20,7 +20,8 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
         if 'dimension' in conf['model']:
-            self.dense_layer = Dense(conf['model']['dimension'])
+            self.dense_layer = Dense(conf['model']['dimension'],
+                                     name='dimension_reduction')
 
     def loss(self, images, labels, image_ids):
         embeddings = self.call(images, training=True)
