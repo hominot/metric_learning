@@ -34,5 +34,5 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         if 'dimension' in self.conf['model']:
             ret = self.dense_layer(ret)
         if self.conf['model']['l2_normalize']:
-            ret = tf.nn.l2_normalize(self.dense_layer(ret))
+            ret = tf.nn.l2_normalize(ret)
         return ret

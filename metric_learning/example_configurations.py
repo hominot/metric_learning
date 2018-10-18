@@ -21,10 +21,10 @@ configs = {
     'cub200': generate_config({
         'image': {},
         'dataset': {'dataset': 'cub200', 'num_groups': 16, 'batch_size': 64, 'group_size': 4},
-        'model': {'name': 'resnet50', 'dimension': 128},
-        'loss': {'name': 'margin', 'parametrization': 'euclidean_distance'},
+        'model': {'name': 'resnet50', 'dimension': 128, 'l2_normalize': True},
+        'loss': {'name': 'contrastive', 'parametrization': 'euclidean_distance', 'alpha': 4.0},
         'metrics': {},
-        'trainer': {},
+        'trainer': {'learning_rate': 0.00001, 'num_epochs': 200},
     }),
     'mnist_simple_dense': generate_config({
         'image': {},
