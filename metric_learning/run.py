@@ -114,7 +114,7 @@ def train(conf):
             num_groups=train_conf['num_groups'],
             min_class_size=train_conf['min_class_size'],
         )
-        train_ds = train_ds.batch(train_conf['batch_size'])
+        train_ds = train_ds.batch(train_conf['batch_size'], drop_remainder=True)
         evaluate(model, test_datasets, validation_datasets)
         with tf.device(device):
             batches = tqdm(train_ds,
