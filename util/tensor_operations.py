@@ -38,3 +38,7 @@ def upper_triangular_part(matrix):
 
 def off_diagonal_part(matrix):
     return tf.boolean_mask(matrix, 1 - tf.eye(int(matrix.shape[0])))
+
+
+def stable_sqrt(tensor):
+    return tf.sqrt(tf.maximum(tensor, 1e-12))

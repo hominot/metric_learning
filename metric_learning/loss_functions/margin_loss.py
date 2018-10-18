@@ -6,6 +6,7 @@ from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import off_diagonal_part
 from util.tensor_operations import repeat_columns
+from util.tensor_operations import stable_sqrt
 
 
 class MarginLoss(LossFunction):
@@ -26,7 +27,7 @@ class MarginLoss(LossFunction):
 
     def loss(self, embeddings, labels, image_ids):
         pairwise_distances_squared = off_diagonal_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
-        pairwise_distances = tf.sqrt(pairwise_distances_squared)
+        pairwise_distances = stable_sqrt(pairwise_distances_squared)
         matching_labels_matrix = tf.cast(
             off_diagonal_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),
             tf.bool)
