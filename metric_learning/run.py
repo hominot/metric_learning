@@ -133,7 +133,8 @@ def train(conf):
                     if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                         upload_tensorboard_log_to_s3(run_name)
             print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
-            create_checkpoint(checkpoint, run_name)
+            if CONFIG['tensorboard'].getboolean('enable_checkpoint'):
+                create_checkpoint(checkpoint, run_name)
 
 
 if __name__ == '__main__':
