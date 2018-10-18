@@ -50,16 +50,18 @@ def train(conf):
         test_dataset, test_num_testcases = create_test_dataset(
             conf, data_loader, test_dir)
 
-    optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
     extra_info = {
         'num_labels': max(training_labels) + 1,
         'num_images': len(training_files),
     }
     model = Model.create(conf['model']['name'], conf, extra_info)
 
-    checkpoint = tf.train.Checkpoint(optimizer=optimizer,
-                                     model=model,
-                                     optimizer_step=tf.train.get_or_create_global_step())
+    optimizers = {
+        k: tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'] * v) for
+        k, (v, _) in model.learning_rates().items()
+    }
+
+    checkpoint = tf.train.Checkpoint(model=model)
 
     writer, run_name = set_tensorboard_writer(conf)
     writer.set_as_default()
@@ -87,8 +89,10 @@ def train(conf):
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 grads = tape.gradient(loss_value, model.variables)
-                optimizer.apply_gradients(
-                    zip(grads, model.variables), global_step=step_counter)
+                for optimizer_key, (_, variables) in model.learning_rates().items():
+                    filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
+                    optimizers[optimizer_key].apply_gradients(filtered_grads)
+                step_counter.assign_add(1)
                 if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                     upload_tensorboard_log_to_s3(run_name)
         print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))

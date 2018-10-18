@@ -7,7 +7,6 @@ import os
 import tempfile
 
 from util.config import CONFIG
-from util.dataset import load_images_from_directory
 from util.dataset import create_test_dataset
 
 from util.registry.model import Model
@@ -78,9 +77,7 @@ if __name__ == '__main__':
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
     model = Model.create(conf['model']['name'], conf)
 
-    checkpoint = tf.train.Checkpoint(optimizer=optimizer,
-                                     model=model,
-                                     optimizer_step=tf.train.get_or_create_global_step())
+    checkpoint = tf.train.Checkpoint(model=model)
     with tempfile.TemporaryDirectory() as temp_dir:
         c = get_checkpoint(temp_dir, args.experiment, args.step)
         checkpoint.restore(c)

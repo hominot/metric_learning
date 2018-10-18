@@ -33,6 +33,19 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
     def preprocess_image(self, image):
         return (image / 255. - 0.5) * 2
 
+    def learning_rates(self):
+        all_variables = set(self.variables)
+        if hasattr(self, 'dense_layer'):
+            return {
+                'default': (1.0, set(self.dense_layer.variables)),
+                'slow': (0.01, all_variables - set(self.dense_layer.variables)),
+            }
+        else:
+            return {
+                'default': (1.0, set()),
+                'slow': (0.01, all_variables),
+            }
+
     def call(self, inputs, training=None, mask=None):
         ret = self.model(self.preprocess_image(inputs),
                          training=training,
