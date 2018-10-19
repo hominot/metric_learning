@@ -7,6 +7,7 @@ from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import pairwise_dot_product
+from util.tensor_operations import stable_sqrt
 
 
 class LatentPositionLoss(LossFunction):
@@ -36,7 +37,7 @@ class LatentPositionLoss(LossFunction):
             pairwise_distances = tf.concat(
                 [pairwise_euclidean_distance_squared(first, second) for first, second in npairs],
                 axis=0)
-            eta = loss_conf['alpha'] * 100. - pairwise_distances
+            eta = loss_conf['alpha'] - pairwise_distances
         elif loss_conf['parametrization'] == 'dot_product':
             dot_products = tf.concat(
                 [pairwise_dot_product(first, second) for first, second in npairs],
