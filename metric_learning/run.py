@@ -87,6 +87,7 @@ def train(conf):
                     10, global_step=step_counter):
                 with tf.GradientTape() as tape:
                     loss_value = model.loss(images, labels, image_ids)
+                    batches.set_postfix({'loss': float(loss_value)})
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 grads = tape.gradient(loss_value, model.variables)
