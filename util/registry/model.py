@@ -11,7 +11,7 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
     loss_function = None
     model = None
 
-    variable_names = []
+    variable_names = ['model']
 
     def __init__(self, conf, extra_info):
         super(Model, self).__init__()
