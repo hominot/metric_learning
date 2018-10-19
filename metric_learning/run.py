@@ -4,6 +4,7 @@ import argparse
 import copy
 import math
 import os
+import json
 
 from tqdm import tqdm
 from util.registry.data_loader import DataLoader
@@ -50,6 +51,10 @@ def train(conf):
         test_dataset, test_num_testcases = create_test_dataset(
             conf, data_loader, test_dir)
 
+    writer, run_name = set_tensorboard_writer(conf)
+    writer.set_as_default()
+    save_config(conf, run_name)
+
     extra_info = {
         'num_labels': max(training_labels) + 1,
         'num_images': len(training_files),
@@ -62,10 +67,6 @@ def train(conf):
     }
 
     checkpoint = tf.train.Checkpoint(model=model)
-
-    writer, run_name = set_tensorboard_writer(conf)
-    writer.set_as_default()
-    save_config(conf, run_name)
 
     train_conf = conf['dataset']['train']
     evaluate(model, test_dataset, test_num_testcases)
