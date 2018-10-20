@@ -4,7 +4,6 @@ import argparse
 import copy
 import math
 import os
-import json
 
 from tqdm import tqdm
 from util.registry.data_loader import DataLoader

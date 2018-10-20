@@ -38,12 +38,24 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         return (image / 255. - 0.5) * 2
 
     def learning_rates(self):
-        return {
-            k: (
-                self.conf['trainer'].get('lr_{}'.format(k), self.conf['trainer']['learning_rate']),
-                getattr(self, k).variables if hasattr(getattr(self, k), 'variables') else getattr(self, k)
-            ) for k in self.variable_names
-        }
+        ret = {}
+        for variable_name in self.variable_names:
+            lr = self.conf['trainer'].get('lr_{}'.format(variable_name),
+                                          self.conf['trainer']['learning_rate'])
+            variable = getattr(self, variable_name)
+            if self.conf['trainer'].get('lr_decay_steps'):
+                lr = tf.train.exponential_decay(
+                    lr,
+                    global_step=tf.train.get_or_create_global_step(),
+                    decay_steps=self.conf['trainer']['lr_decay_steps'],
+                    decay_rate=self.conf['trainer']['lr_decay_rate'],
+                    staircase=True
+                )
+            if hasattr(variable, 'variables'):
+                ret[variable_name] = (lr, variable.variables)
+            else:
+                ret[variable_name] = (lr, [variable])
+        return ret
 
     def call(self, inputs, training=None, mask=None):
         ret = self.model(self.preprocess_image(inputs),

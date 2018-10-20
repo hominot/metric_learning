@@ -32,6 +32,6 @@ configs = {
         'model': {'name': 'simple_dense', 'dimension': 2},
         'loss': {'name': 'contrastive'},
         'metrics': {'recall_k': [1, 2]},
-        'trainer': {},
+        'trainer': {'lr_decay_steps': 10},
     }),
 }
