@@ -7,7 +7,6 @@ from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import pairwise_dot_product
-from util.tensor_operations import stable_sqrt
 
 
 class LatentPositionLoss(LossFunction):
@@ -32,7 +31,7 @@ class LatentPositionLoss(LossFunction):
             return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
 
         # npair compatible loss for fair comparison with n-tuplet loss
-        npairs = group_npairs(embeddings, labels, loss_conf['npair']['n'])
+        npairs = group_npairs(embeddings, labels, self.conf['dataset']['train']['num_groups'])
         if loss_conf['parametrization'] == 'euclidean_distance':
             pairwise_distances = tf.concat(
                 [pairwise_euclidean_distance_squared(first, second) for first, second in npairs],
@@ -45,7 +44,7 @@ class LatentPositionLoss(LossFunction):
             eta = loss_conf['alpha'] + dot_products
         else:
             raise Exception
-        y = 1. - tf.eye(loss_conf['npair']['n']) * 2.
+        y = 1. - tf.eye(self.conf['dataset']['train']['num_groups']) * 2.
         signed_eta = tf.reshape(tf.multiply(eta, tf.concat([y] * len(npairs), axis=0)), [-1])
         padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])
 

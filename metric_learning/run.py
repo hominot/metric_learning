@@ -17,6 +17,7 @@ from util.logging import create_checkpoint
 from util.logging import save_config
 from metric_learning.example_configurations import configs
 from util.config import CONFIG
+from util.config import generate_configs_from_experiment
 
 
 def evaluate(model, test_dataset, num_testcases):
@@ -68,7 +69,7 @@ def train(conf):
     checkpoint = tf.train.Checkpoint(model=model)
 
     train_conf = conf['dataset']['train']
-    evaluate(model, test_dataset, test_num_testcases)
+    #evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = data_loader.create_grouped_dataset(
@@ -107,13 +108,25 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train using a specified config')
     parser.add_argument('--config', help='config to run')
+    parser.add_argument('--experiment', help='experiment to run')
+    parser.add_argument('--experiment_index',
+                        help='index of the experiment to run',
+                        type=int)
     parser.add_argument('--split',
                         help='cross validation split number to use as validation data',
                         default=None,
                         type=int)
     args = parser.parse_args()
-    conf = copy.deepcopy(configs[args.config])
-    if args.split is not None:
-        conf['dataset']['cross_validation_split'] = args.split
 
-    train(conf)
+    if args.experiment:
+        experiments = generate_configs_from_experiment(args.experiment)
+        conf = copy.deepcopy(experiments[args.experiment_index])
+        if args.split is not None:
+            conf['dataset']['cross_validation_split'] = args.split
+        print(conf)
+        train(conf)
+    else:
+        conf = copy.deepcopy(configs[args.config])
+        if args.split is not None:
+            conf['dataset']['cross_validation_split'] = args.split
+        train(conf)

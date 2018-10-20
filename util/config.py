@@ -34,5 +34,7 @@ def generate_configs_from_experiment(experiment):
         os.path.dirname(__file__), experiment
     )) as f:
         parameters = json.load(f)
+    ret = []
     for value in product(*parameters.values()):
-        yield dict(zip(parameters.keys(), value))
+        ret.append(generate_config(dict(zip(parameters.keys(), value))))
+    return ret

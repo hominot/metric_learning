@@ -1,0 +1,19 @@
+{
+  "image": [{}],
+  "dataset": [
+    {"dataset": "cub200", "group_size": 4, "num_groups": 16, "batch_size": 64}
+  ],
+  "model": [{"name": "resnet50"}],
+  "loss": [
+    {"name": "latent_position", "alpha": 2.0},
+    {"name": "latent_position", "alpha": 4.0},
+    {"name": "latent_position", "alpha": 8.0},
+    {"name": "latent_position", "alpha": 16.0}
+  ],
+  "metrics": [{}],
+  "trainer": [
+    {"learning_rate": 0.0001, "lr_dimemsion": 0.0001, "lr_decay_steps": 300, "num_epochs": 40},
+    {"learning_rate": 0.0003, "lr_dimemsion": 0.0003, "lr_decay_steps": 300, "num_epochs": 40},
+    {"learning_rate": 0.00001, "lr_dimemsion": 0.00001, "lr_decay_steps": 300, "num_epochs": 40}
+  ]
+}
