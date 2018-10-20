@@ -16,14 +16,10 @@ class MarginLoss(LossFunction):
         super(MarginLoss, self).__init__(conf, extra_info)
 
         loss_conf = conf['loss']
-        beta = loss_conf['beta']
         if 'num_labels' in extra_info and 'num_images' in extra_info:
-            beta_class = tf.ones(extra_info['num_labels']) * loss_conf['beta_class']
-            beta_image = tf.ones(extra_info['num_images']) * loss_conf['beta_image']
+            beta_class = tf.ones(extra_info['num_labels']) * loss_conf['beta']
 
-            self.extra_variables['beta'] = tf.keras.backend.variable(value=beta, dtype='float32')
-            self.extra_variables['beta_class'] = tf.keras.backend.variable(value=beta_class, dtype='float32')
-            self.extra_variables['beta_image'] = tf.keras.backend.variable(value=beta_image, dtype='float32')
+            self.extra_variables['beta'] = tf.keras.backend.variable(value=beta_class, dtype='float32')
 
     def loss(self, embeddings, labels, image_ids):
         pairwise_distances_squared = off_diagonal_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
@@ -35,20 +31,21 @@ class MarginLoss(LossFunction):
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
 
+        label_indices = off_diagonal_part(tf.cast(repeat_columns(labels), tf.int64))
+        betas = tf.gather(self.extra_variables['beta'], label_indices)
+
+        positive_betas = tf.boolean_mask(betas, matching_labels_matrix)
+        negative_betas = tf.boolean_mask(betas, ~matching_labels_matrix)
         loss_value = sum(tf.maximum(
-            0, self.conf['loss']['alpha'] + positive_distances - self.conf['loss']['beta'])) + sum(
+            0, self.conf['loss']['alpha'] + positive_distances - positive_betas)) + sum(
             tf.maximum(
-                0, self.conf['loss']['alpha'] - negative_distances + self.conf['loss']['beta']
+                0, self.conf['loss']['alpha'] - negative_distances + negative_betas
             )
         )
 
-        label_regularizers = off_diagonal_part(tf.cast(repeat_columns(labels), tf.int64))
-        image_regularizers = off_diagonal_part(tf.cast(repeat_columns(image_ids), tf.int64))
         nu = self.conf['loss']['nu']
 
-        regularizers = self.conf['loss']['beta'] + tf.gather(self.extra_variables['beta_class'], label_regularizers) + tf.gather(self.extra_variables['beta_image'], image_regularizers)
-
-        return (loss_value + nu * sum(regularizers)) / int(pairwise_distances.shape[0])
+        return (loss_value + nu * sum(betas)) / int(pairwise_distances.shape[0])
 
     def __str__(self):
         return self.name
