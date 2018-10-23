@@ -3,6 +3,7 @@ import tensorflow as tf
 from util.registry.class_registry import ClassRegistry
 from util.registry.loss_function import LossFunction
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import BatchNormalization
 
 
 class Model(tf.keras.models.Model, metaclass=ClassRegistry):
@@ -26,6 +27,7 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
             self.embedding = Dense(conf['model']['dimension'],
                                    name='dimension_reduction')
             self.variable_names.append('embedding')
+        self.bn = BatchNormalization()
 
     def loss(self, images, labels, image_ids):
         embeddings = self.call(images, training=True)
@@ -65,4 +67,5 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
             ret = self.embedding(ret)
         if self.conf['model']['l2_normalize']:
             ret = tf.nn.l2_normalize(ret)
+        ret = self.bn(ret)
         return ret
