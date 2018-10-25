@@ -123,7 +123,6 @@ if __name__ == '__main__':
         conf = copy.deepcopy(experiments[args.experiment_index])
         if args.split is not None:
             conf['dataset']['cross_validation_split'] = args.split
-        print(conf)
         train(conf)
     else:
         conf = copy.deepcopy(configs[args.config])

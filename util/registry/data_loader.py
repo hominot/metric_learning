@@ -57,8 +57,6 @@ class DataLoader(object, metaclass=ClassRegistry):
 
     def create_grouped_dataset(self, image_files, labels, group_size=2, num_groups=2, min_class_size=2):
         data = list(zip(image_files, labels, range(len(image_files))))
-        if 'random_crop' in self.conf['image']:
-            data = data * self.conf['image']['random_crop']['n']
         random.shuffle(data)
 
         data_map = defaultdict(list)
