@@ -61,7 +61,7 @@ class Cub200DataLoader(DataLoader):
                         os.path.join(root, filename),
                         os.path.join(test_data_directory, class_name, filename))
 
-    def _image_parse_function(self, filename):
+    def image_parse_function(self, filename):
         width = self.conf['image']['width']
         height = self.conf['image']['height']
         channel = self.conf['image']['channel']

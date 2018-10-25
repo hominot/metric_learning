@@ -105,7 +105,7 @@ class MNISTDataLoader(DataLoader):
 
         prepare_image_files('train-images-idx3-ubyte', 'train-labels-idx1-ubyte')
 
-    def _image_parse_function(self, filename):
+    def image_parse_function(self, filename):
         width = self.conf['image']['width']
         height = self.conf['image']['height']
         channel = self.conf['image']['channel']

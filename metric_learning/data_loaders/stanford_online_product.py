@@ -47,7 +47,7 @@ class StanfordOnlineProductDataLoader(DataLoader):
                     tf.gfile.MakeDirs(os.path.join(dest_directory, object_id))
                 copyfile(os.path.join(extracted_path, directory, filename), os.path.join(dest_directory, object_id, filename))
 
-    def _image_parse_function(self, filename):
+    def image_parse_function(self, filename):
         width = self.conf['image']['width']
         height = self.conf['image']['height']
         channel = self.conf['image']['channel']

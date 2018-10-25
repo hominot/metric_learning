@@ -1,10 +1,10 @@
 {
     'name': '{{ dataset }}',
-    'train': {
+    'dataset': {
+        'name': 'grouped',
         'batch_size': {{ batch_size | default(32) }},
         'group_size': {{ group_size | default(2) }},
         'num_groups': {{ num_groups | default(16) }},
-        'min_class_size': 2,
     },
     'test': {
         'recall': {

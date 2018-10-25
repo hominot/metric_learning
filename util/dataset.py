@@ -144,7 +144,7 @@ def create_test_dataset(conf, data_loader, image_dir):
             test_images.append(data_map[label].pop())
             test_labels.append(label)
             test_labels.append(label)
-    test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(data_loader._image_parse_function)
+    test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(data_loader.image_parse_function)
     test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels, tf.int64))
 
     if 'random_crop' in conf['image']:

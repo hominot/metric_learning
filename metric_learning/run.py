@@ -6,9 +6,10 @@ import math
 import os
 
 from tqdm import tqdm
-from util.registry.data_loader import DataLoader
 from util.dataset import create_test_dataset
 from util.dataset import get_training_files_labels
+from util.registry.data_loader import DataLoader
+from util.registry.dataset import Dataset
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.logging import set_tensorboard_writer
@@ -68,19 +69,16 @@ def train(conf):
 
     checkpoint = tf.train.Checkpoint(model=model)
 
-    train_conf = conf['dataset']['train']
-    #evaluate(model, test_dataset, test_num_testcases)
+    dataset_conf = conf['dataset']['dataset']
+    evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
+
+    dataset = Dataset.create('grouped', conf, {'data_loader': data_loader})
     for epoch in range(conf['trainer']['num_epochs']):
-        train_ds, num_examples = data_loader.create_grouped_dataset(
-            training_files, training_labels,
-            group_size=train_conf['group_size'],
-            num_groups=train_conf['num_groups'],
-            min_class_size=train_conf['min_class_size'],
-        )
-        train_ds = train_ds.batch(train_conf['batch_size'], drop_remainder=True)
+        train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
+        train_ds = train_ds.batch(dataset_conf['batch_size'], drop_remainder=True)
         batches = tqdm(train_ds,
-                       total=math.ceil(num_examples / train_conf['batch_size']),
+                       total=math.ceil(num_examples / dataset_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1))
         for (batch, (images, labels, image_ids)) in enumerate(batches):
             with tf.contrib.summary.record_summaries_every_n_global_steps(

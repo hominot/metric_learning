@@ -42,7 +42,7 @@ class LFWDataLoader(DataLoader):
                 shutil.move(os.path.join(root, dirname), os.path.join(extract_path, dirname))
         os.rmdir(os.path.join(extract_path, 'CASIA-WebFace'))
 
-    def _image_parse_function(self, filename):
+    def image_parse_function(self, filename):
         width = self.conf['image']['width']
         height = self.conf['image']['height']
         channel = self.conf['image']['channel']
