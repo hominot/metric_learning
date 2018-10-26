@@ -10,7 +10,7 @@ class Dataset(object, metaclass=ClassRegistry):
         self.extra_info = extra_info
         self.data_loader = extra_info['data_loader']
 
-    def create_dataset(self):
+    def create_dataset(self, image_files, labels):
         raise NotImplementedError
 
     def __str__(self):

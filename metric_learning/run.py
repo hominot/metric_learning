@@ -70,10 +70,10 @@ def train(conf):
     checkpoint = tf.train.Checkpoint(model=model)
 
     dataset_conf = conf['dataset']['dataset']
-    evaluate(model, test_dataset, test_num_testcases)
+    #evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
 
-    dataset = Dataset.create('grouped', conf, {'data_loader': data_loader})
+    dataset = Dataset.create(conf['dataset']['dataset']['name'], conf, {'data_loader': data_loader})
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
         train_ds = train_ds.batch(dataset_conf['batch_size'], drop_remainder=True)
