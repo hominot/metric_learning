@@ -35,6 +35,20 @@ def evaluate(model, test_dataset, num_testcases):
                 print('{}: {}'.format(metric_conf['name'], score))
 
 
+def compute_all_embeddings(model, conf, training_files):
+    data_loader = DataLoader.create(conf['dataset']['name'], conf)
+    ds = Dataset.create('vanilla', conf, {'data_loader': data_loader})
+    train_ds, num_examples = ds.create_dataset(training_files, [0] * len(training_files))
+    train_ds = train_ds.batch(48)
+    batches = tqdm(train_ds,
+                   total=math.ceil(num_examples / 48),
+                   desc='drift')
+    embeddings = []
+    for (batch, (images, labels, image_ids)) in enumerate(batches):
+        embeddings.append(model(images, training=False))
+    return embeddings
+
+
 def train(conf):
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     training_files, training_labels = get_training_files_labels(conf)
@@ -83,7 +97,7 @@ def train(conf):
         for (batch, (images, labels, image_ids)) in enumerate(batches):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
-                embeddings_before = model(images, training=False)
+                embeddings_before = compute_all_embeddings(model, conf, training_files)
                 with tf.GradientTape() as tape:
                     loss_value = model.loss(images, labels, image_ids)
                     batches.set_postfix({'loss': float(loss_value)})
@@ -93,10 +107,11 @@ def train(conf):
                 for optimizer_key, (_, variables) in model.learning_rates().items():
                     filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
                     optimizers[optimizer_key].apply_gradients(filtered_grads)
-                embeddings_after = model(images, training=False)
+                embeddings_after = compute_all_embeddings(model, conf, training_files)
                 tf.contrib.summary.scalar(
                     'avg_drift',
-                    tf.reduce_mean(tf.norm(embeddings_before - embeddings_after, axis=1)))
+                    sum([tf.reduce_sum(tf.norm([before - after], axis=1)) for before, after in zip(embeddings_before, embeddings_after)]) / len(training_files)
+                )
                 step_counter.assign_add(1)
                 if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                     upload_tensorboard_log_to_s3(run_name)
