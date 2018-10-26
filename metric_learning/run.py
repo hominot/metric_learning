@@ -63,7 +63,7 @@ def train(conf):
     model = Model.create(conf['model']['name'], conf, extra_info)
 
     optimizers = {
-        k: tf.train.AdamOptimizer(learning_rate=v) for
+        k: tf.train.GradientDescentOptimizer(learning_rate=v) for
         k, (v, _) in model.learning_rates().items()
     }
 
@@ -83,6 +83,7 @@ def train(conf):
         for (batch, (images, labels, image_ids)) in enumerate(batches):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
+                embeddings_before = model(images, training=False)
                 with tf.GradientTape() as tape:
                     loss_value = model.loss(images, labels, image_ids)
                     batches.set_postfix({'loss': float(loss_value)})
@@ -92,6 +93,10 @@ def train(conf):
                 for optimizer_key, (_, variables) in model.learning_rates().items():
                     filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
                     optimizers[optimizer_key].apply_gradients(filtered_grads)
+                embeddings_after = model(images, training=False)
+                tf.contrib.summary.scalar(
+                    'avg_drift',
+                    tf.reduce_mean(tf.norm(embeddings_before - embeddings_after, axis=1)))
                 step_counter.assign_add(1)
                 if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                     upload_tensorboard_log_to_s3(run_name)
