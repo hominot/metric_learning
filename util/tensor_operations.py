@@ -7,6 +7,10 @@ def pairwise_euclidean_distance_squared(first, second):
         axis=2)
 
 
+def pairwise_euclidean_distance(first, second):
+    return stable_sqrt(pairwise_euclidean_distance_squared(first, second))
+
+
 def pairwise_dot_product(first, second):
     return tf.reduce_sum(
         tf.multiply(second[None], first[:, None]),

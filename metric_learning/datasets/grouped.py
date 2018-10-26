@@ -1,6 +1,12 @@
 from util.registry.dataset import Dataset
 
 from collections import defaultdict
+from metric_learning.constants.distance_function import DistanceFunction
+from util.tensor_operations import upper_triangular_part
+from util.tensor_operations import pairwise_euclidean_distance_squared
+from util.tensor_operations import pairwise_euclidean_distance
+from util.tensor_operations import pairwise_dot_product
+from util.tensor_operations import pairwise_matching_matrix
 
 import tensorflow as tf
 import random
@@ -43,3 +49,23 @@ class GroupedDataset(Dataset):
 
         return tf.data.Dataset.zip((images_ds, labels_ds, image_ids_ds)), len(image_files_grouped)
 
+    def get_pairwise_distances(self, model, data_row, distance_function):
+        images, labels, image_ids = data_row
+        embeddings = model(images, training=True)
+        if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
+            pairwise_distances = upper_triangular_part(pairwise_euclidean_distance(embeddings, embeddings))
+        elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
+            pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
+        elif distance_function == DistanceFunction.DOT_PRODUCT:
+            pairwise_distances = upper_triangular_part(-pairwise_dot_product(embeddings, embeddings))
+        else:
+            raise Exception('Unknown distance function: {}'.format(distance_function))
+
+        matching_labels_matrix = tf.cast(
+            upper_triangular_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),
+            tf.bool)
+
+        return pairwise_distances, matching_labels_matrix
+
+    def get_npair_distances(self, model, data_row, distance_function):
+        images, labels, image_ids = data_row
