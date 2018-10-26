@@ -5,6 +5,7 @@ import copy
 import math
 import os
 
+from itertools import zip_longest
 from tqdm import tqdm
 from util.dataset import create_test_dataset
 from util.dataset import get_training_files_labels
@@ -19,6 +20,11 @@ from util.logging import save_config
 from metric_learning.example_configurations import configs
 from util.config import CONFIG
 from util.config import generate_configs_from_experiment
+
+
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
 
 
 def evaluate(model, test_dataset, num_testcases):
@@ -70,7 +76,7 @@ def train(conf):
     checkpoint = tf.train.Checkpoint(model=model)
 
     dataset_conf = conf['dataset']['dataset']
-    evaluate(model, test_dataset, test_num_testcases)
+    #evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
 
     dataset = Dataset.create('grouped', conf, {'data_loader': data_loader})
@@ -83,12 +89,24 @@ def train(conf):
         for (batch, (images, labels, image_ids)) in enumerate(batches):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
-                with tf.GradientTape() as tape:
+                with tf.GradientTape(persistent=True) as tape:
                     loss_value = model.loss(images, labels, image_ids)
+                    embeddings = model(images, training=True)
+                    components = tf.split(tf.reshape(embeddings, (-1, )), embeddings.shape[0] * embeddings.shape[1])
                     batches.set_postfix({'loss': float(loss_value)})
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 grads = tape.gradient(loss_value, model.variables)
+                for component_group in grouper(components, int(embeddings.shape[1])):
+                    drifts = []
+                    for component in component_group:
+                        component_grads = tape.gradient(component, model.variables)
+                        component_drift = 0.0
+                        for a, b in zip(component_grads, grads):
+                            component_drift += tf.reduce_sum(tf.reshape(tf.multiply(a, b), [-1]))
+                        drifts.append(component_drift)
+                    print(tf.norm(drifts))
+                del tape
                 for optimizer_key, (_, variables) in model.learning_rates().items():
                     filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
                     optimizers[optimizer_key].apply_gradients(filtered_grads)
