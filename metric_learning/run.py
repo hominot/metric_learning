@@ -87,6 +87,8 @@ def train(conf):
     #evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
 
+    embeddings = compute_all_embeddings(model, conf, training_files)
+    total_drift = 0.0
     dataset = Dataset.create(conf['dataset']['dataset']['name'], conf, {'data_loader': data_loader})
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
@@ -97,7 +99,6 @@ def train(conf):
         for (batch, (images, labels, image_ids)) in enumerate(batches):
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
-                embeddings_before = compute_all_embeddings(model, conf, training_files)
                 with tf.GradientTape() as tape:
                     loss_value = model.loss(images, labels, image_ids)
                     batches.set_postfix({'loss': float(loss_value)})
@@ -107,14 +108,18 @@ def train(conf):
                 for optimizer_key, (_, variables) in model.learning_rates().items():
                     filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
                     optimizers[optimizer_key].apply_gradients(filtered_grads)
-                embeddings_after = compute_all_embeddings(model, conf, training_files)
-                tf.contrib.summary.scalar(
-                    'avg_drift',
-                    sum([tf.reduce_sum(tf.norm([before - after], axis=1)) for before, after in zip(embeddings_before, embeddings_after)]) / len(training_files)
-                )
                 step_counter.assign_add(1)
                 if CONFIG['tensorboard'].getboolean('s3_upload') and int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                     upload_tensorboard_log_to_s3(run_name)
+        embeddings_after = compute_all_embeddings(model, conf, training_files)
+        embeddings = embeddings_after
+        avg_drift = sum([
+            tf.reduce_sum(tf.norm(before - after, axis=1))
+            for before, after in zip(embeddings, embeddings_after)
+        ]) / len(training_files)
+        total_drift += avg_drift
+        tf.contrib.summary.scalar('avg_drift', avg_drift)
+        tf.contrib.summary.scalar('total_drift', total_drift)
         print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
         if CONFIG['tensorboard'].getboolean('enable_checkpoint'):
             create_checkpoint(checkpoint, run_name)
