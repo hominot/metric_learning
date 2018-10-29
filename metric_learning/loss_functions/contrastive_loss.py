@@ -1,21 +1,17 @@
 import tensorflow as tf
 
+from metric_learning.constants.distance_function import DistanceFunction
 from util.registry.loss_function import LossFunction
-from util.tensor_operations import pairwise_euclidean_distance_squared
-from util.tensor_operations import pairwise_matching_matrix
-from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import stable_sqrt
 
 
 class ContrastiveLossFunction(LossFunction):
     name = 'contrastive'
 
-    def loss(self, embeddings, labels, image_ids, *args, **kwargs):
+    def loss(self, batch, model, dataset):
         alpha = self.conf['loss']['alpha']
-        pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
-        matching_labels_matrix = tf.cast(
-            upper_triangular_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),
-            tf.bool)
+        pairwise_distances, matching_labels_matrix = dataset.get_pairwise_distances(
+            batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
         loss_value = (

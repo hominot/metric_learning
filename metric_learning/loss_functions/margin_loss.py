@@ -21,7 +21,7 @@ class MarginLoss(LossFunction):
 
             self.extra_variables['beta'] = tf.keras.backend.variable(value=beta_class, dtype='float32')
 
-    def loss(self, embeddings, labels, image_ids):
+    def loss(self, embeddings, labels):
         pairwise_distances_squared = off_diagonal_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
         pairwise_distances = stable_sqrt(pairwise_distances_squared)
         matching_labels_matrix = tf.cast(

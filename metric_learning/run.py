@@ -71,17 +71,18 @@ def train(conf):
     writer.set_as_default()
     save_config(conf, run_name)
 
+    dataset = Dataset.create(
+        conf['dataset']['dataset']['name'], conf, {'data_loader': data_loader})
+
     extra_info = {
         'num_labels': max(training_labels) + 1,
         'num_images': len(training_files),
     }
     model = Model.create(conf['model']['name'], conf, extra_info)
-
     optimizers = {
         k: tf.train.GradientDescentOptimizer(learning_rate=v) for
         k, (v, _) in model.learning_rates().items()
     }
-
     checkpoint = tf.train.Checkpoint(model=model)
 
     dataset_conf = conf['dataset']['dataset']
@@ -93,18 +94,17 @@ def train(conf):
     if CONFIG['train'].getboolean('compute_drift'):
         embeddings = compute_all_embeddings(model, conf, training_files)
     total_drift = 0.0
-    dataset = Dataset.create(conf['dataset']['dataset']['name'], conf, {'data_loader': data_loader})
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
         train_ds = train_ds.batch(dataset_conf['batch_size'], drop_remainder=True)
         batches = tqdm(train_ds,
                        total=math.ceil(num_examples / dataset_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1))
-        for (batch, (images, labels, image_ids)) in enumerate(batches):
+        for batch in batches:
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     10, global_step=step_counter):
                 with tf.GradientTape() as tape:
-                    loss_value = model.loss(images, labels, image_ids)
+                    loss_value = model.loss(batch, model, dataset)
                     batches.set_postfix({'loss': float(loss_value)})
                     tf.contrib.summary.scalar('loss', loss_value)
 

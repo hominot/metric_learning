@@ -31,7 +31,7 @@ class NPairLossFunction(LossFunction):
             if conf['loss']['parametrization'] == 'euclidean_distance' \
             else compute_dot_product_exponents
 
-    def loss(self, embeddings, labels, image_ids):
+    def loss(self, embeddings, labels):
         sampled_data = group_npairs(embeddings, labels, self.conf['loss']['n'])
         losses = []
         for first_images, second_images in sampled_data:
