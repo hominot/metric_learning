@@ -15,7 +15,7 @@ import random
 class GroupedDataset(Dataset):
     name = 'grouped'
 
-    def create_dataset(self, image_files, labels):
+    def create_dataset(self, image_files, labels, testing=False):
         data = list(zip(image_files, labels, range(len(image_files))))
         random.shuffle(data)
 

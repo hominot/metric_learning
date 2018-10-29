@@ -124,33 +124,15 @@ def group_npairs(images, labels, n):
 
 def create_test_dataset(conf, data_loader, image_dir):
     testing_files, testing_labels = load_images_from_directory(image_dir)
-    if conf['dataset']['test']['recall']['num_testcases'] == 0:
-        test_images = testing_files
-        test_labels = testing_labels
-    else:
-        data = list(zip(testing_files, testing_labels))
-        random.shuffle(data)
-        data_map = defaultdict(list)
-        for image_file, label in data:
-            data_map[label].append(image_file)
-        test_images = []
-        test_labels = []
-        while len(test_images) < conf['dataset']['test']['recall']['num_testcases'] and data_map:
-            label = random.choice(list(data_map.keys()))
-            if len(data_map[label]) < 2:
-                del data_map[label]
-                continue
-            test_images.append(data_map[label].pop())
-            test_images.append(data_map[label].pop())
-            test_labels.append(label)
-            test_labels.append(label)
-    test_images_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_images)).map(data_loader.image_parse_function)
-    test_labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(test_labels, tf.int64))
+    test_images_ds = tf.data.Dataset.from_tensor_slices(
+        tf.constant(testing_files)).map(data_loader.image_parse_function)
+    test_labels_ds = tf.data.Dataset.from_tensor_slices(
+        tf.constant(testing_labels, tf.int64))
 
     if 'random_crop' in conf['image']:
-        test_images_ds = test_images_ds.map(data_loader._center_crop)
+        test_images_ds = test_images_ds.map(data_loader.center_crop)
     ds = tf.data.Dataset.zip((test_images_ds, test_labels_ds))
-    return ds, len(test_labels)
+    return ds, len(testing_labels)
 
 
 def get_training_files_labels(conf):
