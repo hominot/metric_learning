@@ -1,12 +1,12 @@
 import tensorflow as tf
 
+from metric_learning.constants.distance_function import DistanceFunction
 from util.registry.loss_function import LossFunction
 
-from util.tensor_operations import pairwise_euclidean_distance_squared
-from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import off_diagonal_part
 from util.tensor_operations import repeat_columns
-from util.tensor_operations import stable_sqrt
+
+tfe = tf.contrib.eager
 
 
 class MarginLoss(LossFunction):
@@ -19,14 +19,15 @@ class MarginLoss(LossFunction):
         if 'num_labels' in extra_info and 'num_images' in extra_info:
             beta_class = tf.ones(extra_info['num_labels']) * loss_conf['beta']
 
-            self.extra_variables['beta'] = tf.keras.backend.variable(value=beta_class, dtype='float32')
+            self.extra_variables['beta'] = tfe.Variable(beta_class)
 
-    def loss(self, embeddings, labels, image_ids):
-        pairwise_distances_squared = off_diagonal_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
-        pairwise_distances = stable_sqrt(pairwise_distances_squared)
-        matching_labels_matrix = tf.cast(
-            off_diagonal_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),
-            tf.bool)
+    def loss(self, batch, model, dataset):
+        images, labels = batch
+        pairwise_distances, matching_labels_matrix = dataset.get_pairwise_distances(
+            batch, model, DistanceFunction.EUCLIDEAN_DISTANCE
+        )
+        pairwise_distances = off_diagonal_part(pairwise_distances)
+        matching_labels_matrix = off_diagonal_part(matching_labels_matrix)
 
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
@@ -46,6 +47,3 @@ class MarginLoss(LossFunction):
         nu = self.conf['loss']['nu']
 
         return (loss_value + nu * sum(betas)) / int(pairwise_distances.shape[0])
-
-    def __str__(self):
-        return self.name

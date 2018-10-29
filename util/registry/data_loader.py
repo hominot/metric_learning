@@ -1,8 +1,5 @@
 from util.registry.class_registry import ClassRegistry
-from util.dataset import load_images_from_directory
-from util.config import CONFIG
 
-import os
 import tensorflow as tf
 
 

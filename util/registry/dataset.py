@@ -13,5 +13,14 @@ class Dataset(object, metaclass=ClassRegistry):
     def create_dataset(self, image_files, labels, testing=False):
         raise NotImplementedError
 
+    def get_pairwise_distances(self, batch, model, distance_function):
+        raise NotImplementedError
+
+    def get_npair_distances(self, batch, model, distance_function):
+        raise NotImplementedError
+
+    def get_embeddings(self, batch, model, distance_function):
+        raise NotImplementedError
+
     def __str__(self):
-        return self.conf['name']
+        return self.conf['dataset']['dataset']['name']

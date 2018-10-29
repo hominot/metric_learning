@@ -30,7 +30,7 @@ configs = {
         'image': {},
         'dataset': {'dataset': 'mnist', 'num_groups': 2, 'group_size': 2, 'batch_size': 16},
         'model': {'name': 'simple_dense', 'dimension': 2},
-        'loss': {'name': 'latent_position', 'parametrization': 'euclidean_distance', 'alpha': 4, 'npair': True},
+        'loss': {'name': 'npair', 'parametrization': 'dot_product', 'alpha': 4, 'npair': True},
         'metrics': {'recall_k': [1, 2]},
         'trainer': {'lr_decay_steps': 10},
     }),

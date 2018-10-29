@@ -27,9 +27,8 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
                                    name='dimension_reduction')
             self.variable_names.append('embedding')
 
-    def loss(self, images, labels, image_ids):
-        embeddings = self.call(images, training=True)
-        return self.loss_function.loss(embeddings, labels, image_ids)
+    def loss(self, batch, model, dataset):
+        return self.loss_function.loss(batch, model, dataset)
 
     def __str__(self):
         return self.conf['model']['name'] + '_' + str(self.loss_function)
