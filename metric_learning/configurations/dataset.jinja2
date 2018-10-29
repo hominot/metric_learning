@@ -6,10 +6,5 @@
         'group_size': {{ group_size | default(2) }},
         'num_groups': {{ num_groups | default(16) }},
     },
-    'test': {
-        'recall': {
-            'num_testcases': {{ num_recall_testcases | default(0) }},
-        },
-    },
     'cross_validation_split': {{ cross_validation_split | default(-1) }}
 }

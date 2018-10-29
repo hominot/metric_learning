@@ -29,7 +29,7 @@ class DataLoader(object, metaclass=ClassRegistry):
     def random_flip(self, image):
         return tf.image.random_flip_left_right(image)
 
-    def _center_crop(self, image):
+    def center_crop(self, image):
         crop_width = self.conf['image']['random_crop']['width']
         crop_height = self.conf['image']['random_crop']['height']
         width = self.conf['image']['width']
@@ -40,24 +40,6 @@ class DataLoader(object, metaclass=ClassRegistry):
             (height - crop_height) // 2,
             crop_width,
             crop_height)
-
-    def _parse_and_augment(self, dataset: tf.data.Dataset):
-        dataset = dataset.map(self.image_parse_function)
-        if 'random_crop' in self.conf['image']:
-            dataset = dataset.flat_map(self.random_crop)
-        return dataset
-
-    def _parse_and_center(self, dataset: tf.data.Dataset):
-        dataset = dataset.map(self.image_parse_function)
-        if 'random_crop' in self.conf['image']:
-            dataset = dataset.map(self._center_crop)
-        return dataset
-
-    def load_image_files(self):
-        self.prepare_files()
-        image_files, labels = load_images_from_directory(
-            os.path.join(CONFIG['dataset']['data_dir'], self.name))
-        return image_files, labels
 
     def __str__(self):
         return self.conf['dataset']['name']
