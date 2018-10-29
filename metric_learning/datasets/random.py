@@ -1,7 +1,5 @@
 from util.registry.dataset import Dataset
 
-from collections import defaultdict
-
 import tensorflow as tf
 import random
 
@@ -24,3 +22,12 @@ class RandomDataset(Dataset):
         image_ids_ds = tf.data.Dataset.from_tensor_slices(tf.constant(image_ids))
 
         return tf.data.Dataset.zip((images_ds, labels_ds, image_ids_ds)), len(data)
+
+    def get_pairwise_distances(self, batch, model, distance_function):
+        raise NotImplementedError
+
+    def get_npair_distances(self, batch, model, distance_function):
+        raise NotImplementedError
+
+    def get_embeddings(self, batch, model, distance_function):
+        raise NotImplementedError

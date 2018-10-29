@@ -2,7 +2,6 @@ from util.registry.dataset import Dataset
 
 from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
-from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_euclidean_distance
 from util.tensor_operations import pairwise_dot_product
@@ -13,10 +12,29 @@ import tensorflow as tf
 import random
 
 
+def get_npair_distances(embeddings, distance_function):
+    num_groups = int(embeddings.shape[0]) // 2
+    evens = tf.range(num_groups, dtype=tf.int64) * 2
+    odds = tf.range(num_groups, dtype=tf.int64) * 2 + 1
+    even_embeddings = tf.gather(embeddings, evens)
+    odd_embeddings = tf.gather(embeddings, odds)
+
+    if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
+        pairwise_distances = pairwise_euclidean_distance(even_embeddings, odd_embeddings)
+    elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
+        pairwise_distances = pairwise_euclidean_distance_squared(even_embeddings, odd_embeddings)
+    elif distance_function == DistanceFunction.DOT_PRODUCT:
+        pairwise_distances = -pairwise_dot_product(even_embeddings, odd_embeddings)
+    else:
+        raise Exception('Unknown distance function: {}'.format(distance_function))
+
+    return pairwise_distances, tf.cast(tf.eye(num_groups), tf.bool)
+
+
 class GroupedDataset(Dataset):
     name = 'grouped'
 
-    def _get_next_batch(self, image_files, labels):
+    def get_next_batch(self, image_files, labels):
         data = list(zip(image_files, labels))
         random.shuffle(data)
 
@@ -42,7 +60,7 @@ class GroupedDataset(Dataset):
     def create_dataset(self, image_files, labels, testing=False):
         grouped_data = []
         for _ in range(self.conf['dataset']['dataset']['num_batches']):
-            grouped_data += self._get_next_batch(image_files, labels)
+            grouped_data += self.get_next_batch(image_files, labels)
         image_files_grouped, labels_grouped = zip(*grouped_data)
         images_ds = tf.data.Dataset.from_tensor_slices(
             tf.constant(image_files_grouped)
@@ -59,19 +77,26 @@ class GroupedDataset(Dataset):
         images, labels = batch
         embeddings = model(images, training=True)
         if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
-            pairwise_distances = upper_triangular_part(pairwise_euclidean_distance(embeddings, embeddings))
+            pairwise_distances = pairwise_euclidean_distance(embeddings, embeddings)
         elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
-            pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
+            pairwise_distances = pairwise_euclidean_distance_squared(embeddings, embeddings)
         elif distance_function == DistanceFunction.DOT_PRODUCT:
-            pairwise_distances = upper_triangular_part(-pairwise_dot_product(embeddings, embeddings))
+            pairwise_distances = -pairwise_dot_product(embeddings, embeddings)
         else:
             raise Exception('Unknown distance function: {}'.format(distance_function))
 
-        matching_labels_matrix = tf.cast(
-            upper_triangular_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),
-            tf.bool)
+        matching_labels_matrix = pairwise_matching_matrix(labels, labels)
 
         return pairwise_distances, matching_labels_matrix
 
     def get_npair_distances(self, batch, model, distance_function):
-        raise Exception('grouped dataset does not support npair distances')
+        if self.conf['dataset']['dataset']['group_size'] != 2:
+            raise Exception('group size must be 2 in order to get npair distances')
+        images, labels = batch
+        embeddings = model(images, training=True)
+
+        return get_npair_distances(embeddings, distance_function)
+
+    def get_embeddings(self, batch, model, distance_function):
+        images, _ = batch
+        return model(images, training=True)

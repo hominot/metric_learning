@@ -6,16 +6,19 @@ from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import repeat_columns
 from util.tensor_operations import pairwise_difference
+from metric_learning.constants.distance_function import DistanceFunction
 
 
 class TripletLossFunction(LossFunction):
     name = 'triplet'
 
-    def loss(self, embeddings, labels):
-        pairwise_distances = upper_triangular_part(pairwise_euclidean_distance_squared(embeddings, embeddings))
-        matching_labels_matrix = tf.cast(
-            upper_triangular_part(tf.cast(pairwise_matching_matrix(labels, labels), tf.int64)),
-            tf.bool)
+    def loss(self, batch, model, dataset):
+        images, labels = batch
+        pairwise_distances, matching_labels_matrix = dataset.get_pairwise_distances(
+            batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
+        pairwise_distances = upper_triangular_part(pairwise_distances)
+        matching_labels_matrix = upper_triangular_part(matching_labels_matrix)
+
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
 

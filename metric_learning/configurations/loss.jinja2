@@ -32,10 +32,8 @@
 {% elif name == 'npair' %}
 {
     'name': '{{ name }}',
-    'parametrization': '{{ parametrization | default('euclidean_distance') }}',
+    'parametrization': 'dot_product',
     'n': {{ n | default(16) }},
-    {% if parametrization == 'dot_product' %}
     'lambda': {{ lambda | default(0.01) }},
-    {% endif %}
 }
 {% endif %}
