@@ -136,6 +136,7 @@ def train(conf):
                 float(avg_drift), float(total_drift), float(final_drift / total_drift)
             ))
             embeddings = embeddings_after
+            del embeddings_after
         print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
         if CONFIG['tensorboard'].getboolean('enable_checkpoint'):
             create_checkpoint(checkpoint, run_name)
