@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from metric_learning.constants.distance_function import DistanceFunction
-from util.registry.dataset import BatchDesign
+from util.registry.batch_design import BatchDesign
 from metric_learning.batch_designs.grouped import GroupedBatchDesign
 from metric_learning.batch_designs.grouped import get_npair_distances
 
@@ -14,11 +14,10 @@ class GroupedBatchDesignTest(tf.test.TestCase):
         labels = [3, 1, 2, 3, 1, 1]
 
         conf = {
-            'dataset': {
-                'dataset': {
-                    'group_size': 2,
-                    'num_groups': 2,
-                }
+            'batch_design': {
+                'name': 'grouped',
+                'group_size': 2,
+                'num_groups': 2,
             }
         }
         dataset: GroupedBatchDesign = BatchDesign.create('grouped', conf, {'data_loader': None})

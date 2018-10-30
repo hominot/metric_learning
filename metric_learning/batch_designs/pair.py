@@ -24,7 +24,14 @@ class PairBatchDesign(BatchDesign):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels))
         return images_ds, labels_ds
 
-    def get_next_batch(self, data_map):
+    def get_next_batch(self, image_files, labels):
+        data_map = defaultdict(list)
+        data_list = list(zip(image_files, labels))
+        random.shuffle(data_list)
+        for image_file, label in data_list:
+            data_map[label].append(image_file)
+        data_map = dict(filter(lambda x: len(x[1]) >= 2, data_map.items()))
+
         batch_size = self.conf['batch_design']['batch_size']
         positive_ratio = self.conf['batch_design']['positive_ratio']
         num_positive_pairs = int(batch_size * positive_ratio)
@@ -40,28 +47,33 @@ class PairBatchDesign(BatchDesign):
         for idx in range(batch_size):
             if label_match[idx]:
                 query_label = np.random.choice(list(data_map.keys()), size=1, p=p)[0]
-                a, b = random.sample(data_map[query_label], 2)
+                a = data_map[query_label].pop()
+                b = data_map[query_label].pop()
                 first_elements.append((a, query_label))
                 second_elements.append((b, query_label))
+                if len(data_map[query_label]) < 2:
+                    del data_map[query_label]
             else:
                 query_label, target_label = np.random.choice(
                     list(data_map.keys()), size=2, replace=False, p=p)
                 first_elements.append(
-                    (random.choice(data_map[query_label]), query_label)
+                    (data_map[query_label].pop(), query_label)
                 )
                 second_elements.append(
-                    (random.choice(data_map[target_label]), target_label)
+                    (data_map[target_label].pop(), target_label)
                 )
+                if len(data_map[query_label]) < 2:
+                    del data_map[query_label]
+                if len(data_map[target_label]) < 2:
+                    del data_map[target_label]
         return first_elements, second_elements
 
     def create_dataset(self, image_files, labels, testing=False):
-        data_map = defaultdict(list)
-        for image_file, label in zip(image_files, labels):
-            data_map[label].append(image_file)
         first_data = []
         second_data = []
         for _ in range(self.conf['batch_design']['num_batches']):
-            first_elements, second_elements = self.get_next_batch(data_map)
+            first_elements, second_elements = self.get_next_batch(
+                image_files, labels)
             first_data += first_elements
             second_data += second_elements
 

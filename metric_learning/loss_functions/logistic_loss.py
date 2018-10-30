@@ -3,18 +3,15 @@ import tensorflow as tf
 from metric_learning.constants.distance_function import DistanceFunction
 
 from util.registry.loss_function import LossFunction
-from util.tensor_operations import upper_triangular_part
 
 
-class LatentPositionLoss(LossFunction):
-    name = 'latent_position'
+class LogisticLoss(LossFunction):
+    name = 'logistic'
 
     def loss(self, batch, model, dataset):
         loss_conf = self.conf['loss']
         pairwise_distance, y = dataset.get_pairwise_distances(
             batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
-        pairwise_distance = upper_triangular_part(pairwise_distance)
-        y = upper_triangular_part(y)
         eta = loss_conf['alpha'] - pairwise_distance
         signed_eta = tf.multiply(eta, -2 * tf.cast(y, tf.float32) + 1)
         padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])

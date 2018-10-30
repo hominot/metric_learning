@@ -2,6 +2,7 @@ import tensorflow as tf
 
 import argparse
 import copy
+import json
 import math
 import os
 
@@ -51,6 +52,7 @@ def compute_all_embeddings(model, conf, training_files):
 
 
 def train(conf):
+    print(json.dumps(conf, indent=4))
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     training_files, training_labels = get_training_files_labels(conf)
     if conf['dataset']['cross_validation_split'] != -1:

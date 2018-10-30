@@ -6,6 +6,7 @@ from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_euclidean_distance
 from util.tensor_operations import pairwise_dot_product
 from util.tensor_operations import pairwise_matching_matrix
+from util.tensor_operations import upper_triangular_part
 
 import numpy as np
 import tensorflow as tf
@@ -87,7 +88,10 @@ class GroupedBatchDesign(BatchDesign):
 
         matching_labels_matrix = pairwise_matching_matrix(labels, labels)
 
-        return pairwise_distances, matching_labels_matrix
+        return (
+            upper_triangular_part(pairwise_distances),
+            upper_triangular_part(matching_labels_matrix),
+        )
 
     def get_npair_distances(self, batch, model, distance_function):
         if self.conf['batch_design']['group_size'] != 2:
