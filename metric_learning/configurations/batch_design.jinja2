@@ -1,7 +1,11 @@
 {
     'name': '{{ name | default('grouped') }}',
-    'batch_size': {{ batch_size | default(32) }},
+{% if name == 'grouped' %}
     'group_size': {{ group_size | default(2) }},
     'num_groups': {{ num_groups | default(16) }},
+{% elif name == 'pair' %}
+    'positive_ratio': {{ positive_ratio | default(0.5) }},
+{% endif %}
+    'batch_size': {{ batch_size | default(32) }},
     'num_batches': 100,
 }
