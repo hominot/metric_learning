@@ -9,7 +9,7 @@ from tqdm import tqdm
 from util.dataset import create_test_dataset
 from util.dataset import get_training_files_labels
 from util.registry.data_loader import DataLoader
-from util.registry.dataset import Dataset
+from util.registry.batch_design import BatchDesign
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.logging import set_tensorboard_writer
@@ -37,7 +37,7 @@ def evaluate(model, test_dataset, num_testcases):
 
 def compute_all_embeddings(model, conf, training_files):
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
-    ds = Dataset.create('vanilla', conf, {'data_loader': data_loader})
+    ds = BatchDesign.create('vanilla', conf, {'data_loader': data_loader})
     train_ds, num_examples = ds.create_dataset(
         training_files, [0] * len(training_files), testing=True)
     train_ds = train_ds.batch(48)
@@ -71,8 +71,8 @@ def train(conf):
     writer.set_as_default()
     save_config(conf, run_name)
 
-    dataset = Dataset.create(
-        conf['dataset']['dataset']['name'], conf, {'data_loader': data_loader})
+    dataset = BatchDesign.create(
+        conf['batch_design']['name'], conf, {'data_loader': data_loader})
 
     extra_info = {
         'num_labels': max(training_labels) + 1,
@@ -85,7 +85,7 @@ def train(conf):
     }
     checkpoint = tf.train.Checkpoint(model=model)
 
-    dataset_conf = conf['dataset']['dataset']
+    batch_design_conf = conf['batch_design']
     if CONFIG['train'].getboolean('initial_evaluation'):
         evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
@@ -96,9 +96,9 @@ def train(conf):
     total_drift = 0.0
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
-        train_ds = train_ds.batch(dataset_conf['batch_size'], drop_remainder=True)
+        train_ds = train_ds.batch(batch_design_conf['batch_size'], drop_remainder=True)
         batches = tqdm(train_ds,
-                       total=math.ceil(num_examples / dataset_conf['batch_size']),
+                       total=math.ceil(num_examples / batch_design_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1))
         for batch in batches:
             with tf.contrib.summary.record_summaries_every_n_global_steps(

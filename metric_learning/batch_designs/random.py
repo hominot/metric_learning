@@ -1,10 +1,10 @@
-from util.registry.dataset import Dataset
+from util.registry.batch_design import BatchDesign
 
 import tensorflow as tf
 import random
 
 
-class RandomDataset(Dataset):
+class RandomBatchDesign(BatchDesign):
     name = 'random'
 
     def create_dataset(self, image_files, labels, testing=False):

@@ -1,14 +1,14 @@
 import tensorflow as tf
 
 from metric_learning.constants.distance_function import DistanceFunction
-from util.registry.dataset import Dataset
-from metric_learning.datasets.grouped import GroupedDataset
-from metric_learning.datasets.grouped import get_npair_distances
+from util.registry.dataset import BatchDesign
+from metric_learning.batch_designs.grouped import GroupedBatchDesign
+from metric_learning.batch_designs.grouped import get_npair_distances
 
 tf.enable_eager_execution()
 
 
-class GroupedDatasetTest(tf.test.TestCase):
+class GroupedBatchDesignTest(tf.test.TestCase):
     def testGroupedDataset(self):
         image_files = ['a', 'b', 'c', 'd', 'e', 'f']
         labels = [3, 1, 2, 3, 1, 1]
@@ -21,7 +21,7 @@ class GroupedDatasetTest(tf.test.TestCase):
                 }
             }
         }
-        dataset: GroupedDataset = Dataset.create('grouped', conf, {'data_loader': None})
+        dataset: GroupedBatchDesign = BatchDesign.create('grouped', conf, {'data_loader': None})
         batch = dataset.get_next_batch(image_files, labels)
         self.assertAllEqual(batch, [
             ('b', 1),

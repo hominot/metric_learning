@@ -1,11 +1,11 @@
 from util.registry.class_registry import ClassRegistry
 
 
-class Dataset(object, metaclass=ClassRegistry):
-    module_path = 'metric_learning.datasets'
+class BatchDesign(object, metaclass=ClassRegistry):
+    module_path = 'metric_learning.batch_designs'
 
     def __init__(self, conf, extra_info):
-        super(Dataset, self).__init__()
+        super(BatchDesign, self).__init__()
         self.conf = conf
         self.extra_info = extra_info
         self.data_loader = extra_info['data_loader']
@@ -23,4 +23,4 @@ class Dataset(object, metaclass=ClassRegistry):
         raise NotImplementedError
 
     def __str__(self):
-        return self.conf['dataset']['dataset']['name']
+        return self.conf['batch_design']['dataset']['name']

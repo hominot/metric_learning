@@ -1,11 +1,4 @@
 {
-    'name': '{{ dataset }}',
-    'dataset': {
-        'name': '{{ batch_design | default('grouped') }}',
-        'batch_size': {{ batch_size | default(32) }},
-        'group_size': {{ group_size | default(2) }},
-        'num_groups': {{ num_groups | default(16) }},
-        'num_batches': 100,
-    },
+    'name': '{{ name }}',
     'cross_validation_split': {{ cross_validation_split | default(-1) }}
 }

@@ -1,10 +1,10 @@
-from util.registry.dataset import Dataset
+from util.registry.batch_design import BatchDesign
 
 
 import tensorflow as tf
 
 
-class VanillaDataset(Dataset):
+class VanillaBatchDesign(BatchDesign):
     name = 'vanilla'
 
     def create_dataset(self, image_files, labels, testing=False):

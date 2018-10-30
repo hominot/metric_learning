@@ -1,4 +1,4 @@
-from util.registry.dataset import Dataset
+from util.registry.batch_design import BatchDesign
 
 from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
@@ -31,15 +31,15 @@ def get_npair_distances(embeddings, distance_function):
     return pairwise_distances, tf.cast(tf.eye(num_groups), tf.bool)
 
 
-class GroupedDataset(Dataset):
+class GroupedBatchDesign(BatchDesign):
     name = 'grouped'
 
     def get_next_batch(self, image_files, labels):
         data = list(zip(image_files, labels))
         random.shuffle(data)
 
-        group_size = self.conf['dataset']['dataset']['group_size']
-        num_groups = self.conf['dataset']['dataset']['num_groups']
+        group_size = self.conf['batch_design']['group_size']
+        num_groups = self.conf['batch_design']['num_groups']
         data_map = defaultdict(list)
         for image_file, label in data:
             data_map[label].append(image_file)
@@ -59,7 +59,7 @@ class GroupedDataset(Dataset):
 
     def create_dataset(self, image_files, labels, testing=False):
         grouped_data = []
-        for _ in range(self.conf['dataset']['dataset']['num_batches']):
+        for _ in range(self.conf['batch_design']['num_batches']):
             grouped_data += self.get_next_batch(image_files, labels)
         image_files_grouped, labels_grouped = zip(*grouped_data)
         images_ds = tf.data.Dataset.from_tensor_slices(
@@ -90,7 +90,7 @@ class GroupedDataset(Dataset):
         return pairwise_distances, matching_labels_matrix
 
     def get_npair_distances(self, batch, model, distance_function):
-        if self.conf['dataset']['dataset']['group_size'] != 2:
+        if self.conf['batch_design']['group_size'] != 2:
             raise Exception('group size must be 2 in order to get npair distances')
         images, labels = batch
         embeddings = model(images, training=True)

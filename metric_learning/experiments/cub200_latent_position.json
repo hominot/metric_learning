@@ -1,7 +1,10 @@
 {
   "image": [{}],
   "dataset": [
-    {"dataset": "cub200", "group_size": 4, "num_groups": 16, "batch_size": 64}
+    {"name": "cub200"}
+  ],
+  "batch_design": [
+    {"name": "grouped", "group_size": 4, "num_groups": 16, "batch_size": 64}
   ],
   "model": [{"name": "resnet50"}],
   "loss": [
