@@ -3,6 +3,7 @@
     'name': '{{ name }}',
     'alpha': {{ alpha | default(16.0) }},
     'parametrization': 'euclidean_distance',
+    'npair': {{ npair | default(False) }},
 }
 {% elif name == 'triplet' %}
 {
@@ -22,6 +23,7 @@
 {
     'name': '{{ name }}',
     'parametrization': '{{ parametrization | default('euclidean_distance') }}',
+    'npair': {{ npair | default(False) }},
     'alpha': {{ alpha | default(16.0) }},
 }
 {% elif name == 'npair' %}

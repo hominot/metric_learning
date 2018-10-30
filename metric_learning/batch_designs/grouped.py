@@ -39,8 +39,9 @@ class GroupedBatchDesign(BatchDesign):
         data = list(zip(image_files, labels))
         random.shuffle(data)
 
+        batch_size = self.conf['batch_design']['batch_size']
         group_size = self.conf['batch_design']['group_size']
-        num_groups = self.conf['batch_design']['num_groups']
+        num_groups = batch_size // group_size
         data_map = defaultdict(list)
         for image_file, label in data:
             data_map[label].append(image_file)
