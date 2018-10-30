@@ -90,9 +90,11 @@ def train(conf):
         evaluate(model, test_dataset, test_num_testcases)
     step_counter = tf.train.get_or_create_global_step()
 
+    initial_embeddings = None
     embeddings = None
     if CONFIG['train'].getboolean('compute_drift'):
         embeddings = compute_all_embeddings(model, conf, training_files)
+        initial_embeddings = embeddings
     total_drift = 0.0
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
@@ -121,9 +123,18 @@ def train(conf):
                 tf.reduce_sum(tf.norm(before - after, axis=1))
                 for before, after in zip(embeddings, embeddings_after)
             ]) / len(training_files)
+            final_drift = sum([
+                tf.reduce_sum(tf.norm(before - after, axis=1))
+                for before, after in zip(embeddings_after, initial_embeddings)
+            ]) / len(training_files)
             total_drift += avg_drift
-            tf.contrib.summary.scalar('avg_drift', avg_drift)
-            tf.contrib.summary.scalar('total_drift', total_drift)
+            with tf.contrib.summary.always_record_summaries():
+                tf.contrib.summary.scalar('avg_drift', avg_drift)
+                tf.contrib.summary.scalar('total_drift', total_drift)
+                tf.contrib.summary.scalar('drift_ratio', final_drift / total_drift)
+            print('Drift avg: {:4f}, Total drift: {:4f}, Drift ratio: {:4f}'.format(
+                float(avg_drift), float(total_drift), float(final_drift / total_drift)
+            ))
             embeddings = embeddings_after
         print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
         if CONFIG['tensorboard'].getboolean('enable_checkpoint'):
