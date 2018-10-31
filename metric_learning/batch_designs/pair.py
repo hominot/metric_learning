@@ -34,8 +34,8 @@ class PairBatchDesign(BatchDesign):
 
         batch_size = self.conf['batch_design']['batch_size']
         positive_ratio = self.conf['batch_design']['positive_ratio']
-        num_positive_pairs = int(batch_size * positive_ratio)
-        num_negative_pairs = batch_size - num_positive_pairs
+        num_positive_pairs = int(batch_size * positive_ratio / 2)
+        num_negative_pairs = (batch_size // 2) - num_positive_pairs
         label_match = [1] * num_positive_pairs + [0] * num_negative_pairs
         random.shuffle(label_match)
 
@@ -100,7 +100,7 @@ class PairBatchDesign(BatchDesign):
             raise Exception('Unknown distance function: {}'.format(distance_function))
         return pairwise_distances, matching_labels
 
-    def get_npair_distances(self, batch, model, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function):
         raise NotImplementedError
 
     def get_embeddings(self, batch, model, distance_function):
