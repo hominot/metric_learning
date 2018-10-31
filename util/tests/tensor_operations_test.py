@@ -8,6 +8,7 @@ from util.tensor_operations import repeat_columns
 from util.tensor_operations import pairwise_difference
 from util.tensor_operations import pairwise_cosine_similarity
 from util.tensor_operations import off_diagonal_part
+from util.tensor_operations import get_n_blocks
 
 tf.enable_eager_execution()
 
@@ -122,6 +123,51 @@ class TensorOperationsTest(tf.test.TestCase):
         ])
         b = off_diagonal_part(a)
         self.assertAllEqual(b, [2, 3, 4, 6, 7, 8])
+
+    def testNBlocks(self):
+        a = tf.constant([
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16],
+        ])
+        self.assertAllEqual(get_n_blocks(a, 2), [
+            [1, 2],
+            [5, 6],
+            [11, 12],
+            [15, 16],
+        ])
+        self.assertAllEqual(get_n_blocks(a, 1), [
+            [1],
+            [6],
+            [11],
+            [16],
+        ])
+
+        b = tf.constant([
+            [1, 2, 3, 4, 5, 6],
+            [2, 3, 4, 5, 6, 7],
+            [3, 4, 5, 6, 7, 8],
+            [4, 5, 6, 7, 8, 9],
+            [5, 6, 7, 8, 9, 10],
+            [6, 7, 8, 9, 10, 11],
+        ])
+        self.assertAllEqual(get_n_blocks(b, 2), [
+            [1, 2],
+            [2, 3],
+            [5, 6],
+            [6, 7],
+            [9, 10],
+            [10, 11],
+        ])
+        self.assertAllEqual(get_n_blocks(b, 3), [
+            [1, 2, 3],
+            [2, 3, 4],
+            [3, 4, 5],
+            [7, 8, 9],
+            [8, 9, 10],
+            [9, 10, 11],
+        ])
 
 
 if __name__ == '__main__':

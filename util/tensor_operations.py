@@ -46,3 +46,9 @@ def off_diagonal_part(matrix):
 
 def stable_sqrt(tensor):
     return tf.sqrt(tf.maximum(tensor, 1e-12))
+
+
+def get_n_blocks(tensor, n):
+    r = tf.range(tensor.shape[0])
+    mask = tf.equal(r[None] // n, r[:, None] // n)
+    return tf.reshape(tf.boolean_mask(tensor, mask), [-1, n])

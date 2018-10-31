@@ -3,6 +3,9 @@
     'name': '{{ name }}',
     'alpha': {{ alpha | default(16.0) }},
     'parametrization': 'euclidean_distance',
+    {% if npair %}
+    'npair': {{ npair }},
+    {% endif %}
 }
 {% elif name == 'triplet' %}
 {
@@ -22,13 +25,16 @@
 {
     'name': '{{ name }}',
     'parametrization': '{{ parametrization | default('euclidean_distance') }}',
+    {% if npair %}
+    'npair': {{ npair }},
+    {% endif %}
     'alpha': {{ alpha | default(16.0) }},
 }
 {% elif name == 'npair' %}
 {
     'name': '{{ name }}',
     'parametrization': 'dot_product',
-    'n': {{ n | default(16) }},
+    'npair': {{ npair }},
     'lambda': {{ lambda | default(0.01) }},
 }
 {% endif %}

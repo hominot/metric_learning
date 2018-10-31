@@ -7,13 +7,14 @@ from util.tensor_operations import pairwise_euclidean_distance
 from util.tensor_operations import pairwise_dot_product
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
+from util.tensor_operations import get_n_blocks
 
 import numpy as np
 import tensorflow as tf
 import random
 
 
-def get_npair_distances(embeddings, distance_function):
+def get_npair_distances(embeddings, n, distance_function):
     num_groups = int(embeddings.shape[0]) // 2
     evens = tf.range(num_groups, dtype=tf.int64) * 2
     odds = tf.range(num_groups, dtype=tf.int64) * 2 + 1
@@ -29,7 +30,10 @@ def get_npair_distances(embeddings, distance_function):
     else:
         raise Exception('Unknown distance function: {}'.format(distance_function))
 
-    return pairwise_distances, tf.cast(tf.eye(num_groups), tf.bool)
+    return (
+        get_n_blocks(pairwise_distances, n),
+        get_n_blocks(tf.cast(tf.eye(num_groups), tf.bool), n)
+    )
 
 
 class GroupedBatchDesign(BatchDesign):
@@ -39,8 +43,9 @@ class GroupedBatchDesign(BatchDesign):
         data = list(zip(image_files, labels))
         random.shuffle(data)
 
+        batch_size = self.conf['batch_design']['batch_size']
         group_size = self.conf['batch_design']['group_size']
-        num_groups = self.conf['batch_design']['num_groups']
+        num_groups = batch_size // group_size
         data_map = defaultdict(list)
         for image_file, label in data:
             data_map[label].append(image_file)
@@ -93,13 +98,19 @@ class GroupedBatchDesign(BatchDesign):
             upper_triangular_part(matching_labels_matrix),
         )
 
-    def get_npair_distances(self, batch, model, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function):
         if self.conf['batch_design']['group_size'] != 2:
             raise Exception('group size must be 2 in order to get npair distances')
+        if (self.conf['batch_design']['batch_size'] // 2) % n != 0:
+            raise Exception(
+                'n does not divide the number of groups: n={}, num_groups={}'.format(
+                    n, self.conf['batch_size'] // 2
+                ))
+
         images, labels = batch
         embeddings = model(images, training=True)
 
-        return get_npair_distances(embeddings, distance_function)
+        return get_npair_distances(embeddings, n, distance_function)
 
     def get_embeddings(self, batch, model, distance_function):
         images, _ = batch
