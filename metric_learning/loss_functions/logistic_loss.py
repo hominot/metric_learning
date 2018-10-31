@@ -12,7 +12,8 @@ class LogisticLoss(LossFunction):
         loss_conf = self.conf['loss']
         if self.conf['loss']['npair']:
             pairwise_distance, y = dataset.get_npair_distances(
-                batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
+                batch, model, self.conf['loss']['npair'],
+                DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
             pairwise_distance = tf.reshape(pairwise_distance, [-1])
             y = tf.reshape(y, [-1])
         else:

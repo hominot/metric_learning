@@ -16,7 +16,7 @@ class BatchDesign(object, metaclass=ClassRegistry):
     def get_pairwise_distances(self, batch, model, distance_function):
         raise NotImplementedError
 
-    def get_npair_distances(self, batch, model, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function):
         raise NotImplementedError
 
     def get_embeddings(self, batch, model, distance_function):

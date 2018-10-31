@@ -13,7 +13,8 @@ class ContrastiveLossFunction(LossFunction):
 
         if self.conf['loss'].get('npair'):
             pairwise_distances, matching_labels_matrix = dataset.get_npair_distances(
-                batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
+                batch, model,self.conf['loss']['npair'],
+                DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         else:
             pairwise_distances, matching_labels_matrix = dataset.get_pairwise_distances(
                 batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)

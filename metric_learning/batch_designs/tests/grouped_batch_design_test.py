@@ -36,7 +36,8 @@ class GroupedBatchDesignTest(tf.test.TestCase):
             [5.],
             [7.],
         ])
-        distances, matches = get_npair_distances(embeddings, DistanceFunction.EUCLIDEAN_DISTANCE)
+        distances, matches = get_npair_distances(
+            embeddings, 2, DistanceFunction.EUCLIDEAN_DISTANCE)
         self.assertAllEqual(distances, [
             [1., 6.],
             [3., 2.],

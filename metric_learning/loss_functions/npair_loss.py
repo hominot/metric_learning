@@ -9,7 +9,8 @@ class NPairLossFunction(LossFunction):
 
     def loss(self, batch, model, dataset):
         pairwise_distances, matching_matrix = dataset.get_npair_distances(
-            batch, model, DistanceFunction.DOT_PRODUCT)
+            batch, model, self.conf['loss']['npair'],
+            DistanceFunction.DOT_PRODUCT)
         embeddings = dataset.get_embeddings(
             batch, model, DistanceFunction.DOT_PRODUCT)
         regularizer = tf.reduce_mean(tf.reduce_sum(tf.square(embeddings), axis=1))
