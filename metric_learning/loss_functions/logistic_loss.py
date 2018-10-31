@@ -10,7 +10,7 @@ class LogisticLoss(LossFunction):
 
     def loss(self, batch, model, dataset):
         loss_conf = self.conf['loss']
-        if self.conf['loss']['npair']:
+        if self.conf['loss'].get('npair'):
             pairwise_distance, y = dataset.get_npair_distances(
                 batch, model, self.conf['loss']['npair'],
                 DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)

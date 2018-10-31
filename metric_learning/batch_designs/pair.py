@@ -42,63 +42,64 @@ class PairBatchDesign(BatchDesign):
         weights = [float(len(x)) for x in data_map.values()]
         p = np.array(weights) / sum(weights)
 
-        first_elements = []
-        second_elements = []
-        for idx in range(batch_size):
-            if label_match[idx]:
+        elements = []
+        for match in label_match:
+            if match:
                 query_label = np.random.choice(list(data_map.keys()), size=1, p=p)[0]
                 a = data_map[query_label].pop()
                 b = data_map[query_label].pop()
-                first_elements.append((a, query_label))
-                second_elements.append((b, query_label))
+                elements.append((a, query_label))
+                elements.append((b, query_label))
                 if len(data_map[query_label]) < 2:
                     del data_map[query_label]
             else:
                 query_label, target_label = np.random.choice(
                     list(data_map.keys()), size=2, replace=False, p=p)
-                first_elements.append(
+                elements.append(
                     (data_map[query_label].pop(), query_label)
                 )
-                second_elements.append(
+                elements.append(
                     (data_map[target_label].pop(), target_label)
                 )
                 if len(data_map[query_label]) < 2:
                     del data_map[query_label]
                 if len(data_map[target_label]) < 2:
                     del data_map[target_label]
-        return first_elements, second_elements
+        return elements
 
     def create_dataset(self, image_files, labels, testing=False):
-        first_data = []
-        second_data = []
+        data = []
         for _ in range(self.conf['batch_design']['num_batches']):
-            first_elements, second_elements = self.get_next_batch(
+            elements = self.get_next_batch(
                 image_files, labels)
-            first_data += first_elements
-            second_data += second_elements
+            data += elements
 
-        return tf.data.Dataset.zip((
-            self._create_datasets_from_elements(first_data),
-            self._create_datasets_from_elements(second_data)
-        )), len(first_data)
+        return tf.data.Dataset.zip(
+            self._create_datasets_from_elements(data),
+        ), len(data)
 
     def get_pairwise_distances(self, batch, model, distance_function):
-        (first_images, first_labels), (second_images, second_labels) = batch
-        matching_labels = tf.equal(first_labels, second_labels)
-        first_embeddings = model(first_images, training=True)
-        second_embeddings = model(second_images, training=True)
+        images, labels = batch
+        embeddings = model(images, training=True)
+        evens = tf.range(images.shape[0] // 2, dtype=tf.int64) * 2
+        odds = tf.range(images.shape[0] // 2, dtype=tf.int64) * 2 + 1
+        even_embeddings = tf.gather(embeddings, evens)
+        odd_embeddings = tf.gather(embeddings, odds)
+        even_labels = tf.gather(labels, evens)
+        odd_labels = tf.gather(labels, odds)
+        match = tf.equal(even_labels, odd_labels)
         if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
             pairwise_distances = stable_sqrt(
-                tf.reduce_sum(tf.square(first_embeddings - second_embeddings), axis=1))
+                tf.reduce_sum(tf.square(even_embeddings - odd_embeddings), axis=1))
         elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
             pairwise_distances = tf.reduce_sum(
-                tf.square(first_embeddings - second_embeddings), axis=1)
+                tf.square(even_embeddings - odd_embeddings), axis=1)
         elif distance_function == DistanceFunction.DOT_PRODUCT:
             pairwise_distances = -tf.reduce_sum(
-                tf.multiply(first_embeddings, second_embeddings), axis=1)
+                tf.multiply(even_embeddings, odd_embeddings), axis=1)
         else:
             raise Exception('Unknown distance function: {}'.format(distance_function))
-        return pairwise_distances, matching_labels
+        return pairwise_distances, match
 
     def get_npair_distances(self, batch, model, n, distance_function):
         raise NotImplementedError
