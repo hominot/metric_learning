@@ -114,7 +114,7 @@ def train(conf):
     }
     model = Model.create(conf['model']['name'], conf, extra_info)
     optimizers = {
-        k: tf.train.GradientDescentOptimizer(learning_rate=v) for
+        k: tf.train.AdamOptimizer(learning_rate=v) for
         k, (v, _) in model.learning_rates().items()
     }
     checkpoint = tf.train.Checkpoint(model=model)
