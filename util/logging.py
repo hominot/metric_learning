@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 
 import boto3
+import datetime
 import json
 
 from util.config import CONFIG
@@ -86,12 +87,15 @@ def save_config(conf, run_name):
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
         data = {
             'id': run_name,
-            'model': '{}:{}'.format(conf['model']['name'], conf['model']['dimension']),
-            'dataset': conf['dataset']['name'],
-            'loss': conf['loss']['name'],
-            'batch_design': conf['batch_design']['name'],
             'config': json.dumps(conf),
+            'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
+        for key, conf_dict in conf.items():
+            if key in ['image', 'metrics']:
+                continue
+            for name, value in conf_dict.items():
+                data['{}:{}'.format(key, name)] = str(value)
+
         table = db.Table('Experiment')
         table.put_item(Item=data)
 

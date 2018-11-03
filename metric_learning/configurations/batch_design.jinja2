@@ -2,7 +2,6 @@
     'name': '{{ name | default('grouped') }}',
 {% if name == 'grouped' %}
     'group_size': {{ group_size | default(2) }},
-    'num_groups': {{ num_groups | default(16) }},
 {% elif name == 'pair' %}
     'positive_ratio': {{ positive_ratio | default(0.5) }},
 {% endif %}

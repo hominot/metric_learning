@@ -21,7 +21,7 @@ from util.logging import db
 from util.config import CONFIG
 
 
-def evaluate(model, test_dataset, num_testcases, train_stat):
+def evaluate(conf, model, test_dataset, num_testcases, train_stat):
     data = {}
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
@@ -121,7 +121,7 @@ def train(conf):
         'epoch': 0,
     }
     if CONFIG['train'].getboolean('initial_evaluation'):
-        evaluate(model, test_dataset, test_num_testcases, train_stat)
+        evaluate(conf, model, test_dataset, test_num_testcases, train_stat)
     step_counter = tf.train.get_or_create_global_step()
     step_counter.assign(0)
 
@@ -183,7 +183,7 @@ def train(conf):
             create_checkpoint(checkpoint, run_name)
         train_stat['epoch'] = epoch + 1
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
-        metrics.append(evaluate(model, test_dataset, test_num_testcases, train_stat))
+        metrics.append(evaluate(conf, model, test_dataset, test_num_testcases, train_stat))
         if stopping_criteria(metrics):
             break
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
@@ -196,7 +196,7 @@ def train(conf):
                 },
                 UpdateExpression='SET #m = :u',
                 ExpressionAttributeNames={
-                    '#m': metric,
+                    '#m': 'metric:{}'.format(metric),
                 },
                 ExpressionAttributeValues={
                     ':u': score,

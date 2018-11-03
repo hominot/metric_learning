@@ -8,10 +8,10 @@
   ],
   "model": [{"name": "resnet50", "dimension": 128}],
   "loss": [
-    {"name": "contrastive", "alpha": 1.0},
-    {"name": "contrastive", "alpha": 2.0},
-    {"name": "contrastive", "alpha": 4.0},
-    {"name": "contrastive", "alpha": 8.0}
+    {"name": "logistic", "alpha": 1.0},
+    {"name": "logistic", "alpha": 2.0},
+    {"name": "logistic", "alpha": 4.0},
+    {"name": "logistic", "alpha": 8.0}
   ],
   "metrics": [{}],
   "trainer": [
