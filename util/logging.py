@@ -8,6 +8,7 @@ from util.config import CONFIG
 
 
 s3 = boto3.client('s3')
+db = boto3.resource('dynamodb')
 
 
 def get_run_name(conf):
@@ -82,6 +83,17 @@ def save_config(conf, run_name):
             tf.gfile.MakeDirs(config_dir)
         with open(os.path.join(config_dir, 'config.json'), 'w') as f:
             json.dump(conf, f, indent=4)
+    if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
+        data = {
+            'id': run_name,
+            'model': '{}:{}'.format(conf['model']['name'], conf['model']['dimension']),
+            'dataset': conf['dataset']['name'],
+            'loss': conf['loss']['name'],
+            'batch_design': conf['batch_design']['name'],
+            'config': json.dumps(conf),
+        }
+        table = db.Table('Experiment')
+        table.put_item(Item=data)
 
 
 def upload_file_to_s3(file_path, bucket, key):

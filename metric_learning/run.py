@@ -6,6 +6,7 @@ import json
 import math
 import os
 
+from decimal import Decimal
 from tqdm import tqdm
 from util.dataset import create_test_dataset
 from util.dataset import get_training_files_labels
@@ -17,12 +18,14 @@ from util.logging import set_tensorboard_writer
 from util.logging import upload_tensorboard_log_to_s3
 from util.logging import create_checkpoint
 from util.logging import save_config
+from util.logging import db
 from metric_learning.example_configurations import configs
 from util.config import CONFIG
 from util.config import generate_configs_from_experiment
 
 
-def evaluate(model, test_dataset, num_testcases):
+def evaluate(model, test_dataset, num_testcases, train_stat):
+    data = {}
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
             metric = Metric.create(metric_conf['name'], conf)
@@ -31,9 +34,15 @@ def evaluate(model, test_dataset, num_testcases):
                 for metric, s in score.items():
                     tf.contrib.summary.scalar('test ' + metric, s)
                     print('{}: {}'.format(metric, s))
+                    data[metric] = Decimal(str(s))
             else:
                 tf.contrib.summary.scalar('{}'.format(metric_conf['name']), score)
                 print('{}: {}'.format(metric_conf['name'], score))
+                data[metric_conf['name']] = Decimal(str(score))
+    if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
+        table = db.Table('TrainHistory')
+        data.update(train_stat)
+        table.put_item(Item=data)
 
 
 def compute_all_embeddings(model, conf, training_files):
@@ -88,8 +97,12 @@ def train(conf):
     checkpoint = tf.train.Checkpoint(model=model)
 
     batch_design_conf = conf['batch_design']
+    train_stat = {
+        'id': run_name,
+        'epoch': 0,
+    }
     if CONFIG['train'].getboolean('initial_evaluation'):
-        evaluate(model, test_dataset, test_num_testcases)
+        evaluate(model, test_dataset, test_num_testcases, train_stat)
     step_counter = tf.train.get_or_create_global_step()
 
     drift_history = []
@@ -103,12 +116,14 @@ def train(conf):
         batches = tqdm(train_ds,
                        total=math.ceil(num_examples / batch_design_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1))
+        losses = []
         for batch in batches:
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     CONFIG['tensorboard'].getint('record_every_n_global_steps'),
                     global_step=step_counter):
                 with tf.GradientTape() as tape:
                     loss_value = model.loss(batch, model, dataset)
+                    losses.append(float(loss_value))
                     batches.set_postfix({'loss': float(loss_value)})
                     tf.contrib.summary.scalar('loss', loss_value)
 
@@ -145,7 +160,9 @@ def train(conf):
         print('epoch #{} checkpoint: {}'.format(epoch + 1, run_name))
         if CONFIG['tensorboard'].getboolean('enable_checkpoint'):
             create_checkpoint(checkpoint, run_name)
-        evaluate(model, test_dataset, test_num_testcases)
+        train_stat['epoch'] = epoch + 1
+        train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
+        evaluate(model, test_dataset, test_num_testcases, train_stat)
 
 
 if __name__ == '__main__':
