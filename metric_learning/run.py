@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 
 import argparse
@@ -41,8 +42,30 @@ def evaluate(model, test_dataset, num_testcases, train_stat):
                 data[metric_conf['name']] = Decimal(str(score))
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
         table = db.Table('TrainHistory')
-        data.update(train_stat)
-        table.put_item(Item=data)
+        item = {}
+        item.update(train_stat)
+        item.update(data)
+        table.put_item(Item=item)
+    return data
+
+
+def stopping_criteria(metrics):
+    if len(metrics) <= 5:
+        return False
+    recall_1 = [float(x['recall@1']) for x in metrics]
+    max_recall_1 = max(recall_1)
+    if recall_1[-1] < max_recall_1 * 0.85:
+        return True
+    if recall_1[-1] < recall_1[-2] * 0.95 and recall_1[-2] < recall_1[-3] * 0.95:
+        return True
+    if all([x < max_recall_1 * 1.005 for x in recall_1[-4:]]):
+        return True
+    return False
+
+
+def get_metric_to_report(metrics):
+    recall_1 = [float(x['recall@1']) for x in metrics]
+    return metrics[np.argmax(recall_1)]
 
 
 def compute_all_embeddings(model, conf, training_files):
@@ -107,6 +130,7 @@ def train(conf):
 
     drift_history = []
     embeddings_history = []
+    metrics = []
     if CONFIG['train'].getboolean('compute_drift'):
         embeddings = compute_all_embeddings(model, conf, training_files)
         embeddings_history.append(embeddings)
@@ -162,7 +186,25 @@ def train(conf):
             create_checkpoint(checkpoint, run_name)
         train_stat['epoch'] = epoch + 1
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
-        evaluate(model, test_dataset, test_num_testcases, train_stat)
+        metrics.append(evaluate(model, test_dataset, test_num_testcases, train_stat))
+        if stopping_criteria(metrics):
+            break
+    if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
+        final_metrics = get_metric_to_report(metrics)
+        table = db.Table('Experiment')
+        for metric, score in final_metrics.items():
+            table.update_item(
+                Key={
+                    'id': run_name,
+                },
+                UpdateExpression='SET #m = :u',
+                ExpressionAttributeNames={
+                    '#m': metric,
+                },
+                ExpressionAttributeValues={
+                    ':u': score,
+                },
+            )
 
 
 if __name__ == '__main__':
