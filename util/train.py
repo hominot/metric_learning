@@ -50,11 +50,11 @@ def stopping_criteria(metrics):
         return False
     recall_1 = [float(x['recall@1']) for x in metrics]
     max_recall_1 = max(recall_1)
-    if recall_1[-1] < max_recall_1 * 0.85:
+    if recall_1[-1] < max_recall_1 * 0.95:
         return True
-    if recall_1[-1] < recall_1[-2] * 0.95 and recall_1[-2] < recall_1[-3] * 0.95:
+    if recall_1[-1] < recall_1[-2] * 0.98 and recall_1[-2] < recall_1[-3] * 0.98:
         return True
-    if all([x < max_recall_1 * 1.005 for x in recall_1[-4:]]):
+    if all([x * 1.003 < max_recall_1 for x in recall_1[-4:]]):
         return True
     return False
 

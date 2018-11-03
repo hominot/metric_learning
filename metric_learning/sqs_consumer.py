@@ -18,4 +18,5 @@ if __name__ == '__main__':
         for message in messages:
             conf = json.loads(message.body)
             message.delete()
+            tf.set_random_seed(1) # hack for resetting gpu memory
             train(conf)
