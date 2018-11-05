@@ -76,16 +76,18 @@ class PairBatchDesign(BatchDesign):
             raise Exception('Unknown distance function: {}'.format(distance_function))
 
         num_images = model.extra_info['num_images']
+        num_labels = model.extra_info['num_labels']
+        num_average_images_per_label = num_images / num_labels
         label_counts = tf.gather(
             tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
-            labels) / num_images
+            labels) / num_average_images_per_label
         even_label_counts = tf.gather(label_counts, evens)
         odd_label_counts = tf.gather(label_counts, odds)
         num_labels = model.extra_info['num_labels']
         label_counts_multiplied = tf.multiply(even_label_counts, odd_label_counts)
         positive_ratio = self.conf['batch_design']['positive_ratio']
 
-        positive_weights = positive_ratio / even_label_counts / (even_label_counts - 1 / num_images)
+        positive_weights = positive_ratio / even_label_counts / (even_label_counts - 1 / num_average_images_per_label)
         negative_weights = (1 - positive_ratio) / (num_labels - 1) / label_counts_multiplied
         weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
         return pairwise_distances, match, 1 / weights

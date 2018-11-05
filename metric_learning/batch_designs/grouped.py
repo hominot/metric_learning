@@ -76,16 +76,18 @@ class GroupedBatchDesign(BatchDesign):
         matching_labels_matrix = pairwise_matching_matrix(labels, labels)
 
         num_images = model.extra_info['num_images']
+        num_labels = model.extra_info['num_labels']
+        num_average_images_per_label = num_images / num_labels
         label_counts = tf.gather(
             tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
-            labels) / num_images
+            labels) / num_average_images_per_label
         num_labels = model.extra_info['num_labels']
         label_counts_multiplied = pairwise_product(label_counts, label_counts)
         batch_size = self.conf['batch_design']['batch_size']
         group_size = self.conf['batch_design']['group_size']
         num_groups = batch_size // group_size
         negative_weights = (num_groups - 1) * group_size / (num_labels - 1) / label_counts_multiplied
-        positive_weights = (group_size - 1) / label_counts / (label_counts - 1 / num_images)
+        positive_weights = (group_size - 1) / label_counts / (label_counts - 1 / num_average_images_per_label)
         weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
 
         return (
