@@ -32,7 +32,7 @@ class BatchDesign(object, metaclass=ClassRegistry):
 
     def create_dataset(self, image_files, labels, testing=False):
         data = []
-        for _ in range(self.conf['batch_design']['num_batches'] * self.conf['trainer']['combine_batches']):
+        for _ in range(self.conf['batch_design']['num_batches'] * self.conf['batch_design']['combine_batches']):
             elements = self.get_next_batch(
                 image_files, labels)
             data += elements

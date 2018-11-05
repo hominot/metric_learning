@@ -3,9 +3,6 @@
     'name': '{{ name }}',
     'alpha': {{ alpha | default(16.0) }},
     'parametrization': 'euclidean_distance',
-    {% if npair %}
-    'npair': {{ npair }},
-    {% endif %}
     'importance_sampling': {{ importance_sampling | default(False) }},
 }
 {% elif name == 'triplet' %}
@@ -26,9 +23,6 @@
 {
     'name': '{{ name }}',
     'parametrization': '{{ parametrization | default('euclidean_distance') }}',
-    {% if npair %}
-    'npair': {{ npair }},
-    {% endif %}
     'alpha': {{ alpha | default(16.0) }},
     'importance_sampling': {{ importance_sampling | default(False) }},
 }
