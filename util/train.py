@@ -167,7 +167,7 @@ def train(conf):
                         else:
                             grads[idx] += g
                 batches_combined += 1
-                if batches_combined == conf['trainer']['combine_batches']:
+                if batches_combined == conf['batch_design']['combine_batches']:
                     for optimizer_key, (_, variables) in model.learning_rates().items():
                         filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
                         optimizers[optimizer_key].apply_gradients(filtered_grads)

@@ -10,4 +10,5 @@
 {% endif %}
     'batch_size': {{ batch_size | default(32) }},
     'num_batches': 100,
+    'combine_batches': {{ combine_batches | default(1) }}
 }
