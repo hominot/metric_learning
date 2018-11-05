@@ -143,7 +143,8 @@ def train(conf):
                        total=math.ceil(num_examples / batch_design_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1))
         losses = []
-        grads_list = []
+        batches_combined = 0
+        grads = None
         for batch in batches:
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     CONFIG['tensorboard'].getint('record_every_n_global_steps'),
@@ -154,14 +155,24 @@ def train(conf):
                     batches.set_postfix({'loss': float(loss_value)})
                     tf.contrib.summary.scalar('loss', loss_value)
 
-                grads = tape.gradient(loss_value, model.variables)
-                grads_list.append(grads)
-                if len(grads_list) == conf['trainer']['combine_batches']:
-                    combined_grads = [sum(x) for x in zip(*grads_list)]
+                if grads is None:
+                    grads = tape.gradient(loss_value, model.variables)
+                else:
+                    for idx, g in enumerate(tape.gradient(loss_value, model.variables)):
+                        if g is None:
+                            continue
+                        if grads[idx] is None:
+                            grads[idx] = g
+                        else:
+                            grads[idx] += g
+                batches_combined += 1
+                if batches_combined == conf['trainer']['combine_batches']:
                     for optimizer_key, (_, variables) in model.learning_rates().items():
-                        filtered_grads = filter(lambda x: x[1] in variables, zip(combined_grads, model.variables))
+                        filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
                         optimizers[optimizer_key].apply_gradients(filtered_grads)
-                step_counter.assign_add(1)
+                    batches_combined = 0
+                    grads = None
+                    step_counter.assign_add(1)
                 if CONFIG['train'].getboolean('compute_drift'):
                     # TODO: create a drift calculator class
                     embeddings_before = embeddings_history[-1]
