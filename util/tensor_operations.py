@@ -52,3 +52,7 @@ def get_n_blocks(tensor, n):
     r = tf.range(tensor.shape[0])
     mask = tf.equal(r[None] // n, r[:, None] // n)
     return tf.reshape(tf.boolean_mask(tensor, mask), [-1, n])
+
+
+def pairwise_product(first, second):
+    return tf.multiply(second[None], first[:, None])

@@ -16,11 +16,16 @@ class LogisticLoss(LossFunction):
                 DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
             pairwise_distance = tf.reshape(pairwise_distance, [-1])
             y = tf.reshape(y, [-1])
+            # TODO: compute proper weights for npair sampling
+            weights = 1
         else:
-            pairwise_distance, y = dataset.get_pairwise_distances(
+            pairwise_distance, y, weights = dataset.get_pairwise_distances(
                 batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         eta = loss_conf['alpha'] - pairwise_distance
         signed_eta = tf.multiply(eta, -2 * tf.cast(y, tf.float32) + 1)
         padded_signed_eta = tf.stack([tf.zeros(signed_eta.shape[0]), signed_eta])
 
-        return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))
+        if self.conf['loss'].get('importance_sampling'):
+            return tf.reduce_mean(weights * tf.reduce_logsumexp(padded_signed_eta, axis=0))
+        else:
+            return tf.reduce_mean(tf.reduce_logsumexp(padded_signed_eta, axis=0))

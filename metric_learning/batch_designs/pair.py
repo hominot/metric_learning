@@ -76,7 +76,7 @@ class PairBatchDesign(BatchDesign):
                 tf.multiply(even_embeddings, odd_embeddings), axis=1)
         else:
             raise Exception('Unknown distance function: {}'.format(distance_function))
-        return pairwise_distances, match
+        return pairwise_distances, match, None
 
     def get_npair_distances(self, batch, model, n, distance_function):
         raise NotImplementedError

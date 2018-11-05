@@ -6,7 +6,7 @@ configs = {
         'dataset': {'name': 'mnist'},
         'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 16},
         'model': {'name': 'simple_dense', 'dimension': 2},
-        'loss': {'name': 'logistic', 'alpha': 4},
+        'loss': {'name': 'logistic', 'alpha': 4, 'importance_sampling': True},
         'metrics': {'recall_k': [1, 2]},
         'trainer': {'lr_decay_steps': 10},
     }),

@@ -14,7 +14,7 @@ class TripletLossFunction(LossFunction):
 
     def loss(self, batch, model, dataset):
         images, labels = batch
-        pairwise_distances, matching_labels_matrix = dataset.get_pairwise_distances(
+        pairwise_distances, matching_labels_matrix, weights = dataset.get_pairwise_distances(
             batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         pairwise_distances = upper_triangular_part(pairwise_distances)
         matching_labels_matrix = upper_triangular_part(matching_labels_matrix)

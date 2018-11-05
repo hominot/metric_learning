@@ -16,13 +16,21 @@ class ContrastiveLossFunction(LossFunction):
                 batch, model,self.conf['loss']['npair'],
                 DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         else:
-            pairwise_distances, matching_labels_matrix = dataset.get_pairwise_distances(
+            pairwise_distances, matching_labels_matrix, weights = dataset.get_pairwise_distances(
                 batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
-        loss_value = (
-            sum(positive_distances) +
-            sum(tf.square(tf.maximum(0, alpha - stable_sqrt(negative_distances))))
-        ) / int(pairwise_distances.shape[0])
+        if self.conf['loss'].get('importance_sampling'):
+            positive_weights = tf.boolean_mask(weights, matching_labels_matrix)
+            negative_weights = tf.boolean_mask(weights, ~matching_labels_matrix)
+            loss_value = (
+                sum(positive_distances * positive_weights) +
+                sum(tf.square(tf.maximum(0, alpha - stable_sqrt(negative_distances))) * negative_weights)
+            ) / int(pairwise_distances.shape[0])
+        else:
+            loss_value = (
+                sum(positive_distances) +
+                sum(tf.square(tf.maximum(0, alpha - stable_sqrt(negative_distances))))
+            ) / int(pairwise_distances.shape[0])
 
         return loss_value

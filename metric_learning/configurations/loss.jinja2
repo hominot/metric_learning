@@ -6,6 +6,7 @@
     {% if npair %}
     'npair': {{ npair }},
     {% endif %}
+    'importance_sampling': {{ importance_sampling | default(False) }},
 }
 {% elif name == 'triplet' %}
 {
@@ -29,6 +30,7 @@
     'npair': {{ npair }},
     {% endif %}
     'alpha': {{ alpha | default(16.0) }},
+    'importance_sampling': {{ importance_sampling | default(False) }},
 }
 {% elif name == 'npair' %}
 {

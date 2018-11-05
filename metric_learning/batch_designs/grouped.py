@@ -8,6 +8,7 @@ from util.tensor_operations import pairwise_dot_product
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import get_n_blocks
+from util.tensor_operations import pairwise_product
 
 import numpy as np
 import tensorflow as tf
@@ -51,11 +52,8 @@ class GroupedBatchDesign(BatchDesign):
             data_map[label].append(image_file)
 
         data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
-        weights = [float(len(x)) for x in data_map.values()]
-        p = np.array(weights) / sum(weights)
-
         sampled_labels = np.random.choice(
-            list(data_map.keys()), size=num_groups, replace=False, p=p)
+            list(data_map.keys()), size=num_groups, replace=False)
         grouped_data = []
         for label in sampled_labels:
             for _ in range(group_size):
@@ -77,9 +75,23 @@ class GroupedBatchDesign(BatchDesign):
 
         matching_labels_matrix = pairwise_matching_matrix(labels, labels)
 
+        num_images = model.extra_info['num_images']
+        label_counts = tf.gather(
+            tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
+            labels) / num_images
+        num_labels = model.extra_info['num_labels']
+        label_counts_multiplied = pairwise_product(label_counts, label_counts)
+        batch_size = self.conf['batch_design']['batch_size']
+        group_size = self.conf['batch_design']['group_size']
+        num_groups = batch_size // group_size
+        negative_weights = (num_groups - 1) * group_size / (num_labels - 1) / label_counts_multiplied
+        positive_weights = (group_size - 1) / label_counts / (label_counts - 1 / num_images)
+        weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+
         return (
             upper_triangular_part(pairwise_distances),
             upper_triangular_part(matching_labels_matrix),
+            upper_triangular_part(1 / weights),
         )
 
     def get_npair_distances(self, batch, model, n, distance_function):

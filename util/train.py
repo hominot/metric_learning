@@ -105,7 +105,7 @@ def train(conf):
     dataset = BatchDesign.create(
         conf['batch_design']['name'], conf, {'data_loader': data_loader})
 
-    label_counts = defaultdict(int)
+    label_counts = [0] * (max(training_labels) + 1)
     for label in training_labels:
         label_counts[label] += 1
     extra_info = {

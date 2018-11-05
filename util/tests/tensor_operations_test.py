@@ -9,6 +9,7 @@ from util.tensor_operations import pairwise_difference
 from util.tensor_operations import pairwise_cosine_similarity
 from util.tensor_operations import off_diagonal_part
 from util.tensor_operations import get_n_blocks
+from util.tensor_operations import pairwise_product
 
 tf.enable_eager_execution()
 
@@ -167,6 +168,15 @@ class TensorOperationsTest(tf.test.TestCase):
             [7, 8, 9],
             [8, 9, 10],
             [9, 10, 11],
+        ])
+
+    def testPairwiseProduct(self):
+        a = tf.constant([1, 2, 3])
+        b = tf.constant([2, 3, 4])
+        self.assertAllEqual(pairwise_product(a, b), [
+            [2, 3, 4],
+            [4, 6, 8],
+            [6, 9, 12],
         ])
 
 
