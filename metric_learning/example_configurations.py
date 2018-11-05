@@ -4,7 +4,7 @@ configs = {
     'mnist_simple_dense': generate_config({
         'image': {},
         'dataset': {'name': 'mnist'},
-        'batch_design': {'name': 'pair', 'group_size': 2, 'batch_size': 16},
+        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 16},
         'model': {'name': 'simple_dense', 'dimension': 2},
         'loss': {'name': 'logistic', 'alpha': 4},
         'metrics': {'recall_k': [1, 2]},

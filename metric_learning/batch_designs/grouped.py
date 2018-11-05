@@ -63,22 +63,6 @@ class GroupedBatchDesign(BatchDesign):
                 grouped_data.append((image_file, label))
         return grouped_data
 
-    def create_dataset(self, image_files, labels, testing=False):
-        grouped_data = []
-        for _ in range(self.conf['batch_design']['num_batches']):
-            grouped_data += self.get_next_batch(image_files, labels)
-        image_files_grouped, labels_grouped = zip(*grouped_data)
-        images_ds = tf.data.Dataset.from_tensor_slices(
-            tf.constant(image_files_grouped)
-        ).map(self.data_loader.image_parse_function)
-        if 'random_flip' in self.conf['image'] and self.conf['image']['random_flip']:
-            images_ds = images_ds.map(self.data_loader.random_flip)
-        if 'random_crop' in self.conf['image']:
-            images_ds = images_ds.map(self.data_loader.random_crop)
-        labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels_grouped))
-
-        return tf.data.Dataset.zip((images_ds, labels_ds)), len(image_files_grouped)
-
     def get_pairwise_distances(self, batch, model, distance_function):
         images, labels = batch
         embeddings = model(images, training=True)

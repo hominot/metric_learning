@@ -5,6 +5,7 @@ import json
 import math
 import os
 
+from collections import defaultdict
 from decimal import Decimal
 from tqdm import tqdm
 from util.dataset import create_test_dataset
@@ -104,9 +105,13 @@ def train(conf):
     dataset = BatchDesign.create(
         conf['batch_design']['name'], conf, {'data_loader': data_loader})
 
+    label_counts = defaultdict(int)
+    for label in training_labels:
+        label_counts[label] += 1
     extra_info = {
         'num_labels': max(training_labels) + 1,
         'num_images': len(training_files),
+        'label_counts': label_counts,
     }
     model = Model.create(conf['model']['name'], conf, extra_info)
     optimizers = {
@@ -138,6 +143,7 @@ def train(conf):
                        total=math.ceil(num_examples / batch_design_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1))
         losses = []
+        grads_list = []
         for batch in batches:
             with tf.contrib.summary.record_summaries_every_n_global_steps(
                     CONFIG['tensorboard'].getint('record_every_n_global_steps'),
@@ -149,9 +155,12 @@ def train(conf):
                     tf.contrib.summary.scalar('loss', loss_value)
 
                 grads = tape.gradient(loss_value, model.variables)
-                for optimizer_key, (_, variables) in model.learning_rates().items():
-                    filtered_grads = filter(lambda x: x[1] in variables, zip(grads, model.variables))
-                    optimizers[optimizer_key].apply_gradients(filtered_grads)
+                grads_list.append(grads)
+                if len(grads_list) == conf['trainer']['combine_batches']:
+                    combined_grads = [sum(x) for x in zip(*grads_list)]
+                    for optimizer_key, (_, variables) in model.learning_rates().items():
+                        filtered_grads = filter(lambda x: x[1] in variables, zip(combined_grads, model.variables))
+                        optimizers[optimizer_key].apply_gradients(filtered_grads)
                 step_counter.assign_add(1)
                 if CONFIG['train'].getboolean('compute_drift'):
                     # TODO: create a drift calculator class

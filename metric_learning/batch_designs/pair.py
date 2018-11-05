@@ -12,18 +12,6 @@ import random
 class PairBatchDesign(BatchDesign):
     name = 'pair'
 
-    def _create_datasets_from_elements(self, elements):
-        image_files, labels = zip(*elements)
-        images_ds = tf.data.Dataset.from_tensor_slices(
-            tf.constant(image_files)
-        ).map(self.data_loader.image_parse_function)
-        if 'random_flip' in self.conf['image'] and self.conf['image']['random_flip']:
-            images_ds = images_ds.map(self.data_loader.random_flip)
-        if 'random_crop' in self.conf['image']:
-            images_ds = images_ds.map(self.data_loader.random_crop)
-        labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels))
-        return images_ds, labels_ds
-
     def get_next_batch(self, image_files, labels):
         data_map = defaultdict(list)
         data_list = list(zip(image_files, labels))
@@ -66,17 +54,6 @@ class PairBatchDesign(BatchDesign):
                 if len(data_map[target_label]) < 2:
                     del data_map[target_label]
         return elements
-
-    def create_dataset(self, image_files, labels, testing=False):
-        data = []
-        for _ in range(self.conf['batch_design']['num_batches']):
-            elements = self.get_next_batch(
-                image_files, labels)
-            data += elements
-
-        return tf.data.Dataset.zip(
-            self._create_datasets_from_elements(data),
-        ), len(data)
 
     def get_pairwise_distances(self, batch, model, distance_function):
         images, labels = batch
