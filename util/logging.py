@@ -22,31 +22,11 @@ def get_run_name(conf):
 
 def set_tensorboard_writer(conf):
     run_name = get_run_name(conf)
-    run_dir = '{}_0001'.format(run_name)
 
     local_tensorboard_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'tensorboard')
     if not tf.gfile.Exists(local_tensorboard_dir):
         tf.gfile.MakeDirs(local_tensorboard_dir)
-    runs = list(filter(
-        lambda x: '_' in x and x.rsplit('_', 1)[0] == run_name,
-        tf.gfile.ListDirectory(local_tensorboard_dir)
-    ))
-
-    if CONFIG['tensorboard'].getboolean('s3_upload'):
-        prefix='{}/tensorboard/{}'.format(CONFIG['tensorboard']['s3_key'], run_name)
-        response = s3.list_objects_v2(
-            Bucket=CONFIG['tensorboard']['s3_bucket'],
-            Prefix=prefix)
-        keys = [x['Key'][:-1]
-                for x in response.get('Contents', [])
-                if x['Key'].endswith('/')]
-        runs += list(filter(
-            lambda x: '_' in x and x.rsplit('_', 1)[0].rsplit('/', 1)[1] == run_name,
-            keys
-        ))
-    if runs:
-        next_run = max([int(run.split('_')[-1]) for run in runs]) + 1
-        run_dir = '{}_{:04d}'.format(run_name, next_run)
+    run_dir = '{}_{}'.format(run_name, datetime.datetime.now().strftime('%Y%m%d%H%M%S_%f'))
 
     if CONFIG['tensorboard'].getboolean('s3_upload'):
         s3.put_object(
