@@ -3,6 +3,7 @@ from util.registry.batch_design import BatchDesign
 from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
 from util.tensor_operations import stable_sqrt
+from util.tensor_operations import pairwise_product
 
 import numpy as np
 import tensorflow as tf
@@ -27,13 +28,10 @@ class PairBatchDesign(BatchDesign):
         label_match = [1] * num_positive_pairs + [0] * num_negative_pairs
         random.shuffle(label_match)
 
-        weights = [float(len(x)) for x in data_map.values()]
-        p = np.array(weights) / sum(weights)
-
         elements = []
         for match in label_match:
             if match:
-                query_label = np.random.choice(list(data_map.keys()), size=1, p=p)[0]
+                query_label = np.random.choice(list(data_map.keys()), size=1)[0]
                 a = data_map[query_label].pop()
                 b = data_map[query_label].pop()
                 elements.append((a, query_label))
@@ -42,7 +40,7 @@ class PairBatchDesign(BatchDesign):
                     del data_map[query_label]
             else:
                 query_label, target_label = np.random.choice(
-                    list(data_map.keys()), size=2, replace=False, p=p)
+                    list(data_map.keys()), size=2, replace=False)
                 elements.append(
                     (data_map[query_label].pop(), query_label)
                 )
@@ -76,7 +74,21 @@ class PairBatchDesign(BatchDesign):
                 tf.multiply(even_embeddings, odd_embeddings), axis=1)
         else:
             raise Exception('Unknown distance function: {}'.format(distance_function))
-        return pairwise_distances, match, None
+
+        num_images = model.extra_info['num_images']
+        label_counts = tf.gather(
+            tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
+            labels) / num_images
+        even_label_counts = tf.gather(label_counts, evens)
+        odd_label_counts = tf.gather(label_counts, odds)
+        num_labels = model.extra_info['num_labels']
+        label_counts_multiplied = tf.multiply(even_label_counts, odd_label_counts)
+        positive_ratio = self.conf['batch_design']['positive_ratio']
+
+        positive_weights = positive_ratio / even_label_counts / (even_label_counts - 1 / num_images)
+        negative_weights = (1 - positive_ratio) / (num_labels - 1) / label_counts_multiplied
+        weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
+        return pairwise_distances, match, 1 / weights
 
     def get_npair_distances(self, batch, model, n, distance_function):
         raise NotImplementedError
