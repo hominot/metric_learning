@@ -20,7 +20,7 @@ def compute_recall(data, k_list, parametrization):
     successes = defaultdict(float)
     total = 0.
     num_singletons = 0
-    for i, (embeddings, labels) in enumerate(tqdm(data, total=len(data), desc='recall')):
+    for i, (embeddings, labels) in enumerate(tqdm(data, total=len(data), desc='recall', dynamic_ncols=True)):
         all_labels = []
         distance_blocks = []
         for j, (test_embeddings, test_labels) in enumerate(data):
@@ -51,7 +51,7 @@ class Recall(Metric):
         batch_size = self.metric_conf['batch_size']
         ds = ds.batch(batch_size)
         data = []
-        for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='recall: embedding'):
+        for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='recall: embedding', dynamic_ncols=True):
             embeddings = model(images, training=False)
             data.append((embeddings, labels))
 

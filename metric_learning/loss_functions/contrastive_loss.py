@@ -11,9 +11,9 @@ class ContrastiveLossFunction(LossFunction):
     def loss(self, batch, model, dataset):
         alpha = self.conf['loss']['alpha']
 
-        if self.conf['loss'].get('npair'):
+        if self.conf['batch_design'].get('npair'):
             pairwise_distances, matching_labels_matrix = dataset.get_npair_distances(
-                batch, model,self.conf['loss']['npair'],
+                batch, model,self.conf['batch_design']['npair'],
                 DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         else:
             pairwise_distances, matching_labels_matrix, weights = dataset.get_pairwise_distances(

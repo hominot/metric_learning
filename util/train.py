@@ -5,7 +5,6 @@ import json
 import math
 import os
 
-from collections import defaultdict
 from decimal import Decimal
 from tqdm import tqdm
 from util.dataset import create_test_dataset
@@ -73,7 +72,8 @@ def compute_all_embeddings(model, conf, training_files):
     train_ds = train_ds.batch(48)
     batches = tqdm(train_ds,
                    total=math.ceil(num_examples / 48),
-                   desc='drift')
+                   desc='drift',
+                   dynamic_ncols=True)
     embeddings = []
     for (batch, (images, labels, image_ids)) in enumerate(batches):
         embeddings.append(model(images, training=False))
@@ -141,7 +141,8 @@ def train(conf):
         train_ds = train_ds.batch(batch_design_conf['batch_size'], drop_remainder=True)
         batches = tqdm(train_ds,
                        total=math.ceil(num_examples / batch_design_conf['batch_size']),
-                       desc='epoch #{}'.format(epoch + 1))
+                       desc='epoch #{}'.format(epoch + 1),
+                       dynamic_ncols=True)
         losses = []
         batches_combined = 0
         grads = None

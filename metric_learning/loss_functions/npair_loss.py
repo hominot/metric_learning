@@ -9,7 +9,7 @@ class NPairLossFunction(LossFunction):
 
     def loss(self, batch, model, dataset):
         pairwise_distances, matching_matrix = dataset.get_npair_distances(
-            batch, model, self.conf['loss']['npair'],
+            batch, model, self.conf['batch_design']['npair'],
             DistanceFunction.DOT_PRODUCT)
         embeddings = dataset.get_embeddings(
             batch, model, DistanceFunction.DOT_PRODUCT)
