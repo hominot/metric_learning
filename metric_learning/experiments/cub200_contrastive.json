@@ -4,17 +4,17 @@
     {"name": "cub200"}
   ],
   "batch_design": [
-    {"name": "pair", "group_size": 2, "batch_size": 46},
-    {"name": "pair", "group_size": 3, "batch_size": 45},
-    {"name": "pair", "group_size": 5, "batch_size": 45},
-    {"name": "pair", "group_size": 9, "batch_size": 45},
-    {"name": "pair", "group_size": 15, "batch_size": 45},
-    {"name": "pair", "group_size": 23, "batch_size": 46},
-    {"name": "pair", "group_size": 2, "npair": 2, "batch_size": 64, "combine_batches": 16},
-    {"name": "pair", "group_size": 2, "npair": 4, "batch_size": 64, "combine_batches": 8},
-    {"name": "pair", "group_size": 2, "npair": 8, "batch_size": 64, "combine_batches": 4},
-    {"name": "pair", "group_size": 2, "npair": 16, "batch_size": 64, "combine_batches": 2},
-    {"name": "pair", "group_size": 2, "npair": 32, "batch_size": 64, "combine_batches": 1}
+    {"name": "grouped", "group_size": 2, "batch_size": 46},
+    {"name": "grouped", "group_size": 3, "batch_size": 45},
+    {"name": "grouped", "group_size": 5, "batch_size": 45},
+    {"name": "grouped", "group_size": 9, "batch_size": 45},
+    {"name": "grouped", "group_size": 15, "batch_size": 45},
+    {"name": "grouped", "group_size": 23, "batch_size": 46},
+    {"name": "grouped", "group_size": 2, "npair": 2, "batch_size": 64, "combine_batches": 16},
+    {"name": "grouped", "group_size": 2, "npair": 4, "batch_size": 64, "combine_batches": 8},
+    {"name": "grouped", "group_size": 2, "npair": 8, "batch_size": 64, "combine_batches": 4},
+    {"name": "grouped", "group_size": 2, "npair": 16, "batch_size": 64, "combine_batches": 2},
+    {"name": "grouped", "group_size": 2, "npair": 32, "batch_size": 64, "combine_batches": 1}
   ],
   "model": [{"name": "resnet50", "dimension": 128}],
   "loss": [
