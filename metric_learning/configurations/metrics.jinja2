@@ -2,15 +2,13 @@
 {% if recall | default(True) %}
     {
         'name': 'recall',
-        'compute_period': {{ compute_period | default(200) }},
         'k': {{ recall_k | default([1, 2, 4, 8]) }},
         'batch_size': 48,
     },
 {% endif %}
-{% if accuracy | default(False) %}
+{% if contrastive_train_loss | default(False) %}
     {
-        'name': 'accuracy',
-        'compute_period': {{ compute_period | default(200) }},
+        'name': 'contrastive_train_loss',
         'batch_size': 48,
     },
 {% endif %}

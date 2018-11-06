@@ -21,11 +21,12 @@ from util.logging import db
 from util.config import CONFIG
 
 
-def evaluate(conf, model, test_dataset, num_testcases, train_stat):
+def evaluate(conf, model, test_datasets, train_stat):
     data = {}
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
             metric = Metric.create(metric_conf['name'], conf)
+            test_dataset, num_testcases = test_datasets[metric.dataset]
             score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():
@@ -98,6 +99,15 @@ def train(conf, experiment_name):
         test_dataset, test_num_testcases = create_test_dataset(
             conf, data_loader, test_dir)
 
+    train_dir = os.path.join(
+        CONFIG['dataset']['experiment_dir'],
+        conf['dataset']['name'],
+        'train')
+    test_datasets = {
+        'recall': (test_dataset, test_num_testcases),
+        'train': create_test_dataset(conf, data_loader, train_dir),
+    }
+
     writer, run_name = set_tensorboard_writer(conf, experiment_name)
     if experiment_name is None:
         experiment_name = run_name.rsplit('_', 1)[0]
@@ -128,7 +138,7 @@ def train(conf, experiment_name):
         'epoch': 0,
     }
     if CONFIG['train'].getboolean('initial_evaluation'):
-        evaluate(conf, model, test_dataset, test_num_testcases, train_stat)
+        evaluate(conf, model, test_datasets, train_stat)
     step_counter = tf.train.get_or_create_global_step()
     step_counter.assign(0)
 
@@ -206,7 +216,7 @@ def train(conf, experiment_name):
             create_checkpoint(checkpoint, run_name)
         train_stat['epoch'] = epoch + 1
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
-        metrics.append(evaluate(conf, model, test_dataset, test_num_testcases, train_stat))
+        metrics.append(evaluate(conf, model, test_datasets, train_stat))
         if stopping_criteria(metrics):
             break
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
