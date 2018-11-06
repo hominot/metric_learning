@@ -9,7 +9,7 @@
 {% endif %}
 {% if contrastive_train_loss | default(False) %}
     {
-        'name': 'contrastive_train_loss',
+        'name': 'contrastive_loss',
         'batch_size': 48,
         'dataset': 'train',
     },
