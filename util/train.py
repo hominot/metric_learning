@@ -7,7 +7,7 @@ import os
 
 from decimal import Decimal
 from tqdm import tqdm
-from util.dataset import create_test_dataset
+from util.dataset import load_images_from_directory
 from util.dataset import get_training_files_labels
 from util.registry.data_loader import DataLoader
 from util.registry.batch_design import BatchDesign
@@ -26,7 +26,7 @@ def evaluate(conf, model, test_datasets, train_stat):
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
             metric = Metric.create(metric_conf['name'], conf)
-            test_dataset, num_testcases = test_datasets[metric.dataset]
+            test_dataset, num_testcases = test_datasets[metric_conf['dataset']]
             score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():
@@ -86,26 +86,25 @@ def train(conf, experiment_name):
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     training_files, training_labels = get_training_files_labels(conf)
     if conf['dataset']['cross_validation_split'] != -1:
-        validation_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
+        test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
                                       conf['dataset']['name'],
                                       'train',
                                       str(conf['dataset']['cross_validation_split']))
-        test_dataset, test_num_testcases = create_test_dataset(
-            conf, data_loader, validation_dir)
     else:
         test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
                                 conf['dataset']['name'],
                                 'test')
-        test_dataset, test_num_testcases = create_test_dataset(
-            conf, data_loader, test_dir)
+    testing_files, testing_labels = load_images_from_directory(test_dir)
 
-    train_dir = os.path.join(
-        CONFIG['dataset']['experiment_dir'],
-        conf['dataset']['name'],
-        'train')
+    vanilla_ds = BatchDesign.create(
+        'vanilla',
+        conf,
+        {'data_loader': data_loader})
     test_datasets = {
-        'recall': (test_dataset, test_num_testcases),
-        'train': create_test_dataset(conf, data_loader, train_dir),
+        'test': vanilla_ds.create_dataset(
+            testing_files, testing_labels, testing=True),
+        'train': vanilla_ds.create_dataset(
+            training_files, training_labels, testing=True),
     }
 
     writer, run_name = set_tensorboard_writer(conf, experiment_name)

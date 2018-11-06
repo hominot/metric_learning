@@ -36,7 +36,11 @@ def compute_recall(data, k_list, parametrization):
         values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(k_list))
         top_labels = tf.gather(tf.constant(all_labels, tf.int64), indices)
         for k in k_list:
-            score = tf.reduce_sum(tf.cast(tf.equal(tf.transpose(labels[None]), top_labels[:, 0:k]), tf.int32), axis=1)
+            score = tf.reduce_sum(
+                tf.cast(tf.equal(
+                    tf.transpose(labels[None]),
+                    top_labels[:, 0:k]
+                ), tf.int32), axis=1)
             successes[k] += int(sum(tf.cast(score >= 1, tf.int32)))
         total += int(embeddings.shape[0])
         num_singletons = count_singletons(all_labels)
@@ -45,7 +49,6 @@ def compute_recall(data, k_list, parametrization):
 
 class Recall(Metric):
     name = 'recall'
-    dataset = 'recall'
 
     def compute_metric(self, model, ds, num_testcases):
         batch_size = self.metric_conf['batch_size']

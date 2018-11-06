@@ -7,11 +7,12 @@ import os
 import tempfile
 
 from util.config import CONFIG
-from util.dataset import create_test_dataset
+from util.dataset import load_images_from_directory
 
 from util.registry.model import Model
 from util.registry.metric import Metric
 from util.registry.data_loader import DataLoader
+from util.registry.batch_design import BatchDesign
 
 
 s3 = boto3.client('s3')
@@ -62,6 +63,7 @@ METRICS = [
         'k': [1, 2, 4, 8],
         'compute_period': 10,
         'batch_size': 48,
+        'dataset': 'test',
     },
 ]
 
@@ -77,17 +79,27 @@ if __name__ == '__main__':
     optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
     model = Model.create(conf['model']['name'], conf)
 
+    test_dir = os.path.join(
+        CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test')
+    testing_files, testing_labels = load_images_from_directory(test_dir)
+
+    data_loader = DataLoader.create(conf['dataset']['name'], conf)
+    vanilla_ds = BatchDesign.create(
+        'vanilla',
+        conf,
+        {'data_loader': data_loader})
+    test_datasets = {
+        'test': vanilla_ds.create_dataset(
+            testing_files, testing_labels, testing=True),
+    }
+
     checkpoint = tf.train.Checkpoint(model=model)
     with tempfile.TemporaryDirectory() as temp_dir:
         c = get_checkpoint(temp_dir, args.experiment, args.step)
         checkpoint.restore(c)
 
-        test_dir = os.path.join(
-            CONFIG['dataset']['experiment_dir'], conf['dataset']['name'], 'test')
-        data_loader = DataLoader.create(conf['dataset']['name'], conf)
-        test_dataset, test_num_testcases = create_test_dataset(
-            conf, data_loader, test_dir)
         for metric_conf in METRICS:
             metric = Metric.create(metric_conf['name'], conf)
+            test_dataset, test_num_testcases = test_datasets[metric_conf['dataset']]
             score = metric.compute_metric(model, test_dataset, test_num_testcases)
             print(metric_conf['name'], score)

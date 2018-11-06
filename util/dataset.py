@@ -122,19 +122,6 @@ def group_npairs(images, labels, n):
     return ret
 
 
-def create_test_dataset(conf, data_loader, image_dir):
-    testing_files, testing_labels = load_images_from_directory(image_dir)
-    test_images_ds = tf.data.Dataset.from_tensor_slices(
-        tf.constant(testing_files)).map(data_loader.image_parse_function)
-    test_labels_ds = tf.data.Dataset.from_tensor_slices(
-        tf.constant(testing_labels, tf.int64))
-
-    if 'random_crop' in conf['image']:
-        test_images_ds = test_images_ds.map(data_loader.center_crop)
-    ds = tf.data.Dataset.zip((test_images_ds, test_labels_ds))
-    return ds, len(testing_labels)
-
-
 def get_training_files_labels(conf):
     cv_splits = CONFIG['dataset'].getint('cross_validation_splits')
     cv_split = CONFIG['dataset'].getint('cross_validation_split')

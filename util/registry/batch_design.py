@@ -24,7 +24,7 @@ class BatchDesign(object, metaclass=ClassRegistry):
                 images_ds = images_ds.map(self.data_loader.center_crop)
             else:
                 images_ds = images_ds.map(self.data_loader.random_crop)
-        labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels))
+        labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels, dtype=tf.int64))
         return images_ds, labels_ds
 
     def get_next_batch(self, image_files, labels):

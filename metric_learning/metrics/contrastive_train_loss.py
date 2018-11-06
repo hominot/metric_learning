@@ -45,9 +45,8 @@ def compute_contrastive_loss(conf, data):
     return loss / num_pairs
 
 
-class Recall(Metric):
+class ContrastiveTrainLoss(Metric):
     name = 'contrastive_train_loss'
-    dataset = 'train'
 
     def compute_metric(self, model, ds, num_testcases):
         batch_size = self.metric_conf['batch_size']

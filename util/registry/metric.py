@@ -3,7 +3,6 @@ from util.registry.class_registry import ClassRegistry
 
 class Metric(object, metaclass=ClassRegistry):
     module_path = 'metric_learning.metrics'
-    dataset = None
 
     def __init__(self, conf, extra_info):
         super(Metric, self).__init__()
