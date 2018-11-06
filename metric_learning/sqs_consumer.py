@@ -2,6 +2,9 @@ import tensorflow as tf
 
 import boto3
 import json
+import os
+import sys
+import time
 
 from util.train import train
 
@@ -17,4 +20,7 @@ if __name__ == '__main__':
     for message in messages:
         conf = json.loads(message.body)
         message.delete()
-        train(conf)
+        train(conf, None)
+
+    time.sleep(10)
+    os.execv(__file__, sys.argv)
