@@ -63,5 +63,4 @@ class Recall(Metric):
             embeddings = model(images, training=False)
             data.append((embeddings, labels))
 
-        ret = compute_contrastive_loss(self.conf, data)
-        return {'recall@{}'.format(k): score for k, score in ret.items()}
+        return compute_contrastive_loss(self.conf, data)
