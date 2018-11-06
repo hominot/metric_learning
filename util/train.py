@@ -46,13 +46,13 @@ def evaluate(conf, model, test_dataset, num_testcases, train_stat):
 
 
 def stopping_criteria(metrics):
-    if len(metrics) <= 5:
+    if len(metrics) <= 3:
         return False
     recall_1 = [float(x['recall@1']) for x in metrics]
     max_recall_1 = max(recall_1)
-    if recall_1[-1] < max_recall_1 * 0.95:
+    if recall_1[-1] < max_recall_1 * 0.93:
         return True
-    if recall_1[-1] < recall_1[-2] * 0.98 and recall_1[-2] < recall_1[-3] * 0.98:
+    if recall_1[-1] < recall_1[-2] * 0.97 and recall_1[-2] < recall_1[-3] * 0.97:
         return True
     if all([x * 1.003 < max_recall_1 for x in recall_1[-4:]]):
         return True
