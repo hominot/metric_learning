@@ -80,7 +80,7 @@ def compute_all_embeddings(model, conf, training_files):
     return embeddings
 
 
-def train(conf):
+def train(conf, experiment_name):
     print(json.dumps(conf, indent=4))
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
     training_files, training_labels = get_training_files_labels(conf)
@@ -98,9 +98,11 @@ def train(conf):
         test_dataset, test_num_testcases = create_test_dataset(
             conf, data_loader, test_dir)
 
-    writer, run_name = set_tensorboard_writer(conf)
+    writer, run_name = set_tensorboard_writer(conf, experiment_name)
+    if experiment_name is None:
+        experiment_name = run_name.rsplit('_', 1)[0]
     writer.set_as_default()
-    save_config(conf, run_name)
+    save_config(conf, run_name, experiment_name)
 
     dataset = BatchDesign.create(
         conf['batch_design']['name'], conf, {'data_loader': data_loader})

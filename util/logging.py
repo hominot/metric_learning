@@ -20,13 +20,16 @@ def get_run_name(conf):
     ])
 
 
-def set_tensorboard_writer(conf):
-    run_name = get_run_name(conf)
+def set_tensorboard_writer(conf, experiment_name):
+    if experiment_name is None:
+        run_name = get_run_name(conf)
+    else:
+        run_name = experiment_name
 
     local_tensorboard_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'tensorboard')
     if not tf.gfile.Exists(local_tensorboard_dir):
         tf.gfile.MakeDirs(local_tensorboard_dir)
-    run_dir = '{}_{}'.format(run_name, datetime.datetime.now().strftime('%Y%m%d%H%M%S_%f'))
+    run_dir = '{}_{}'.format(run_name, datetime.datetime.now().strftime('%Y%m%d%H%M%S-%f'))
 
     if CONFIG['tensorboard'].getboolean('s3_upload'):
         s3.put_object(
@@ -51,7 +54,7 @@ def upload_tensorboard_log_to_s3(run_name):
             '{}/tensorboard/{}/{}'.format(CONFIG['tensorboard']['s3_key'], run_name, filename))
 
 
-def save_config(conf, run_name):
+def save_config(conf, run_name, experiment_name):
     if CONFIG['tensorboard'].getboolean('s3_upload'):
         upload_string_to_s3(
             bucket=CONFIG['tensorboard']['s3_bucket'],
@@ -67,6 +70,7 @@ def save_config(conf, run_name):
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
         data = {
             'id': run_name,
+            'experiment_name': experiment_name,
             'config': json.dumps(conf),
             'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
