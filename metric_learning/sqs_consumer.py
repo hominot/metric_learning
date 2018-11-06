@@ -23,4 +23,4 @@ if __name__ == '__main__':
         train(conf, None)
 
     time.sleep(10)
-    os.execv(__file__, sys.argv)
+    os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
