@@ -79,7 +79,7 @@ class GroupedBatchDesign(BatchDesign):
             label_counts = tf.gather(
                 tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
                 even_labels) / num_average_images_per_label
-            positive_label_counts = tf.stack([label_counts, label_counts], axis=1)
+            positive_label_counts = label_counts[:, None]
             label_counts_multiplied = get_n_blocks(
                 pairwise_product(label_counts, label_counts),
                 self.conf['batch_design']['npair'])
