@@ -50,13 +50,17 @@ def compute_recall(data, k_list, parametrization):
 class Recall(Metric):
     name = 'recall'
 
-    def compute_metric(self, model, ds, num_testcases):
-        batch_size = self.metric_conf['batch_design']['batch_size']
-        ds = ds.batch(batch_size)
-        data = []
-        for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='recall: embedding', dynamic_ncols=True):
-            embeddings = model(images, training=False)
-            data.append((embeddings, labels))
+    def compute_metric(self, model, ds, num_testcases, embedding_cache):
+        if self.metric_conf['dataset'] in embedding_cache:
+            data = embedding_cache[self.metric_conf['dataset']]
+        else:
+            data = []
+            batch_size = self.metric_conf['batch_design']['batch_size']
+            ds = ds.batch(batch_size)
+            for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='embedding', dynamic_ncols=True):
+                embeddings = model(images, training=False)
+                data.append((embeddings, labels))
+            embedding_cache[self.metric_conf['dataset']] = data
 
         ret = compute_recall(data, self.metric_conf['k'], self.conf['loss']['parametrization'])
         return {'recall@{}'.format(k): score for k, score in ret.items()}

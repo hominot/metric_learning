@@ -11,7 +11,7 @@ import tensorflow as tf
 class AUC(Metric):
     name = 'auc'
 
-    def compute_metric(self, model, ds, num_testcases):
+    def compute_metric(self, model, ds, num_testcases, embedding_cache):
         batch_size = self.metric_conf['batch_design']['batch_size']
         ds = ds.batch(batch_size)
         conf_copy = {}

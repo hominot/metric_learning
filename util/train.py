@@ -24,6 +24,7 @@ from util.config import CONFIG
 def evaluate(conf, model, data_files, train_stat):
     data = {}
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
+    embedding_cache = {}
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
             conf_copy = {}
@@ -37,7 +38,7 @@ def evaluate(conf, model, data_files, train_stat):
             image_files, labels = data_files[metric_conf.get('dataset', 'test')]
             test_dataset, num_testcases = batch_design.create_dataset(
                 image_files, labels, metric_conf['batch_design'], testing=True)
-            score = metric.compute_metric(model, test_dataset, num_testcases)
+            score = metric.compute_metric(model, test_dataset, num_testcases, embedding_cache)
             if type(score) is dict:
                 for metric, s in score.items():
                     tf.contrib.summary.scalar('test ' + metric, s)
@@ -47,6 +48,7 @@ def evaluate(conf, model, data_files, train_stat):
                 tf.contrib.summary.scalar('{}'.format(metric_conf['name']), score)
                 print('{}: {}'.format(metric_conf['name'], score))
                 data[metric_conf['name']] = Decimal(str(score))
+        embedding_cache.clear()
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
         table = db.Table('TrainHistory')
         item = {}

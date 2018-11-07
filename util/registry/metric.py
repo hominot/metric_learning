@@ -14,7 +14,7 @@ class Metric(object, metaclass=ClassRegistry):
                 break
         self.extra_info = extra_info
 
-    def compute_metric(self, model, test_ds, num_testcases):
+    def compute_metric(self, model, test_ds, num_testcases, embedding_cache):
         raise NotImplementedError
 
     def __str__(self):

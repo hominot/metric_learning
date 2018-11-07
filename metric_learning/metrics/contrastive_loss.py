@@ -48,18 +48,22 @@ def compute_contrastive_loss(conf, data):
 class ContrastiveLoss(Metric):
     name = 'contrastive_loss'
 
-    def compute_metric(self, model, ds, num_testcases):
-        batch_size = self.metric_conf['batch_design']['batch_size']
-        data = []
-        batches = tqdm(
-            ds.batch(batch_size),
-            total=math.ceil(num_testcases / batch_size),
-            desc='contrastive: embedding',
-            dynamic_ncols=True
-        )
+    def compute_metric(self, model, ds, num_testcases, embedding_cache):
 
-        for images, labels in batches:
-            embeddings = model(images, training=False)
-            data.append((embeddings, labels))
+        if self.metric_conf['dataset'] in embedding_cache:
+            data = embedding_cache[self.metric_conf['dataset']]
+        else:
+            batch_size = self.metric_conf['batch_design']['batch_size']
+            batches = tqdm(
+                ds.batch(batch_size),
+                total=math.ceil(num_testcases / batch_size),
+                desc='embedding',
+                dynamic_ncols=True
+            )
+            data = []
+            for images, labels in batches:
+                embeddings = model(images, training=False)
+                data.append((embeddings, labels))
+            embedding_cache[self.metric_conf['dataset']] = data
 
         return compute_contrastive_loss(self.conf, data)
