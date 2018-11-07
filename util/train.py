@@ -65,22 +65,6 @@ def get_metric_to_report(metrics):
     return metrics[np.argmax(recall_1)]
 
 
-def compute_all_embeddings(model, conf, training_files):
-    data_loader = DataLoader.create(conf['dataset']['name'], conf)
-    ds = BatchDesign.create('vanilla', conf, {'data_loader': data_loader})
-    train_ds, num_examples = ds.create_dataset(
-        training_files, [0] * len(training_files), testing=True)
-    train_ds = train_ds.batch(48)
-    batches = tqdm(train_ds,
-                   total=math.ceil(num_examples / 48),
-                   desc='drift',
-                   dynamic_ncols=True)
-    embeddings = []
-    for (batch, (images, labels, image_ids)) in enumerate(batches):
-        embeddings.append(model(images, training=False))
-    return embeddings
-
-
 def train(conf, experiment_name):
     print(json.dumps(conf, indent=4))
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
@@ -141,12 +125,7 @@ def train(conf, experiment_name):
     step_counter = tf.train.get_or_create_global_step()
     step_counter.assign(0)
 
-    drift_history = []
-    embeddings_history = []
     metrics = []
-    if CONFIG['train'].getboolean('compute_drift'):
-        embeddings = compute_all_embeddings(model, conf, training_files)
-        embeddings_history.append(embeddings)
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
         train_ds = train_ds.batch(batch_design_conf['batch_size'], drop_remainder=True)
@@ -185,28 +164,6 @@ def train(conf, experiment_name):
                     batches_combined = 0
                     grads = None
                     step_counter.assign_add(1)
-                if CONFIG['train'].getboolean('compute_drift'):
-                    # TODO: create a drift calculator class
-                    embeddings_before = embeddings_history[-1]
-                    embeddings_after = compute_all_embeddings(model, conf, training_files)
-                    avg_drift = sum([
-                        tf.reduce_sum(tf.norm(before - after, axis=1))
-                        for before, after in zip(embeddings_before, embeddings_after)
-                    ]) / len(training_files)
-                    drift_history.append(float(avg_drift))
-                    if len(drift_history) > CONFIG['train'].getint('drift_history_length'):
-                        drift_history.pop(0)
-                    tf.contrib.summary.scalar('avg_drift', avg_drift)
-                    embeddings_history.append(embeddings_after)
-                    if len(embeddings_history) > CONFIG['train'].getint('drift_history_length'):
-                        initial_embeddings = embeddings_history.pop(0)
-                        total_drift = sum(drift_history)
-                        final_drift = sum([
-                            tf.reduce_sum(tf.norm(before - after, axis=1))
-                            for before, after in zip(embeddings_after, initial_embeddings)
-                        ]) / len(training_files)
-                        tf.contrib.summary.scalar('total_drift', total_drift)
-                        tf.contrib.summary.scalar('drift_ratio', final_drift / total_drift)
                 if CONFIG['tensorboard'].getboolean('s3_upload') and \
                         int(step_counter) % int(CONFIG['tensorboard']['s3_upload_period']) == 0:
                     upload_tensorboard_log_to_s3(run_name)
