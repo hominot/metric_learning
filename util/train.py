@@ -26,7 +26,9 @@ def evaluate(conf, model, test_datasets, train_stat):
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
             metric = Metric.create(metric_conf['name'], conf)
-            test_dataset, num_testcases = test_datasets[metric_conf['dataset']]
+            batch_design, image_files, labels = test_datasets[metric_conf['dataset']]
+            test_dataset, num_testcases = batch_design.create_dataset(
+                image_files, labels, metric_conf, testing=True)
             score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():
@@ -68,7 +70,6 @@ def get_metric_to_report(metrics):
 def train(conf, experiment_name):
     print(json.dumps(conf, indent=4))
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
-    training_files, training_labels = get_training_files_labels(conf)
     if conf['dataset']['cross_validation_split'] != -1:
         test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
                                       conf['dataset']['name'],
@@ -78,17 +79,9 @@ def train(conf, experiment_name):
         test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
                                 conf['dataset']['name'],
                                 'test')
-    testing_files, testing_labels = load_images_from_directory(test_dir)
-
-    vanilla_ds = BatchDesign.create(
-        'vanilla',
-        conf,
-        {'data_loader': data_loader})
-    test_datasets = {
-        'test': vanilla_ds.create_dataset(
-            testing_files, testing_labels, testing=True),
-        'train': vanilla_ds.create_dataset(
-            training_files, training_labels, testing=True),
+    data_files = {
+        'test': load_images_from_directory(test_dir),
+        'train': get_training_files_labels(conf),
     }
 
     writer, run_name = set_tensorboard_writer(conf, experiment_name)
@@ -100,7 +93,7 @@ def train(conf, experiment_name):
     dataset = BatchDesign.create(
         conf['batch_design']['name'], conf, {'data_loader': data_loader})
 
-    label_counts = [0] * (max(training_labels) + 1)
+    label_counts = [0] * (max(data_files['train'][1]) + 1)
     for label in training_labels:
         label_counts[label] += 1
     extra_info = {
@@ -127,7 +120,7 @@ def train(conf, experiment_name):
 
     metrics = []
     for epoch in range(conf['trainer']['num_epochs']):
-        train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
+        train_ds, num_examples = dataset.create_dataset(training_files, training_labels, conf['batch_design'])
         train_ds = train_ds.batch(batch_design_conf['batch_size'], drop_remainder=True)
         batches = tqdm(train_ds,
                        total=math.ceil(num_examples / batch_design_conf['batch_size']),

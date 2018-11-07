@@ -6,10 +6,10 @@ import random
 class RandomBatchDesign(BatchDesign):
     name = 'random'
 
-    def get_next_batch(self, image_files, labels):
+    def get_next_batch(self, image_files, labels, batch_conf):
         data = list(zip(image_files, labels, range(len(image_files))))
         random.shuffle(data)
-        return data[:self.conf['batch_design']['batch_size']]
+        return data[:batch_conf['batch_size']]
 
     def get_pairwise_distances(self, batch, model, distance_function):
         raise NotImplementedError

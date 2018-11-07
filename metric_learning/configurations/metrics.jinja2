@@ -14,4 +14,12 @@
         'dataset': 'train',
     },
 {% endif %}
+{% if test_auc | default(False) %}
+    {
+        'name': 'auc',
+        'batch_size': 48,
+        'num_batches': 500,
+        'dataset': 'test_pair',
+    },
+{% endif %}
 ]

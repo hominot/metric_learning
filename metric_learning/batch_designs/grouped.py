@@ -40,12 +40,12 @@ def get_npair_distances(embeddings, n, distance_function):
 class GroupedBatchDesign(BatchDesign):
     name = 'grouped'
 
-    def get_next_batch(self, image_files, labels):
+    def get_next_batch(self, image_files, labels, batch_conf):
         data = list(zip(image_files, labels))
         random.shuffle(data)
 
-        batch_size = self.conf['batch_design']['batch_size']
-        group_size = self.conf['batch_design']['group_size']
+        batch_size = batch_conf['batch_size']
+        group_size = batch_conf['group_size']
         num_groups = batch_size // group_size
         data_map = defaultdict(list)
         for image_file, label in data:

@@ -27,14 +27,13 @@ class BatchDesign(object, metaclass=ClassRegistry):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels, dtype=tf.int64))
         return images_ds, labels_ds
 
-    def get_next_batch(self, image_files, labels):
+    def get_next_batch(self, image_files, labels, batch_conf):
         raise NotImplementedError
 
-    def create_dataset(self, image_files, labels, testing=False):
+    def create_dataset(self, image_files, labels, batch_conf, testing=False):
         data = []
-        for _ in range(self.conf['batch_design']['num_batches'] * self.conf['batch_design']['combine_batches']):
-            elements = self.get_next_batch(
-                image_files, labels)
+        for _ in range(batch_conf['num_batches'] * batch_conf['combine_batches']):
+            elements = self.get_next_batch(image_files, labels, batch_conf)
             data += elements
 
         return tf.data.Dataset.zip(
