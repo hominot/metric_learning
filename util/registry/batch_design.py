@@ -10,7 +10,7 @@ class BatchDesign(object, metaclass=ClassRegistry):
         super(BatchDesign, self).__init__()
         self.conf = conf
         self.extra_info = extra_info
-        self.data_loader = extra_info['data_loader']
+        self.data_loader = extra_info.get('data_loader')
 
     def _create_datasets_from_elements(self, elements, testing=False):
         image_files, labels = zip(*elements)
@@ -27,27 +27,26 @@ class BatchDesign(object, metaclass=ClassRegistry):
         labels_ds = tf.data.Dataset.from_tensor_slices(tf.constant(labels, dtype=tf.int64))
         return images_ds, labels_ds
 
-    def get_next_batch(self, image_files, labels):
+    def get_next_batch(self, image_files, labels, batch_conf):
         raise NotImplementedError
 
-    def create_dataset(self, image_files, labels, testing=False):
+    def create_dataset(self, image_files, labels, batch_conf, testing=False):
         data = []
-        for _ in range(self.conf['batch_design']['num_batches'] * self.conf['batch_design']['combine_batches']):
-            elements = self.get_next_batch(
-                image_files, labels)
+        for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
+            elements = self.get_next_batch(image_files, labels, batch_conf)
             data += elements
 
         return tf.data.Dataset.zip(
             self._create_datasets_from_elements(data, testing),
         ), len(data)
 
-    def get_pairwise_distances(self, batch, model, distance_function):
+    def get_pairwise_distances(self, batch, model, distance_function, training=True):
         raise NotImplementedError
 
-    def get_npair_distances(self, batch, model, n, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError
 
-    def get_embeddings(self, batch, model, distance_function):
+    def get_embeddings(self, batch, model, distance_function, training=True):
         raise NotImplementedError
 
     def __str__(self):

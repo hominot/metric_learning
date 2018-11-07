@@ -13,7 +13,7 @@ import random
 class PairBatchDesign(BatchDesign):
     name = 'pair'
 
-    def get_next_batch(self, image_files, labels):
+    def get_next_batch(self, image_files, labels, batch_conf):
         data_map = defaultdict(list)
         data_list = list(zip(image_files, labels))
         random.shuffle(data_list)
@@ -21,12 +21,11 @@ class PairBatchDesign(BatchDesign):
             data_map[label].append(image_file)
         data_map = dict(filter(lambda x: len(x[1]) >= 2, data_map.items()))
 
-        batch_size = self.conf['batch_design']['batch_size']
-        positive_ratio = self.conf['batch_design']['positive_ratio']
+        batch_size = batch_conf['batch_size']
+        positive_ratio = batch_conf['positive_ratio']
         num_positive_pairs = int(batch_size * positive_ratio / 2)
         num_negative_pairs = (batch_size // 2) - num_positive_pairs
         label_match = [1] * num_positive_pairs + [0] * num_negative_pairs
-        random.shuffle(label_match)
 
         elements = []
         for match in label_match:
@@ -53,9 +52,9 @@ class PairBatchDesign(BatchDesign):
                     del data_map[target_label]
         return elements
 
-    def get_pairwise_distances(self, batch, model, distance_function):
+    def get_pairwise_distances(self, batch, model, distance_function, training=True):
         images, labels = batch
-        embeddings = model(images, training=True)
+        embeddings = model(images, training=training)
         evens = tf.range(images.shape[0] // 2, dtype=tf.int64) * 2
         odds = tf.range(images.shape[0] // 2, dtype=tf.int64) * 2 + 1
         even_embeddings = tf.gather(embeddings, evens)
@@ -92,8 +91,8 @@ class PairBatchDesign(BatchDesign):
         weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
         return pairwise_distances, match, 1 / weights
 
-    def get_npair_distances(self, batch, model, n, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError
 
-    def get_embeddings(self, batch, model, distance_function):
+    def get_embeddings(self, batch, model, distance_function, training=True):
         raise NotImplementedError

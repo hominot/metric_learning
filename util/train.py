@@ -21,12 +21,22 @@ from util.logging import db
 from util.config import CONFIG
 
 
-def evaluate(conf, model, test_datasets, train_stat):
+def evaluate(conf, model, data_files, train_stat):
     data = {}
+    data_loader = DataLoader.create(conf['dataset']['name'], conf)
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
+            conf_copy = {}
+            conf_copy.update(conf)
+            conf_copy['batch_design'] = metric_conf['batch_design']
+            batch_design = BatchDesign.create(
+                metric_conf['batch_design']['name'],
+                conf_copy,
+                {'data_loader': data_loader})
             metric = Metric.create(metric_conf['name'], conf)
-            test_dataset, num_testcases = test_datasets[metric_conf['dataset']]
+            image_files, labels = data_files[metric_conf.get('dataset', 'test')]
+            test_dataset, num_testcases = batch_design.create_dataset(
+                image_files, labels, metric_conf['batch_design'], testing=True)
             score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():
@@ -68,7 +78,6 @@ def get_metric_to_report(metrics):
 def train(conf, experiment_name):
     print(json.dumps(conf, indent=4))
     data_loader = DataLoader.create(conf['dataset']['name'], conf)
-    training_files, training_labels = get_training_files_labels(conf)
     if conf['dataset']['cross_validation_split'] != -1:
         test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
                                       conf['dataset']['name'],
@@ -78,17 +87,9 @@ def train(conf, experiment_name):
         test_dir = os.path.join(CONFIG['dataset']['experiment_dir'],
                                 conf['dataset']['name'],
                                 'test')
-    testing_files, testing_labels = load_images_from_directory(test_dir)
-
-    vanilla_ds = BatchDesign.create(
-        'vanilla',
-        conf,
-        {'data_loader': data_loader})
-    test_datasets = {
-        'test': vanilla_ds.create_dataset(
-            testing_files, testing_labels, testing=True),
-        'train': vanilla_ds.create_dataset(
-            training_files, training_labels, testing=True),
+    data_files = {
+        'test': load_images_from_directory(test_dir),
+        'train': get_training_files_labels(conf),
     }
 
     writer, run_name = set_tensorboard_writer(conf, experiment_name)
@@ -100,12 +101,14 @@ def train(conf, experiment_name):
     dataset = BatchDesign.create(
         conf['batch_design']['name'], conf, {'data_loader': data_loader})
 
-    label_counts = [0] * (max(training_labels) + 1)
-    for label in training_labels:
+    train_images, train_labels = data_files['train']
+    num_train_labels = max(train_labels) + 1
+    label_counts = [0] * num_train_labels
+    for label in train_labels:
         label_counts[label] += 1
     extra_info = {
-        'num_labels': max(training_labels) + 1,
-        'num_images': len(training_files),
+        'num_labels': num_train_labels,
+        'num_images': len(train_images),
         'label_counts': label_counts,
     }
     model = Model.create(conf['model']['name'], conf, extra_info)
@@ -121,14 +124,18 @@ def train(conf, experiment_name):
         'epoch': 0,
     }
     if CONFIG['train'].getboolean('initial_evaluation'):
-        evaluate(conf, model, test_datasets, train_stat)
+        evaluate(conf, model, data_files, train_stat)
     step_counter = tf.train.get_or_create_global_step()
     step_counter.assign(0)
 
     metrics = []
     for epoch in range(conf['trainer']['num_epochs']):
-        train_ds, num_examples = dataset.create_dataset(training_files, training_labels)
-        train_ds = train_ds.batch(batch_design_conf['batch_size'], drop_remainder=True)
+        train_ds, num_examples = dataset.create_dataset(
+            train_images,
+            train_labels,
+            batch_design_conf)
+        train_ds = train_ds.batch(batch_design_conf['batch_size'],
+                                  drop_remainder=True)
         batches = tqdm(train_ds,
                        total=math.ceil(num_examples / batch_design_conf['batch_size']),
                        desc='epoch #{}'.format(epoch + 1),
@@ -172,7 +179,7 @@ def train(conf, experiment_name):
             create_checkpoint(checkpoint, run_name)
         train_stat['epoch'] = epoch + 1
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
-        metrics.append(evaluate(conf, model, test_datasets, train_stat))
+        metrics.append(evaluate(conf, model, data_files, train_stat))
         if stopping_criteria(metrics):
             break
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
