@@ -36,7 +36,7 @@ def evaluate(conf, model, data_files, train_stat):
             metric = Metric.create(metric_conf['name'], conf)
             image_files, labels = data_files[metric_conf.get('dataset', 'test')]
             test_dataset, num_testcases = batch_design.create_dataset(
-                image_files, labels, metric_conf, testing=True)
+                image_files, labels, metric_conf['batch_design'], testing=True)
             score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():

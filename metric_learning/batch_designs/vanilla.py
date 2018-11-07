@@ -13,14 +13,14 @@ class VanillaBatchDesign(BatchDesign):
             self._create_datasets_from_elements(data, testing),
         ), len(data)
 
-    def get_pairwise_distances(self, batch, model, distance_function):
+    def get_pairwise_distances(self, batch, model, distance_function, training=True):
         raise NotImplementedError
 
-    def get_npair_distances(self, batch, model, n, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError
 
-    def get_embeddings(self, batch, model, distance_function):
+    def get_embeddings(self, batch, model, distance_function, training=True):
         raise NotImplementedError
 
-    def get_next_batch(self, image_files, labels, batch_conf):
+    def get_next_batch(self, image_files, labels, batch_conf, training=True):
         raise NotImplementedError

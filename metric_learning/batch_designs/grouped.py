@@ -61,9 +61,9 @@ class GroupedBatchDesign(BatchDesign):
                 grouped_data.append((image_file, label))
         return grouped_data
 
-    def get_pairwise_distances(self, batch, model, distance_function):
+    def get_pairwise_distances(self, batch, model, distance_function, training=True):
         images, labels = batch
-        embeddings = model(images, training=True)
+        embeddings = model(images, training=training)
 
         num_images = model.extra_info['num_images']
         num_labels = model.extra_info['num_labels']
@@ -119,7 +119,7 @@ class GroupedBatchDesign(BatchDesign):
                 upper_triangular_part(1 / weights),
             )
 
-    def get_npair_distances(self, batch, model, n, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function, training=True):
         if self.conf['batch_design']['group_size'] != 2:
             raise Exception('group size must be 2 in order to get npair distances')
         if (self.conf['batch_design']['batch_size'] // 2) % n != 0:
@@ -129,10 +129,10 @@ class GroupedBatchDesign(BatchDesign):
                 ))
 
         images, labels = batch
-        embeddings = model(images, training=True)
+        embeddings = model(images, training=training)
 
         return get_npair_distances(embeddings, n, distance_function)
 
-    def get_embeddings(self, batch, model, distance_function):
+    def get_embeddings(self, batch, model, distance_function, training=True):
         images, _ = batch
-        return model(images, training=True)
+        return model(images, training=training)

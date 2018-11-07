@@ -11,11 +11,11 @@ class RandomBatchDesign(BatchDesign):
         random.shuffle(data)
         return data[:batch_conf['batch_size']]
 
-    def get_pairwise_distances(self, batch, model, distance_function):
+    def get_pairwise_distances(self, batch, model, distance_function, training=True):
         raise NotImplementedError
 
-    def get_npair_distances(self, batch, model, n, distance_function):
+    def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError
 
-    def get_embeddings(self, batch, model, distance_function):
+    def get_embeddings(self, batch, model, distance_function, training=True):
         raise NotImplementedError
