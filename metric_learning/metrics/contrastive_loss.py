@@ -49,7 +49,7 @@ class ContrastiveLoss(Metric):
     name = 'contrastive_loss'
 
     def compute_metric(self, model, ds, num_testcases):
-        batch_size = self.metric_conf['batch_size']
+        batch_size = self.metric_conf['batch_design']['batch_size']
         data = []
         batches = tqdm(
             ds.batch(batch_size),

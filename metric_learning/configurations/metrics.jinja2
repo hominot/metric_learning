@@ -3,23 +3,30 @@
     {
         'name': 'recall',
         'k': {{ recall_k | default([1, 2, 4, 8]) }},
-        'batch_size': 48,
-        'dataset': 'test',
+        'batch_design': {
+            'name': 'vanilla',
+            'batch_size': 48,
+        },
     },
 {% endif %}
 {% if contrastive_train_loss | default(False) %}
     {
         'name': 'contrastive_loss',
-        'batch_size': 48,
+        'batch_design': {
+            'name': 'vanilla',
+            'batch_size': 48,
+        },
         'dataset': 'train',
     },
 {% endif %}
 {% if test_auc | default(False) %}
     {
         'name': 'auc',
-        'batch_size': 48,
-        'num_batches': 500,
-        'dataset': 'test_pair',
+        'batch_design': {
+            'name': 'pair',
+            'batch_size': 48,
+            'num_batches': 500,
+        },
     },
 {% endif %}
 ]

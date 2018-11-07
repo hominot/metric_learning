@@ -51,7 +51,7 @@ class Recall(Metric):
     name = 'recall'
 
     def compute_metric(self, model, ds, num_testcases):
-        batch_size = self.metric_conf['batch_size']
+        batch_size = self.metric_conf['batch_design']['batch_size']
         ds = ds.batch(batch_size)
         data = []
         for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='recall: embedding', dynamic_ncols=True):
