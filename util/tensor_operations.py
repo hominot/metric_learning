@@ -5,13 +5,23 @@ from metric_learning.constants.distance_function import DistanceFunction
 
 def compute_pairwise_distances(first, second, distance_function):
     if distance_function == DistanceFunction.COSINE_SIMILARITY:
-        return -pairwise_cosine_similarity(first, second)
+        first_norm = first / tf.norm(first, axis=1, keep_dims=True)
+        second_norm = second / tf.norm(second, axis=1, keep_dims=True)
+        return -tf.reduce_sum(
+            tf.multiply(second_norm[None], first_norm[:, None]),
+            axis=2)
     if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
-        return _pairwise_euclidean_distance_squared(first, second)
+        return tf.reduce_sum(
+            tf.square(second[None] - first[:, None]),
+            axis=2)
     if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
-        return _pairwise_euclidean_distance(first, second)
+        return stable_sqrt(tf.reduce_sum(
+            tf.square(second[None] - first[:, None]),
+            axis=2))
     if distance_function == DistanceFunction.DOT_PRODUCT:
-        return -_pairwise_dot_product(first, second)
+        return -tf.reduce_sum(
+            tf.multiply(second[None], first[:, None]),
+            axis=2)
     raise Exception(
         'Unknown distance function with name {}'.format(distance_function))
 
@@ -29,28 +39,6 @@ def compute_elementwise_distances(first, second, distance_function):
         return -tf.reduce_sum(tf.square(first - second), axis=1)
     raise Exception(
         'Unknown distance function with name {}'.format(distance_function))
-
-
-def _pairwise_euclidean_distance_squared(first, second):
-    return tf.reduce_sum(
-        tf.square(second[None] - first[:, None]),
-        axis=2)
-
-
-def _pairwise_euclidean_distance(first, second):
-    return stable_sqrt(_pairwise_euclidean_distance_squared(first, second))
-
-
-def _pairwise_dot_product(first, second):
-    return tf.reduce_sum(
-        tf.multiply(second[None], first[:, None]),
-        axis=2)
-
-
-def pairwise_cosine_similarity(first, second):
-    first_norm = first / tf.norm(first, axis=1, keep_dims=True)
-    second_norm = second / tf.norm(second, axis=1, keep_dims=True)
-    return _pairwise_dot_product(first_norm, second_norm)
 
 
 def pairwise_difference(first, second):

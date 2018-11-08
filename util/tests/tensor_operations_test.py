@@ -1,15 +1,14 @@
 import tensorflow as tf
 
-from util.tensor_operations import _pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
-from util.tensor_operations import pairwise_dot_product
+from util.tensor_operations import compute_pairwise_distances
 from util.tensor_operations import repeat_columns
 from util.tensor_operations import pairwise_difference
-from util.tensor_operations import pairwise_cosine_similarity
 from util.tensor_operations import off_diagonal_part
 from util.tensor_operations import get_n_blocks
 from util.tensor_operations import pairwise_product
+from metric_learning.constants.distance_function import DistanceFunction
 
 tf.enable_eager_execution()
 
@@ -21,7 +20,8 @@ class TensorOperationsTest(tf.test.TestCase):
             [0, 2],
             [0, 3],
         ])
-        y = _pairwise_euclidean_distance_squared(embeddings, embeddings)
+        y = compute_pairwise_distances(
+            embeddings, embeddings, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         self.assertAllEqual(y, [
             [0, 1, 4],
             [1, 0, 1],
@@ -37,7 +37,8 @@ class TensorOperationsTest(tf.test.TestCase):
         second = tf.constant([
             [0, 1],
         ])
-        y = _pairwise_euclidean_distance_squared(first, second)
+        y = compute_pairwise_distances(
+            first, second, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
         self.assertAllEqual(y, [
             [0], [1], [4],
         ])
@@ -48,7 +49,8 @@ class TensorOperationsTest(tf.test.TestCase):
             [0, 2],
             [0, 3],
         ])
-        y = pairwise_dot_product(embeddings, embeddings)
+        y = -compute_pairwise_distances(
+            embeddings, embeddings, DistanceFunction.DOT_PRODUCT)
         self.assertAllEqual(y, [
             [1, 2, 3],
             [2, 4, 6],
@@ -110,7 +112,8 @@ class TensorOperationsTest(tf.test.TestCase):
             [0., 1.],
             [1., 0.],
         ])
-        c = pairwise_cosine_similarity(embeddings, embeddings)
+        c = -compute_pairwise_distances(
+            embeddings, embeddings, DistanceFunction.COSINE_SIMILARITY)
         self.assertAllEqual(c, [
             [1., 0.],
             [0., 1.],
