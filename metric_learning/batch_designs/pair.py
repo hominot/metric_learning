@@ -1,9 +1,6 @@
 from util.registry.batch_design import BatchDesign
 
 from collections import defaultdict
-from metric_learning.constants.distance_function import DistanceFunction
-from util.tensor_operations import stable_sqrt
-from util.tensor_operations import pairwise_product
 from util.tensor_operations import compute_elementwise_distances
 
 import numpy as np
@@ -68,22 +65,30 @@ class PairBatchDesign(BatchDesign):
             even_embeddings, odd_embeddings, distance_function
         )
 
-        num_images = model.extra_info['num_images']
-        num_labels = model.extra_info['num_labels']
+        weights = self.get_pairwise_weights(labels, model.extra_info)
+        return elementwise_distances, match, 1 / weights
+
+    @staticmethod
+    def get_pairwise_weights(labels, extra_info):
+        num_images = extra_info['num_images']
+        num_labels = extra_info['num_labels']
         num_average_images_per_label = num_images / num_labels
         label_counts = tf.gather(
-            tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
+            tf.constant(extra_info['label_counts'], dtype=tf.float32),
             labels) / num_average_images_per_label
+        evens = tf.range(labels.shape[0] // 2, dtype=tf.int64) * 2
+        odds = tf.range(labels.shape[0] // 2, dtype=tf.int64) * 2 + 1
+        even_labels = tf.gather(labels, evens)
+        odd_labels = tf.gather(labels, odds)
+        match = tf.equal(even_labels, odd_labels)
+        positive_ratio = float(tf.reduce_sum(tf.cast(match, tf.float32))) / int(match.shape[0])
         even_label_counts = tf.gather(label_counts, evens)
         odd_label_counts = tf.gather(label_counts, odds)
-        num_labels = model.extra_info['num_labels']
         label_counts_multiplied = tf.multiply(even_label_counts, odd_label_counts)
-        positive_ratio = self.conf['batch_design']['positive_ratio']
-
         positive_weights = positive_ratio / even_label_counts / (even_label_counts - 1 / num_average_images_per_label)
         negative_weights = (1 - positive_ratio) / (num_labels - 1) / label_counts_multiplied
         weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
-        return elementwise_distances, match, 1 / weights
+        return weights
 
     def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError
