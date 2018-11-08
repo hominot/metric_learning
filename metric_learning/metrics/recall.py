@@ -19,7 +19,7 @@ def compute_recall(embeddings_list, labels_list, k_list, distance_function):
     successes = defaultdict(float)
     total = 0.
     num_singletons = 0
-    data = zip(embeddings_list, labels_list)
+    data = list(zip(embeddings_list, labels_list))
     batches = tqdm(
         data, total=len(embeddings_list), desc='recall', dynamic_ncols=True)
     for i, (embeddings, labels) in enumerate(batches):

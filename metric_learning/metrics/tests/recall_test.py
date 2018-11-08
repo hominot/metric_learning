@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from metric_learning.metrics.recall import compute_recall
 from metric_learning.metrics.recall import count_singletons
+from metric_learning.constants.distance_function import get_distance_function
 
 
 tf.enable_eager_execution()
@@ -21,9 +22,8 @@ class RecallMetricTest(tf.test.TestCase):
             [0., 1.],
         ])
         labels = tf.constant([1, 1, 2, 2], tf.int64)
-        data = [(embeddings, labels)]
-        for parametrization in ['euclidean_distance', 'dot_product']:
-            r = compute_recall(data, [1], parametrization)
+        for parametrization in ['euclidean_distance', 'cosine_similarity']:
+            r = compute_recall([embeddings], [labels], [1], get_distance_function(parametrization))
             self.assertEqual(r, {1: 1.0})
 
     def testRecall2(self):
@@ -34,18 +34,18 @@ class RecallMetricTest(tf.test.TestCase):
             [1., 2.],
         ])
         labels = tf.constant([1, 1, 2, 2], tf.int64)
-        data = [(embeddings, labels)]
-        self.assertEqual(
-            compute_recall(data, [1, 2, 3], 'euclidean_distance'),
-            {1: 0.5, 2: 0.75, 3: 1.0}
-        )
-        self.assertEqual(
-            compute_recall(data, [1, 2, 3], 'dot_product'),
-            {1: 1.0, 2: 1.0, 3: 1.0}
-        )
+        ret = compute_recall(
+            [embeddings], [labels],
+            [1, 2, 3],
+            get_distance_function('euclidean_distance'))
+        self.assertEqual(ret, {1: 0.5, 2: 0.75, 3: 1.0})
+        ret = compute_recall(
+            [embeddings], [labels],
+            [1, 2, 3],
+            get_distance_function('cosine_similarity'))
+        self.assertEqual(ret, {1: 1.0, 2: 1.0, 3: 1.0})
 
     def testRecallMultipleBlocks(self):
-        pass
         embeddings1 = tf.constant([
             [1., 0.],
             [4., 0.],
@@ -56,15 +56,16 @@ class RecallMetricTest(tf.test.TestCase):
         ])
         labels1 = tf.constant([1, 1], tf.int64)
         labels2 = tf.constant([2, 2], tf.int64)
-        data = [(embeddings1, labels1), (embeddings2, labels2)]
-        self.assertEqual(
-            compute_recall(data, [1, 2, 3], 'euclidean_distance'),
-            {1: 0.5, 2: 0.75, 3: 1.0}
-        )
-        self.assertEqual(
-            compute_recall(data, [1, 2, 3], 'dot_product'),
-            {1: 1.0, 2: 1.0, 3: 1.0}
-        )
+        ret = compute_recall(
+            [embeddings1, embeddings2], [labels1, labels2],
+            [1, 2, 3],
+            get_distance_function('euclidean_distance'))
+        self.assertEqual(ret, {1: 0.5, 2: 0.75, 3: 1.0})
+        ret = compute_recall(
+            [embeddings1, embeddings2], [labels1, labels2],
+            [1, 2, 3],
+            get_distance_function('cosine_similarity'))
+        self.assertEqual(ret, {1: 1.0, 2: 1.0, 3: 1.0})
 
     def testRecallWithSingleton(self):
         embeddings = tf.constant([
@@ -75,8 +76,10 @@ class RecallMetricTest(tf.test.TestCase):
             [0., 1.],
         ])
         labels = tf.constant([1, 1, 2, 3, 4], tf.int64)
-        data = [(embeddings, labels)]
-        r = compute_recall(data, [1], 'euclidean_distance')
+        r = compute_recall(
+            [embeddings], [labels],
+            [1],
+            get_distance_function('euclidean_distance'))
         self.assertEqual(r, {1: 1.0})
 
 
