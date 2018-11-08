@@ -4,6 +4,7 @@ from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
 from util.tensor_operations import stable_sqrt
 from util.tensor_operations import pairwise_product
+from util.tensor_operations import compute_elementwise_distances
 
 import numpy as np
 import tensorflow as tf
@@ -62,17 +63,10 @@ class PairBatchDesign(BatchDesign):
         even_labels = tf.gather(labels, evens)
         odd_labels = tf.gather(labels, odds)
         match = tf.equal(even_labels, odd_labels)
-        if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
-            pairwise_distances = stable_sqrt(
-                tf.reduce_sum(tf.square(even_embeddings - odd_embeddings), axis=1))
-        elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
-            pairwise_distances = tf.reduce_sum(
-                tf.square(even_embeddings - odd_embeddings), axis=1)
-        elif distance_function == DistanceFunction.DOT_PRODUCT:
-            pairwise_distances = -tf.reduce_sum(
-                tf.multiply(even_embeddings, odd_embeddings), axis=1)
-        else:
-            raise Exception('Unknown distance function: {}'.format(distance_function))
+
+        elementwise_distances = compute_elementwise_distances(
+            even_embeddings, odd_embeddings, distance_function
+        )
 
         num_images = model.extra_info['num_images']
         num_labels = model.extra_info['num_labels']
@@ -89,7 +83,7 @@ class PairBatchDesign(BatchDesign):
         positive_weights = positive_ratio / even_label_counts / (even_label_counts - 1 / num_average_images_per_label)
         negative_weights = (1 - positive_ratio) / (num_labels - 1) / label_counts_multiplied
         weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
-        return pairwise_distances, match, 1 / weights
+        return elementwise_distances, match, 1 / weights
 
     def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError

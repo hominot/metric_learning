@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from util.registry.loss_function import LossFunction
-from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import repeat_columns

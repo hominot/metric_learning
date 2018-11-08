@@ -1,7 +1,8 @@
 from util.registry.metric import Metric
 
 from collections import defaultdict
-from metric_learning.constants.distance_function import DistanceFunction
+from metric_learning.constants.distance_function import get_distance_function
+from util.tensor_operations import compute_elementwise_distances
 
 import random
 import tensorflow as tf
@@ -10,19 +11,8 @@ import tensorflow as tf
 def compute_distances(embeddings, first_list, second_list, distance_function):
     first_embeddings = tf.gather(embeddings, first_list)
     second_embeddings = tf.gather(embeddings, second_list)
-    if distance_function == DistanceFunction.DOT_PRODUCT:
-        first_norm = tf.norm(first_embeddings, axis=1)
-        second_norm = tf.norm(second_embeddings, axis=1)
-        distances = -tf.reduce_sum(tf.multiply(
-            first_embeddings,
-            second_embeddings
-        ), axis=1) / first_norm / second_norm
-    else:
-        distances = tf.reduce_sum(
-            tf.square(first_embeddings - second_embeddings),
-            axis=1
-        )
-    return distances
+    return compute_elementwise_distances(
+        first_embeddings, second_embeddings, distance_function)
 
 
 class AUC(Metric):
@@ -31,11 +21,8 @@ class AUC(Metric):
     def compute_metric(self, model, ds, num_testcases):
         embeddings_list, labels_list = self.get_embeddings(
             model, ds, num_testcases)
-        parametrization = self.conf['loss']['parametrization']
-        if parametrization == 'dot_product':
-            distance_function = DistanceFunction.DOT_PRODUCT
-        else:
-            distance_function = DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED
+        distance_function = get_distance_function(
+            self.conf['loss']['distance_function'])
 
         embeddings = tf.concat(embeddings_list, axis=0)
         labels = tf.concat(labels_list, axis=0)

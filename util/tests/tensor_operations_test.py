@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from util.tensor_operations import pairwise_euclidean_distance_squared
+from util.tensor_operations import _pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import pairwise_dot_product
@@ -21,7 +21,7 @@ class TensorOperationsTest(tf.test.TestCase):
             [0, 2],
             [0, 3],
         ])
-        y = pairwise_euclidean_distance_squared(embeddings, embeddings)
+        y = _pairwise_euclidean_distance_squared(embeddings, embeddings)
         self.assertAllEqual(y, [
             [0, 1, 4],
             [1, 0, 1],
@@ -37,7 +37,7 @@ class TensorOperationsTest(tf.test.TestCase):
         second = tf.constant([
             [0, 1],
         ])
-        y = pairwise_euclidean_distance_squared(first, second)
+        y = _pairwise_euclidean_distance_squared(first, second)
         self.assertAllEqual(y, [
             [0], [1], [4],
         ])

@@ -2,10 +2,11 @@ from util.registry.metric import Metric
 
 from collections import defaultdict
 from tqdm import tqdm
-from util.tensor_operations import pairwise_euclidean_distance_squared
+from util.tensor_operations import compute_pairwise_distances
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import stable_sqrt
 from util.tensor_operations import upper_triangular_part
+from metric_learning.constants.distance_function import DistanceFunction
 
 import tensorflow as tf
 
@@ -26,7 +27,8 @@ def compute_contrastive_loss(conf, embeddings_list, labels_list):
         for j, (test_embeddings, test_labels) in enumerate(data):
             if i > j:
                 continue
-            distances = pairwise_euclidean_distance_squared(embeddings, test_embeddings)
+            distances = compute_pairwise_distances(
+                embeddings, test_embeddings, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
             matches = pairwise_matching_matrix(labels, test_labels)
             if i == j:
                 distances = upper_triangular_part(distances)
