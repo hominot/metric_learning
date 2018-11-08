@@ -57,53 +57,67 @@ class GroupedBatchDesign(BatchDesign):
         images, labels = batch
         embeddings = model(images, training=training)
 
-        num_images = model.extra_info['num_images']
-        num_labels = model.extra_info['num_labels']
-        num_average_images_per_label = num_images / num_labels
-        batch_size = self.conf['batch_design']['batch_size']
-        group_size = self.conf['batch_design']['group_size']
-        num_groups = batch_size // group_size
-
         if self.conf['batch_design'].get('npair'):
-            evens = tf.range(num_groups, dtype=tf.int64) * 2
-            even_labels = tf.gather(labels, evens)
-            num_average_images_per_label = num_images / num_labels
-            label_counts = tf.gather(
-                tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
-                even_labels) / num_average_images_per_label
-            positive_label_counts = label_counts[:, None]
-            label_counts_multiplied = get_n_blocks(
-                pairwise_product(label_counts, label_counts),
-                self.conf['batch_design']['npair'])
             pairwise_distances, matching_labels_matrix = get_npair_distances(
                 embeddings, self.conf['batch_design']['npair'], distance_function)
-        else:
-            pairwise_distances = compute_pairwise_distances(
-                embeddings, embeddings, distance_function)
-            label_counts = tf.gather(
-                tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
-                labels) / num_average_images_per_label
-            positive_label_counts = label_counts
-            matching_labels_matrix = pairwise_matching_matrix(labels, labels)
-            label_counts_multiplied = pairwise_product(label_counts, label_counts)
-
-        num_labels = model.extra_info['num_labels']
-        negative_weights = (num_groups - 1) * group_size / (num_labels - 1) / label_counts_multiplied
-        positive_weights = (group_size - 1) / positive_label_counts / (positive_label_counts - 1 / num_average_images_per_label)
-        weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
-
-        if self.conf['batch_design'].get('npair'):
+            weights = self.get_npair_pairwise_weights(
+                labels, self.conf['batch_design']['npair'], model.extra_info)
             return (
                 tf.reshape(pairwise_distances, [-1]),
                 tf.reshape(matching_labels_matrix, [-1]),
                 tf.reshape(1 / weights, [-1]),
             )
         else:
+            group_size = self.conf['batch_design']['group_size']
+            pairwise_distances = compute_pairwise_distances(
+                embeddings, embeddings, distance_function)
+            matching_labels_matrix = pairwise_matching_matrix(labels, labels)
+            weights = self.get_pairwise_weights(labels, group_size, model.extra_info)
             return (
                 upper_triangular_part(pairwise_distances),
                 upper_triangular_part(matching_labels_matrix),
                 upper_triangular_part(1 / weights),
             )
+
+    @staticmethod
+    def get_npair_pairwise_weights(labels, npair, extra_info):
+        batch_size = int(labels.shape[0])
+        group_size = 2
+        num_groups = batch_size // group_size
+        num_labels = extra_info['num_labels']
+        evens = tf.range(num_groups, dtype=tf.int64) * 2
+        even_labels = tf.gather(labels, evens)
+        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
+        label_counts = tf.gather(
+            tf.constant(extra_info['label_counts'], dtype=tf.float32),
+            even_labels) / num_average_images_per_label
+        label_counts_multiplied = get_n_blocks(
+            pairwise_product(label_counts, label_counts),
+            npair)
+        positive_label_counts = label_counts[:, None]
+        negative_weights = (npair - 1) * 2 / (num_labels - 1) / label_counts_multiplied
+        positive_weights = 1 / positive_label_counts / (positive_label_counts - 1 / num_average_images_per_label)
+        matching_labels_matrix = get_n_blocks(tf.cast(tf.eye(num_groups), tf.bool), npair)
+        weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+        return weights
+
+    @staticmethod
+    def get_pairwise_weights(labels, group_size, extra_info):
+        batch_size = int(labels.shape[0])
+        num_groups = batch_size // group_size
+        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
+        label_counts = tf.gather(
+            tf.constant(extra_info['label_counts'], dtype=tf.float32),
+            labels) / num_average_images_per_label
+        positive_label_counts = label_counts
+        matching_labels_matrix = pairwise_matching_matrix(labels, labels)
+        label_counts_multiplied = pairwise_product(label_counts, label_counts)
+
+        num_labels = extra_info['num_labels']
+        negative_weights = (num_groups - 1) * group_size / (num_labels - 1) / label_counts_multiplied
+        positive_weights = (group_size - 1) / positive_label_counts / (positive_label_counts - 1 / num_average_images_per_label)
+        weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+        return weights
 
     def get_npair_distances(self, batch, model, n, distance_function, training=True):
         if self.conf['batch_design']['group_size'] != 2:
