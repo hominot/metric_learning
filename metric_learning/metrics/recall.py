@@ -5,7 +5,6 @@ from tqdm import tqdm
 from util.tensor_operations import pairwise_euclidean_distance_squared
 from util.tensor_operations import pairwise_cosine_similarity
 
-import math
 import tensorflow as tf
 
 
@@ -16,11 +15,14 @@ def count_singletons(all_labels):
     return len(list(filter(lambda x: x == 1, counts.values())))
 
 
-def compute_recall(data, k_list, parametrization):
+def compute_recall(embeddings_list, labels_list, k_list, parametrization):
     successes = defaultdict(float)
     total = 0.
     num_singletons = 0
-    for i, (embeddings, labels) in enumerate(tqdm(data, total=len(data), desc='recall', dynamic_ncols=True)):
+    data = zip(embeddings_list, labels_list)
+    batches = tqdm(
+        data, total=len(embeddings_list), desc='recall', dynamic_ncols=True)
+    for i, (embeddings, labels) in enumerate(batches):
         all_labels = []
         distance_blocks = []
         for j, (test_embeddings, test_labels) in enumerate(data):
@@ -50,17 +52,12 @@ def compute_recall(data, k_list, parametrization):
 class Recall(Metric):
     name = 'recall'
 
-    def compute_metric(self, model, ds, num_testcases, embedding_cache):
-        if self.metric_conf['dataset'] in embedding_cache:
-            data = embedding_cache[self.metric_conf['dataset']]
-        else:
-            data = []
-            batch_size = self.metric_conf['batch_design']['batch_size']
-            ds = ds.batch(batch_size)
-            for images, labels in tqdm(ds, total=math.ceil(num_testcases / batch_size), desc='embedding', dynamic_ncols=True):
-                embeddings = model(images, training=False)
-                data.append((embeddings, labels))
-            embedding_cache[self.metric_conf['dataset']] = data
+    def compute_metric(self, model, ds, num_testcases):
+        embeddings_list, labels_list = self.get_embeddings(model, ds, num_testcases)
 
-        ret = compute_recall(data, self.metric_conf['k'], self.conf['loss']['parametrization'])
+        ret = compute_recall(
+            embeddings_list,
+            labels_list,
+            self.metric_conf['k'],
+            self.conf['loss']['parametrization'])
         return {'recall@{}'.format(k): score for k, score in ret.items()}
