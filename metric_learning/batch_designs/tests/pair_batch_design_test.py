@@ -14,7 +14,7 @@ class PairBatchDesignTest(tf.test.TestCase):
             'num_labels': 6,
             'label_counts': label_counts,
         }
-        weights = PairBatchDesign.get_pairwise_weights(labels, extra_info)
+        weights = PairBatchDesign.get_pairwise_weights(labels, 0.5, extra_info)
 
         evens = tf.range(labels.shape[0] // 2, dtype=tf.int64) * 2
         odds = tf.range(labels.shape[0] // 2, dtype=tf.int64) * 2 + 1
@@ -22,8 +22,7 @@ class PairBatchDesignTest(tf.test.TestCase):
         odd_labels = tf.gather(labels, odds)
         self.assertAllEqual(even_labels, [0, 1, 2, 4])
         self.assertAllEqual(odd_labels, [0, 1, 3, 5])
-        match = tf.equal(even_labels, odd_labels)
-        positive_ratio = float(tf.reduce_sum(tf.cast(match, tf.float32))) / int(match.shape[0])
+        positive_ratio = 0.5
         self.assertEqual(positive_ratio, 0.5)
         num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
 

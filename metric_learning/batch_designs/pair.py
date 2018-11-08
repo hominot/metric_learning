@@ -21,9 +21,8 @@ class PairBatchDesign(BatchDesign):
 
         batch_size = batch_conf['batch_size']
         positive_ratio = batch_conf['positive_ratio']
-        num_positive_pairs = int(batch_size * positive_ratio / 2)
-        num_negative_pairs = (batch_size // 2) - num_positive_pairs
-        label_match = [1] * num_positive_pairs + [0] * num_negative_pairs
+        label_match = [1 if random.random() < positive_ratio else 0
+                       for _ in range(batch_size // 2)]
 
         elements = []
         for match in label_match:
@@ -65,11 +64,14 @@ class PairBatchDesign(BatchDesign):
             even_embeddings, odd_embeddings, distance_function
         )
 
-        weights = self.get_pairwise_weights(labels, model.extra_info)
+        weights = self.get_pairwise_weights(
+            labels,
+            self.conf['batch_design']['positive_ratio'],
+            model.extra_info)
         return elementwise_distances, match, 1 / weights
 
     @staticmethod
-    def get_pairwise_weights(labels, extra_info):
+    def get_pairwise_weights(labels, positive_ratio, extra_info):
         num_images = extra_info['num_images']
         num_labels = extra_info['num_labels']
         num_average_images_per_label = num_images / num_labels
@@ -81,7 +83,6 @@ class PairBatchDesign(BatchDesign):
         even_labels = tf.gather(labels, evens)
         odd_labels = tf.gather(labels, odds)
         match = tf.equal(even_labels, odd_labels)
-        positive_ratio = float(tf.reduce_sum(tf.cast(match, tf.float32))) / int(match.shape[0])
         even_label_counts = tf.gather(label_counts, evens)
         odd_label_counts = tf.gather(label_counts, odds)
         label_counts_multiplied = tf.multiply(even_label_counts, odd_label_counts)
