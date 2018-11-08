@@ -1,45 +1,86 @@
 from util.registry.metric import Metric
 
-from tqdm import tqdm
-from util.registry.batch_design import BatchDesign
+from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
 
-import math
+import random
 import tensorflow as tf
+
+
+def compute_distances(embeddings, first_list, second_list, distance_function):
+    first_embeddings = tf.gather(embeddings, first_list)
+    second_embeddings = tf.gather(embeddings, second_list)
+    if distance_function == DistanceFunction.DOT_PRODUCT:
+        first_norm = tf.norm(first_embeddings, axis=1)
+        second_norm = tf.norm(second_embeddings, axis=1)
+        distances = -tf.reduce_sum(tf.multiply(
+            first_embeddings,
+            second_embeddings
+        ), axis=1) / first_norm / second_norm
+    else:
+        distances = tf.reduce_sum(
+            tf.square(first_embeddings - second_embeddings),
+            axis=1
+        )
+    return distances
 
 
 class AUC(Metric):
     name = 'auc'
 
     def compute_metric(self, model, ds, num_testcases):
-        batch_size = self.metric_conf['batch_design']['batch_size']
-        ds = ds.batch(batch_size)
-        conf_copy = {}
-        conf_copy.update(self.conf)
-        conf_copy['batch_design'] = self.metric_conf['batch_design']
-        batch_design = BatchDesign.create(
-            self.metric_conf['batch_design']['name'],
-            conf_copy,
-            {})
+        embeddings_list, labels_list = self.get_embeddings(
+            model, ds, num_testcases)
         parametrization = self.conf['loss']['parametrization']
         if parametrization == 'dot_product':
             distance_function = DistanceFunction.DOT_PRODUCT
         else:
             distance_function = DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED
 
-        scores = []
-        batches = tqdm(
-            ds,
-            total=math.ceil(num_testcases / batch_size),
-            desc='auc',
-            dynamic_ncols=True)
-        for batch in batches:
-            distances, match, _ = batch_design.get_pairwise_distances(
-                batch, model, distance_function, training=False)
-            num_pairs = int(distances.shape[0]) // 2
-            scores.append(tf.reduce_mean(tf.cast(
-                distances[:num_pairs] < distances[num_pairs:],
-                tf.float32
-            )))
+        embeddings = tf.concat(embeddings_list, axis=0)
+        labels = tf.concat(labels_list, axis=0)
 
-        return float(sum(scores)) / len(scores)
+        label_map = defaultdict(list)
+        for index, label in enumerate(labels):
+            label_map[int(label)].append(index)
+        num_samples = self.metric_conf['num_samples']
+        positive_label_map = dict(
+            [(k, v) for k, v in label_map.items() if len(v) >= 2]
+        )
+
+        positive_labels = random.choices(
+            population=list(positive_label_map.keys()),
+            weights=[len(v) for v in positive_label_map.values()],
+            k=num_samples,
+        )
+        positive_pairs = []
+        for positive_label in positive_labels:
+            a, b = random.sample(label_map[positive_label], 2)
+            positive_pairs.append((a, b))
+        first_list, second_list = zip(*positive_pairs)
+        positive_distances = compute_distances(
+            embeddings, first_list, second_list, distance_function)
+
+        negative_label_pairs = []
+        population = list(label_map.keys())
+        weights = [len(v) for v in label_map.values()]
+        for _ in range(num_samples):
+            while True:
+                a, b = random.choices(
+                    population=population,
+                    weights=weights,
+                    k=2,
+                )
+                if a != b:
+                    break
+            negative_label_pairs.append((a, b))
+        negative_pairs = []
+        for a, b in negative_label_pairs:
+            first = random.choice(label_map[a])
+            second = random.choice(label_map[b])
+            negative_pairs.append((first, second))
+        first_list, second_list = zip(*negative_pairs)
+        negative_distances = compute_distances(
+            embeddings, first_list, second_list, distance_function)
+
+        return float(tf.reduce_sum(tf.cast(positive_distances < negative_distances, tf.float32))) / num_samples

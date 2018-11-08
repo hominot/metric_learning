@@ -1,5 +1,5 @@
 [
-{% if recall | default(True) %}
+{% if recall | default(False) %}
     {
         'name': 'recall',
         'k': {{ recall_k | default([1, 2, 4, 8]) }},
@@ -24,12 +24,11 @@
     {
         'name': 'auc',
         'batch_design': {
-            'name': 'pair',
+            'name': 'vanilla',
             'batch_size': 48,
-            'num_batches': 500,
-            'positive_ratio': 0.5,
         },
         'dataset': 'test',
+        'num_samples': 40000,
     },
 {% endif %}
 {% if nmi | default(False) %}

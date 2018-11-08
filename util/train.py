@@ -48,6 +48,7 @@ def evaluate(conf, model, data_files, train_stat):
                 tf.contrib.summary.scalar('{}'.format(metric_conf['name']), score)
                 print('{}: {}'.format(metric_conf['name'], score))
                 data[metric_conf['name']] = Decimal(str(score))
+    Metric.cache.clear()
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
         table = db.Table('TrainHistory')
         item = {}
