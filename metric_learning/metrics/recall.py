@@ -2,8 +2,8 @@ from util.registry.metric import Metric
 
 from collections import defaultdict
 from tqdm import tqdm
-from util.tensor_operations import pairwise_euclidean_distance_squared
-from util.tensor_operations import pairwise_cosine_similarity
+from util.tensor_operations import compute_pairwise_distances
+from metric_learning.constants.distance_function import get_distance_function
 
 import tensorflow as tf
 
@@ -15,7 +15,7 @@ def count_singletons(all_labels):
     return len(list(filter(lambda x: x == 1, counts.values())))
 
 
-def compute_recall(embeddings_list, labels_list, k_list, parametrization):
+def compute_recall(embeddings_list, labels_list, k_list, distance_function):
     successes = defaultdict(float)
     total = 0.
     num_singletons = 0
@@ -27,13 +27,12 @@ def compute_recall(embeddings_list, labels_list, k_list, parametrization):
         distance_blocks = []
         for j, (test_embeddings, test_labels) in enumerate(data):
             all_labels += list(test_labels.numpy())
-            if parametrization == 'dot_product':
-                distances = -pairwise_cosine_similarity(embeddings, test_embeddings)
-            else:
-                distances = pairwise_euclidean_distance_squared(embeddings, test_embeddings)
+            pairwise_distances = compute_pairwise_distances(
+                embeddings, test_embeddings, distance_function)
             if i == j:
-                distances = distances + tf.eye(int(distances.shape[0])) * 1e6
-            distance_blocks.append(distances)
+                pairwise_distances = pairwise_distances + \
+                         tf.eye(int(pairwise_distances.shape[0])) * 1e6
+            distance_blocks.append(pairwise_distances)
 
         values, indices = tf.nn.top_k(-tf.concat(distance_blocks, axis=1), max(k_list))
         top_labels = tf.gather(tf.constant(all_labels, tf.int64), indices)
@@ -59,5 +58,5 @@ class Recall(Metric):
             embeddings_list,
             labels_list,
             self.metric_conf['k'],
-            self.conf['loss']['parametrization'])
+            get_distance_function(self.conf['loss']['distance_function']))
         return {'recall@{}'.format(k): score for k, score in ret.items()}

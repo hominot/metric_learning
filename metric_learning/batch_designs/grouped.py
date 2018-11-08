@@ -2,13 +2,11 @@ from util.registry.batch_design import BatchDesign
 
 from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
-from util.tensor_operations import pairwise_euclidean_distance_squared
-from util.tensor_operations import pairwise_euclidean_distance
-from util.tensor_operations import pairwise_dot_product
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import get_n_blocks
 from util.tensor_operations import pairwise_product
+from util.tensor_operations import compute_pairwise_distances
 
 import numpy as np
 import tensorflow as tf
@@ -22,14 +20,8 @@ def get_npair_distances(embeddings, n, distance_function):
     even_embeddings = tf.gather(embeddings, evens)
     odd_embeddings = tf.gather(embeddings, odds)
 
-    if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
-        pairwise_distances = pairwise_euclidean_distance(even_embeddings, odd_embeddings)
-    elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
-        pairwise_distances = pairwise_euclidean_distance_squared(even_embeddings, odd_embeddings)
-    elif distance_function == DistanceFunction.DOT_PRODUCT:
-        pairwise_distances = -pairwise_dot_product(even_embeddings, odd_embeddings)
-    else:
-        raise Exception('Unknown distance function: {}'.format(distance_function))
+    pairwise_distances = compute_pairwise_distances(
+        even_embeddings, odd_embeddings, distance_function)
 
     return (
         get_n_blocks(pairwise_distances, n),
@@ -86,14 +78,8 @@ class GroupedBatchDesign(BatchDesign):
             pairwise_distances, matching_labels_matrix = get_npair_distances(
                 embeddings, self.conf['batch_design']['npair'], distance_function)
         else:
-            if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
-                pairwise_distances = pairwise_euclidean_distance(embeddings, embeddings)
-            elif distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
-                pairwise_distances = pairwise_euclidean_distance_squared(embeddings, embeddings)
-            elif distance_function == DistanceFunction.DOT_PRODUCT:
-                pairwise_distances = -pairwise_dot_product(embeddings, embeddings)
-            else:
-                raise Exception('Unknown distance function: {}'.format(distance_function))
+            pairwise_distances = compute_pairwise_distances(
+                embeddings, embeddings, distance_function)
             label_counts = tf.gather(
                 tf.constant(model.extra_info['label_counts'], dtype=tf.float32),
                 labels) / num_average_images_per_label

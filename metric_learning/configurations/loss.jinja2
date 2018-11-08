@@ -2,14 +2,14 @@
 {
     'name': '{{ name }}',
     'alpha': {{ alpha | default(16.0) }},
-    'parametrization': 'euclidean_distance',
+    'distance_function': 'euclidean_distance',
     'importance_sampling': {{ importance_sampling | default(False) }},
 }
 {% elif name == 'triplet' %}
 {
     'name': '{{ name }}',
     'alpha': {{ alpha | default(4.0) }},
-    'parametrization': 'euclidean_distance',
+    'distance_function': 'euclidean_distance',
 }
 {% elif name == 'margin' %}
 {
@@ -17,19 +17,19 @@
     'alpha': {{ alpha | default(0.2) }},
     'beta': {{ beta | default(1.2) }},
     'nu': {{ nu | default(0.0) }},
-    'parametrization': 'euclidean_distance',
+    'distance_function': 'euclidean_distance',
 }
 {% elif name == 'logistic' %}
 {
     'name': '{{ name }}',
-    'parametrization': '{{ parametrization | default('euclidean_distance') }}',
+    'distance_function': 'euclidean_distance',
     'alpha': {{ alpha | default(16.0) }},
     'importance_sampling': {{ importance_sampling | default(False) }},
 }
 {% elif name == 'npair' %}
 {
     'name': '{{ name }}',
-    'parametrization': 'dot_product',
+    'distance_function': 'cosine_similarity',
     'lambda': {{ lambda | default(0.01) }},
 }
 {% endif %}
