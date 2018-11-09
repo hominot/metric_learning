@@ -41,4 +41,16 @@
         'dataset': 'test',
     },
 {% endif %}
+{% if vrf | default(False) %}
+    {
+        'name': 'vrf',
+        'k': {{ vrf_k | default([1, 3, 7, 15, 31]) }},
+        'batch_design': {
+            'name': 'vanilla',
+            'batch_size': 48,
+        },
+        'dataset': 'test',
+        'num_samples': 1000,
+    },
+{% endif %}
 ]
