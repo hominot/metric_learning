@@ -95,7 +95,7 @@ class GroupedBatchDesign(BatchDesign):
             pairwise_product(label_counts, label_counts),
             npair)
         positive_label_counts = label_counts[:, None]
-        negative_weights = (npair - 1) * 2 / (num_labels - 1) / label_counts_multiplied
+        negative_weights = (npair - 1) / (num_labels - 1) / label_counts_multiplied
         positive_weights = 1 / positive_label_counts / (positive_label_counts - 1 / num_average_images_per_label)
         matching_labels_matrix = get_n_blocks(tf.cast(tf.eye(num_groups), tf.bool), npair)
         weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)

@@ -62,21 +62,21 @@ class GroupedBatchDesignTest(tf.test.TestCase):
             [
                 (num_average_images_per_label * num_average_images_per_label) /
                 (label_counts[0] * (label_counts[0] - 1)),
-                (2 * (npair - 1) * num_average_images_per_label * num_average_images_per_label) /
+                ((npair - 1) * num_average_images_per_label * num_average_images_per_label) /
                 ((num_labels - 1) * label_counts[0] * label_counts[1]),
             ],
             [
-                (2 * (npair - 1) * num_average_images_per_label * num_average_images_per_label) /
+                ((npair - 1) * num_average_images_per_label * num_average_images_per_label) /
                 ((num_labels - 1) * label_counts[1] * label_counts[0]),
                 (num_average_images_per_label * num_average_images_per_label) / (label_counts[1] * (label_counts[1] - 1)),
             ],
             [
                 (num_average_images_per_label * num_average_images_per_label) / (label_counts[2] * (label_counts[2] - 1)),
-                (2 * (npair - 1) * num_average_images_per_label * num_average_images_per_label) /
+                ((npair - 1) * num_average_images_per_label * num_average_images_per_label) /
                 ((num_labels - 1) * label_counts[2] * label_counts[3]),
             ],
             [
-                (2 * (npair - 1) * num_average_images_per_label * num_average_images_per_label) /
+                ((npair - 1) * num_average_images_per_label * num_average_images_per_label) /
                 ((num_labels - 1) * label_counts[3] * label_counts[2]),
                 (num_average_images_per_label * num_average_images_per_label) / (label_counts[3] * (label_counts[3] - 1)),
             ],
