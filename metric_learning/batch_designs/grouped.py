@@ -1,7 +1,6 @@
 from util.registry.batch_design import BatchDesign
 
 from collections import defaultdict
-from metric_learning.constants.distance_function import DistanceFunction
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import get_n_blocks
@@ -13,7 +12,7 @@ import tensorflow as tf
 import random
 
 
-def get_npair_distances(embeddings, n, distance_function):
+def get_npair_distances(embeddings, n, distance_function, transpose=False):
     num_groups = int(embeddings.shape[0]) // 2
     evens = tf.range(num_groups, dtype=tf.int64) * 2
     odds = tf.range(num_groups, dtype=tf.int64) * 2 + 1
@@ -24,8 +23,9 @@ def get_npair_distances(embeddings, n, distance_function):
         even_embeddings, odd_embeddings, distance_function)
 
     return (
-        get_n_blocks(pairwise_distances, n),
-        get_n_blocks(tf.cast(tf.eye(num_groups), tf.bool), n)
+        get_n_blocks(pairwise_distances, n, transpose=transpose),
+        get_n_blocks(
+            tf.cast(tf.eye(num_groups), tf.bool), n, transpose=transpose)
     )
 
 

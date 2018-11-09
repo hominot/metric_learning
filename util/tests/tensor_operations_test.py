@@ -141,11 +141,18 @@ class TensorOperationsTest(tf.test.TestCase):
             [11, 12],
             [15, 16],
         ])
+        self.assertAllEqual(get_n_blocks(a, 2, transpose=True), [
+            [1, 2, 11, 12],
+            [5, 6, 15, 16],
+        ])
         self.assertAllEqual(get_n_blocks(a, 1), [
             [1],
             [6],
             [11],
             [16],
+        ])
+        self.assertAllEqual(get_n_blocks(a, 1, transpose=True), [
+            [1, 6, 11, 16],
         ])
 
         b = tf.constant([
@@ -164,6 +171,10 @@ class TensorOperationsTest(tf.test.TestCase):
             [9, 10],
             [10, 11],
         ])
+        self.assertAllEqual(get_n_blocks(b, 2, transpose=True), [
+            [1, 2, 5, 6, 9, 10],
+            [2, 3, 6, 7, 10, 11],
+        ])
         self.assertAllEqual(get_n_blocks(b, 3), [
             [1, 2, 3],
             [2, 3, 4],
@@ -171,6 +182,11 @@ class TensorOperationsTest(tf.test.TestCase):
             [7, 8, 9],
             [8, 9, 10],
             [9, 10, 11],
+        ])
+        self.assertAllEqual(get_n_blocks(b, 3, transpose=True), [
+            [1, 2, 3, 7, 8, 9],
+            [2, 3, 4, 8, 9, 10],
+            [3, 4, 5, 9, 10, 11],
         ])
 
     def testPairwiseProduct(self):
