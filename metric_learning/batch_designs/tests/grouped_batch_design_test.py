@@ -83,6 +83,26 @@ class GroupedBatchDesignTest(tf.test.TestCase):
         ]
         self.assertAllClose(weights, expected_weights)
 
+    def testNpairWeights(self):
+        labels = tf.constant([0, 0, 1, 1, 2, 2, 3, 3])
+        npair = 2
+        label_counts = [4, 4, 2, 2]
+        extra_info = {
+            'num_images': 20,
+            'num_labels': 4,
+            'label_counts': label_counts,
+        }
+        weights = GroupedBatchDesign.get_npair_weights(labels, npair, extra_info)
+
+        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
+        expected_weights = [
+            (num_average_images_per_label ** 3) / (label_counts[0] * (label_counts[0] - 1) * label_counts[1]),
+            (num_average_images_per_label ** 3) / (label_counts[1] * (label_counts[1] - 1) * label_counts[0]),
+            (num_average_images_per_label ** 3) / (label_counts[2] * (label_counts[2] - 1) * label_counts[3]),
+            (num_average_images_per_label ** 3) / (label_counts[3] * (label_counts[3] - 1) * label_counts[2]),
+        ]
+        self.assertAllClose(weights, expected_weights)
+
     def testPairwiseWeights(self):
         labels = tf.constant([0, 0, 1, 1])
         group_size = 2

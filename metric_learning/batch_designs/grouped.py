@@ -6,6 +6,7 @@ from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import get_n_blocks
 from util.tensor_operations import pairwise_product
 from util.tensor_operations import compute_pairwise_distances
+from util.tensor_operations import repeat_columns
 
 import numpy as np
 import tensorflow as tf
@@ -99,6 +100,23 @@ class GroupedBatchDesign(BatchDesign):
         positive_weights = 1 / positive_label_counts / (positive_label_counts - 1 / num_average_images_per_label)
         matching_labels_matrix = get_n_blocks(tf.cast(tf.eye(num_groups), tf.bool), npair)
         weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+        return weights
+
+    @staticmethod
+    def get_npair_weights(labels, npair, extra_info):
+        batch_size = int(labels.shape[0])
+        group_size = 2
+        num_groups = batch_size // group_size
+        evens = tf.range(num_groups, dtype=tf.int64) * 2
+        even_labels = tf.gather(labels, evens)
+        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
+        label_counts = tf.gather(
+            tf.constant(extra_info['label_counts'], dtype=tf.float32),
+            even_labels) / num_average_images_per_label
+        weights = 1 / tf.reduce_prod(
+            get_n_blocks(tf.transpose(repeat_columns(label_counts)), npair),
+            axis=1
+        ) / (label_counts - 1 / num_average_images_per_label)
         return weights
 
     @staticmethod

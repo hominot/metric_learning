@@ -3,6 +3,7 @@ import tensorflow as tf
 from metric_learning.constants.distance_function import DistanceFunction
 from util.registry.loss_function import LossFunction
 from metric_learning.batch_designs.grouped import get_npair_distances
+from metric_learning.batch_designs.grouped import GroupedBatchDesign
 
 
 class NPairLossFunction(LossFunction):
@@ -18,8 +19,19 @@ class NPairLossFunction(LossFunction):
             embeddings, self.conf['batch_design']['npair'],
             DistanceFunction.DOT_PRODUCT, transpose=True)
         regularizer = tf.reduce_mean(tf.reduce_sum(tf.square(embeddings), axis=1))
-        return tf.reduce_mean(
-            0.5 * tf.reduce_logsumexp(-pairwise_distances, axis=1) +
-            0.5 * tf.reduce_logsumexp(-pairwise_distances_t, axis=0) +
-            tf.boolean_mask(pairwise_distances, matching_matrix)
-        ) + regularizer * self.conf['loss']['lambda']
+
+        if self.conf['loss'].get('importance_sampling'):
+            _, labels = batch
+            weights = GroupedBatchDesign.get_npair_weights(
+                labels, self.conf['batch_design']['npair'], model.extra_info)
+            return tf.reduce_mean(
+                (0.5 * tf.reduce_logsumexp(-pairwise_distances, axis=1) +
+                0.5 * tf.reduce_logsumexp(-pairwise_distances_t, axis=0)) / weights +
+                tf.boolean_mask(pairwise_distances, matching_matrix)
+            ) + regularizer * self.conf['loss']['lambda']
+        else:
+            return tf.reduce_mean(
+                0.5 * tf.reduce_logsumexp(-pairwise_distances, axis=1) +
+                0.5 * tf.reduce_logsumexp(-pairwise_distances_t, axis=0) +
+                tf.boolean_mask(pairwise_distances, matching_matrix)
+            ) + regularizer * self.conf['loss']['lambda']
