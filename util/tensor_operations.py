@@ -30,7 +30,7 @@ def compute_elementwise_distances(first, second, distance_function):
     if distance_function == DistanceFunction.COSINE_SIMILARITY:
         first_norm = tf.norm(first, axis=1)
         second_norm = tf.norm(second, axis=1)
-        return -tf.reduce_sum(tf.square(first - second), axis=1) / first_norm / second_norm
+        return -tf.reduce_sum(tf.multiply(first, second), axis=1) / first_norm / second_norm
     if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
         return tf.reduce_sum(tf.square(first - second), axis=1)
     if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
