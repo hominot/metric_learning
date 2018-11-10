@@ -32,4 +32,10 @@
     'distance_function': 'cosine_similarity',
     'lambda': {{ lambda | default(0.01) }},
 }
+{% elif name == 'lifted' %}
+{
+    'name': '{{ name }}',
+    'distance_function': 'euclidean_distance',
+    'alpha': {{ alpha | default(1.0) }},
+}
 {% endif %}
