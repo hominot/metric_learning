@@ -126,6 +126,20 @@ class GroupedBatchDesign(BatchDesign):
                 grouped_data.append((image_file, label))
         return grouped_data
 
+    def get_raw_pairwise_distances(self, batch, model, distance_function, training=True):
+        images, labels = batch
+        embeddings = model(images, training=training)
+        group_size = self.conf['batch_design']['group_size']
+        pairwise_distances = compute_pairwise_distances(
+            embeddings, embeddings, distance_function)
+        matching_labels_matrix = pairwise_matching_matrix(labels, labels)
+        weights = self.get_pairwise_weights(labels, group_size, model.extra_info)
+        return (
+            pairwise_distances,
+            matching_labels_matrix,
+            1 / weights,
+        )
+
     def get_pairwise_distances(self, batch, model, distance_function, training=True):
         images, labels = batch
         embeddings = model(images, training=training)

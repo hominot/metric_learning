@@ -23,7 +23,7 @@ class MarginLoss(LossFunction):
 
     def loss(self, batch, model, dataset):
         images, labels = batch
-        pairwise_distances, matching_labels_matrix, weights = dataset.get_pairwise_distances(
+        pairwise_distances, matching_labels_matrix, weights = dataset.get_raw_pairwise_distances(
             batch, model, DistanceFunction.EUCLIDEAN_DISTANCE
         )
         pairwise_distances = off_diagonal_part(pairwise_distances)
