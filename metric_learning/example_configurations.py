@@ -6,7 +6,7 @@ configs = {
         'dataset': {'name': 'mnist'},
         'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 16},
         'model': {'name': 'simple_dense', 'dimension': 2},
-        'loss': {'name': 'cluster', 'gamma': 1},
+        'loss': {'name': 'cluster', 'gamma': 1, 'importance_sampling': True},
         'metrics': {'vrf': True, 'vrf_k': [1, 2]},
         'trainer': {'lr_decay_steps': 10},
     }),

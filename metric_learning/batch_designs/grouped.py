@@ -134,16 +134,18 @@ class GroupedBatchDesign(BatchDesign):
             embeddings, embeddings, distance_function)
         matching_labels_matrix = pairwise_matching_matrix(labels, labels)
         weights = self.get_pairwise_weights(labels, group_size, model.extra_info)
+        q_bias = self.conf['batch_design'].get('q_bias', 1.0)
         return (
             pairwise_distances,
             matching_labels_matrix,
-            1 / weights,
+            (1 / weights) ** q_bias,
         )
 
     def get_pairwise_distances(self, batch, model, distance_function, training=True):
         images, labels = batch
         embeddings = model(images, training=training)
 
+        q_bias = self.conf['batch_design'].get('q_bias', 1.0)
         if self.conf['batch_design'].get('npair'):
             pairwise_distances, matching_labels_matrix = get_npair_distances(
                 embeddings, self.conf['batch_design']['npair'], distance_function)
@@ -152,7 +154,7 @@ class GroupedBatchDesign(BatchDesign):
             return (
                 tf.reshape(pairwise_distances, [-1]),
                 tf.reshape(matching_labels_matrix, [-1]),
-                tf.reshape(1 / weights, [-1]),
+                tf.reshape(1 / weights, [-1]) ** q_bias,
             )
         else:
             group_size = self.conf['batch_design']['group_size']
@@ -163,7 +165,7 @@ class GroupedBatchDesign(BatchDesign):
             return (
                 upper_triangular_part(pairwise_distances),
                 upper_triangular_part(matching_labels_matrix),
-                upper_triangular_part(1 / weights),
+                upper_triangular_part(1 / weights) ** q_bias,
             )
 
     @staticmethod
@@ -209,17 +211,19 @@ class GroupedBatchDesign(BatchDesign):
     def get_pairwise_weights(labels, group_size, extra_info):
         batch_size = int(labels.shape[0])
         num_groups = batch_size // group_size
-        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
+        num_images = extra_info['num_images']
         label_counts = tf.gather(
             tf.constant(extra_info['label_counts'], dtype=tf.float32),
-            labels) / num_average_images_per_label
+            labels)
         positive_label_counts = label_counts
         matching_labels_matrix = pairwise_matching_matrix(labels, labels)
         label_counts_multiplied = pairwise_product(label_counts, label_counts)
 
         num_labels = extra_info['num_labels']
-        negative_weights = (num_groups - 1) * group_size / (num_labels - 1) / label_counts_multiplied
-        positive_weights = (group_size - 1) / positive_label_counts / (positive_label_counts - 1 / num_average_images_per_label)
+        positive_weights = (group_size - 1) * num_images * (num_images - 1) / (
+                positive_label_counts * (positive_label_counts - 1) * num_labels * (batch_size - 1))
+        negative_weights = (num_groups - 1) * group_size * num_images * (num_images - 1) / (
+                (batch_size - 1) * num_labels * (num_labels - 1) * label_counts_multiplied)
         weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
         return weights
 

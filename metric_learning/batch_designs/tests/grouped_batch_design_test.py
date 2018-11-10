@@ -18,11 +18,11 @@ class GroupedBatchDesignTest(tf.test.TestCase):
             'batch_design': {
                 'name': 'grouped',
                 'group_size': 2,
-                'num_groups': 2,
+                'batch_size': 4
             }
         }
         dataset: GroupedBatchDesign = BatchDesign.create('grouped', conf, {'data_loader': None})
-        batch = dataset.get_next_batch(image_files, labels)
+        batch = dataset.get_next_batch(image_files, labels, conf['batch_design'])
         self.assertAllEqual(batch, [
             ('b', 1),
             ('f', 1),
@@ -107,6 +107,7 @@ class GroupedBatchDesignTest(tf.test.TestCase):
         labels = tf.constant([0, 0, 1, 1])
         group_size = 2
         num_groups = int(labels.shape[0]) // 2
+        batch_size = num_groups * group_size
         label_counts = [4, 2]
         extra_info = {
             'num_images': 10,
@@ -116,32 +117,32 @@ class GroupedBatchDesignTest(tf.test.TestCase):
         weights = GroupedBatchDesign.get_pairwise_weights(labels, group_size, extra_info)
 
         num_labels = extra_info['num_labels']
-        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
+        num_images = extra_info['num_images']
 
         expected_weights = [
             [
                 0,
-                (group_size - 1) * num_average_images_per_label * num_average_images_per_label /
-                (label_counts[0] * (label_counts[0] - 1)),
-                (num_groups - 1) * group_size * num_average_images_per_label * num_average_images_per_label /
-                ((num_labels - 1) * label_counts[0] * label_counts[1]),
-                (num_groups - 1) * group_size * num_average_images_per_label * num_average_images_per_label /
-                ((num_labels - 1) * label_counts[0] * label_counts[1]),
+                (group_size - 1) * num_images * (num_images - 1) /
+                ((batch_size - 1) * num_labels * label_counts[0] * (label_counts[0] - 1)),
+                group_size * (num_groups - 1) * num_images * (num_images - 1) /
+                ((batch_size - 1) * num_labels * (num_labels - 1) * label_counts[0] * label_counts[1]),
+                group_size * (num_groups - 1) * num_images * (num_images - 1) /
+                ((batch_size - 1) * num_labels * (num_labels - 1) * label_counts[0] * label_counts[1]),
             ],
             [
                 0,
                 0,
-                (num_groups - 1) * group_size * num_average_images_per_label * num_average_images_per_label /
-                ((num_labels - 1) * label_counts[0] * label_counts[1]),
-                (num_groups - 1) * group_size * num_average_images_per_label * num_average_images_per_label /
-                ((num_labels - 1) * label_counts[0] * label_counts[1]),
+                group_size * (num_groups - 1) * num_images * (num_images - 1) /
+                ((batch_size - 1) * num_labels * (num_labels - 1) * label_counts[0] * label_counts[1]),
+                group_size * (num_groups - 1) * num_images * (num_images - 1) /
+                ((batch_size - 1) * num_labels * (num_labels - 1) * label_counts[0] * label_counts[1]),
             ],
             [
                 0,
                 0,
                 0,
-                (group_size - 1) * num_average_images_per_label * num_average_images_per_label /
-                (label_counts[1] * (label_counts[1] - 1)),
+                (group_size - 1) * num_images * (num_images - 1) /
+                ((batch_size - 1) * num_labels * label_counts[1] * (label_counts[1] - 1)),
             ],
             [
                 0,
