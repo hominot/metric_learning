@@ -12,8 +12,7 @@ class LiftedStructureLoss(LossFunction):
 
     def loss(self, batch, model, dataset):
         loss_conf = self.conf['loss']
-        embeddings = dataset.get_embeddings(
-            batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
+        embeddings = dataset.get_embeddings(batch, model, None)
         pairwise_distances = compute_pairwise_distances(
             embeddings, embeddings, DistanceFunction.EUCLIDEAN_DISTANCE)
         _, labels = batch
