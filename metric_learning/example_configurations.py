@@ -13,9 +13,9 @@ configs = {
     'cub200_npair': generate_config({
         'image': {},
         'dataset': {'name': 'cub200'},
-        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 64, 'npair': 32},
+        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 64, 'npair': 32, 'negative_class_mining': True},
         'model': {'name': 'resnet50', 'dimension': 128},
-        'loss': {'name': 'npair', 'lambda': 0.1, 'importance_sampling': False},
+        'loss': {'name': 'npair', 'lambda': 0.001, 'importance_sampling': False},
         'metrics': {'auc': True, 'recall': True, 'nmi': True},
         'trainer': {'lr_decay_steps': 100, 'learning_rate': 0.0001, 'lr_embedding': 0.0001, 'num_epochs': 20, 'lr_decay_rate': 0.9},
     }),

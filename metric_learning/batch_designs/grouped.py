@@ -71,7 +71,8 @@ class GroupedBatchDesign(BatchDesign):
             means = []
             mean_distances = []
             inter_distances = []
-            for label in range(model.extra_info['num_labels']):
+            num_labels = model.extra_info['num_labels']
+            for label in range(num_labels):
                 label_embeddings = tf.boolean_mask(
                     full_embeddings,
                     tf.equal(full_labels, label))
@@ -80,12 +81,12 @@ class GroupedBatchDesign(BatchDesign):
                     label_embeddings,
                     label_embeddings,
                     DistanceFunction.EUCLIDEAN_DISTANCE))
-                inter_distances = tf.reduce_sum(compute_pairwise_distances(
-                    tf.stack(means),
-                    tf.stack(means),
-                    DistanceFunction.EUCLIDEAN_DISTANCE), axis=0) / (model.extra_info['num_labels'] - 1)
                 mean_distances.append(float(tf.reduce_mean(distances) / int(distances.shape[0])))
-            self.cache['inter_distances'] = inter_distances
+            inter_distances = tf.reduce_min(compute_pairwise_distances(
+                tf.stack(means),
+                tf.stack(means),
+                DistanceFunction.EUCLIDEAN_DISTANCE) + tf.eye(num_labels) * 1e6, axis=0)
+            self.cache['class_weights'] = tf.maximum(0.1, tf.minimum(10.0, 1.0 / inter_distances))
 
         data = []
         for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
@@ -109,7 +110,7 @@ class GroupedBatchDesign(BatchDesign):
 
         if batch_conf.get('negative_class_mining'):
             data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
-            weights = [float(self.cache['inter_distances'][k]) for k in data_map.keys()]
+            weights = [float(self.cache['class_weights'][k]) for k in data_map.keys()]
             weight_sum = sum(weights)
             weights = [k / weight_sum for k in weights]
             sampled_labels = np.random.choice(
