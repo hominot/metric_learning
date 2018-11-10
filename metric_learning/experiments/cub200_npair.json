@@ -4,7 +4,7 @@
     {"name": "cub200"}
   ],
   "batch_design": [
-    {"name": "grouped", "group_size": 2, "batch_size": 64}
+    {"name": "grouped", "group_size": 2, "batch_size": 64, "npair": 32}
   ],
   "model": [{"name": "resnet50", "dimension": 128}],
   "loss": [
@@ -14,7 +14,7 @@
     {"name": "npair", "lambda": 0.001},
     {"name": "npair", "lambda": 0.0001}
   ],
-  "metrics": [{}],
+  "metrics": [{"auc": true, "recall": true, "nmi": true}],
   "trainer": [
     {"learning_rate": 0.0001, "lr_dimemsion": 0.0001, "lr_decay_steps": 100, "lr_decay_rate": 0.9, "num_epochs": 20},
     {"learning_rate": 0.0003, "lr_dimemsion": 0.0003, "lr_decay_steps": 100, "lr_decay_rate": 0.9, "num_epochs": 20},

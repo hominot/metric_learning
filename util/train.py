@@ -183,6 +183,7 @@ def train(conf, experiment_name):
             create_checkpoint(checkpoint, run_name)
         train_stat['epoch'] = epoch + 1
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
+        print('average loss: {:.4f}'.format(sum(losses) / len(losses)))
         metrics.append(evaluate(conf, model, data_files, train_stat))
         if stopping_criteria(metrics):
             break
