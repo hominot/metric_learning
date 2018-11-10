@@ -17,9 +17,20 @@ if __name__ == '__main__':
 
     if args.experiment:
         experiments = generate_configs_from_experiment(args.experiment)
+        experiment_name = args.experiment
     else:
         experiments = [configs[args.config]]
+        experiment_name = ''
 
     for experiment in experiments:
+
         conf = json.dumps(experiment, indent=4)
-        queue.send_message(MessageBody=conf)
+        queue.send_message(
+            MessageBody=conf,
+            MessageAttributes={
+                'experiment_name': {
+                    'StringValue': experiment_name,
+                    'DataType': 'String'
+                }
+            }
+        )

@@ -15,12 +15,14 @@ if __name__ == '__main__':
     queue = conn_sqs.get_queue_by_name(QueueName='experiment-configs')
     messages = queue.receive_messages(
         MaxNumberOfMessages=1,
+        MessageAttributeNames=['experiment_name'],
         WaitTimeSeconds=0)
 
     for message in messages:
         conf = json.loads(message.body)
+        experiment_name = message.message_attributes.get('experiment_name').get('StringValue')
         message.delete()
-        train(conf, None)
+        train(conf, experiment_name)
 
     time.sleep(10)
     os.execv(sys.executable, [sys.executable, __file__] + sys.argv)

@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+import datetime
 import json
 import math
 import os
@@ -51,8 +52,9 @@ def evaluate(conf, model, data_files, train_stat):
                 data[metric_conf['name']] = Decimal(str(score))
     Metric.cache.clear()
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
+        dt = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
         table = db.Table('TrainHistory')
-        item = {}
+        item = {'timestamp': dt.strftime('%Y-%m-%d %H:%M:%S')}
         item.update(train_stat)
         item.update(data)
         table.put_item(Item=item)
@@ -96,7 +98,7 @@ def train(conf, experiment_name):
     }
 
     writer, run_name = set_tensorboard_writer(conf, experiment_name)
-    if experiment_name is None:
+    if not experiment_name:
         experiment_name = run_name.rsplit('_', 1)[0]
     writer.set_as_default()
     save_config(conf, run_name, experiment_name)
