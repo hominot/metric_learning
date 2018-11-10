@@ -7,7 +7,7 @@ import tensorflow as tf
 class VanillaBatchDesign(BatchDesign):
     name = 'vanilla'
 
-    def create_dataset(self, image_files, labels, batch_conf, testing=False):
+    def create_dataset(self, model, image_files, labels, batch_conf, testing=False):
         data = list(zip(image_files, labels))
         return tf.data.Dataset.zip(
             self._create_datasets_from_elements(data, testing),

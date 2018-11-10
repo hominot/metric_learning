@@ -1,13 +1,18 @@
 from util.registry.batch_design import BatchDesign
 
 from collections import defaultdict
+from metric_learning.constants.distance_function import DistanceFunction
+from tqdm import tqdm
+from util.registry.data_loader import DataLoader
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import get_n_blocks
 from util.tensor_operations import pairwise_product
 from util.tensor_operations import compute_pairwise_distances
+from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import repeat_columns
 
+import math
 import numpy as np
 import tensorflow as tf
 import random
@@ -33,6 +38,64 @@ def get_npair_distances(embeddings, n, distance_function, transpose=False):
 class GroupedBatchDesign(BatchDesign):
     name = 'grouped'
 
+    cache = {}
+
+    def create_dataset(self, model, image_files, labels, batch_conf,
+                       testing=False):
+        if batch_conf.get('negative_class_mining'):
+            data_loader = DataLoader.create(self.conf['dataset']['name'],
+                                            self.conf)
+            batch_design = BatchDesign.create(
+                'vanilla',
+                self.conf,
+                {'data_loader': data_loader})
+            batch_size = 48
+            test_dataset, num_testcases = batch_design.create_dataset(
+                model, image_files, labels,
+                {'name': 'vanilla', 'batch_size': batch_size},
+                testing=True)
+            test_dataset = test_dataset.batch(batch_size)
+            batches = tqdm(
+                test_dataset,
+                total=math.ceil(num_testcases / batch_size),
+                desc='embedding',
+                dynamic_ncols=True)
+            embeddings_list = []
+            labels_list = []
+            for mini_images, mini_labels in batches:
+                embeddings = model(mini_images, training=False)
+                embeddings_list.append(embeddings)
+                labels_list.append(mini_labels)
+            full_embeddings = tf.concat(embeddings_list, axis=0)
+            full_labels = tf.concat(labels_list, axis=0)
+            means = []
+            mean_distances = []
+            inter_distances = []
+            for label in range(model.extra_info['num_labels']):
+                label_embeddings = tf.boolean_mask(
+                    full_embeddings,
+                    tf.equal(full_labels, label))
+                means.append(tf.reduce_mean(label_embeddings, axis=0))
+                distances = upper_triangular_part(compute_pairwise_distances(
+                    label_embeddings,
+                    label_embeddings,
+                    DistanceFunction.EUCLIDEAN_DISTANCE))
+                inter_distances = tf.reduce_sum(compute_pairwise_distances(
+                    tf.stack(means),
+                    tf.stack(means),
+                    DistanceFunction.EUCLIDEAN_DISTANCE), axis=0) / (model.extra_info['num_labels'] - 1)
+                mean_distances.append(float(tf.reduce_mean(distances) / int(distances.shape[0])))
+            self.cache['inter_distances'] = inter_distances
+
+        data = []
+        for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
+            elements = self.get_next_batch(image_files, labels, batch_conf)
+            data += elements
+
+        return tf.data.Dataset.zip(
+            self._create_datasets_from_elements(data, testing),
+        ), len(data)
+
     def get_next_batch(self, image_files, labels, batch_conf):
         data = list(zip(image_files, labels))
         random.shuffle(data)
@@ -44,9 +107,17 @@ class GroupedBatchDesign(BatchDesign):
         for image_file, label in data:
             data_map[label].append(image_file)
 
-        data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
-        sampled_labels = np.random.choice(
-            list(data_map.keys()), size=num_groups, replace=False)
+        if batch_conf.get('negative_class_mining'):
+            data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
+            weights = [float(self.cache['inter_distances'][k]) for k in data_map.keys()]
+            weight_sum = sum(weights)
+            weights = [k / weight_sum for k in weights]
+            sampled_labels = np.random.choice(
+                list(data_map.keys()), size=num_groups, replace=False, p=weights)
+        else:
+            data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
+            sampled_labels = np.random.choice(
+                list(data_map.keys()), size=num_groups, replace=False)
         grouped_data = []
         for label in sampled_labels:
             for _ in range(group_size):

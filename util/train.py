@@ -37,7 +37,8 @@ def evaluate(conf, model, data_files, train_stat):
             metric = Metric.create(metric_conf['name'], conf)
             image_files, labels = data_files[metric_conf.get('dataset', 'test')]
             test_dataset, num_testcases = batch_design.create_dataset(
-                image_files, labels, metric_conf['batch_design'], testing=True)
+                model, image_files, labels,
+                metric_conf['batch_design'], testing=True)
             score = metric.compute_metric(model, test_dataset, num_testcases)
             if type(score) is dict:
                 for metric, s in score.items():
@@ -133,6 +134,7 @@ def train(conf, experiment_name):
     metrics = []
     for epoch in range(conf['trainer']['num_epochs']):
         train_ds, num_examples = dataset.create_dataset(
+            model,
             train_images,
             train_labels,
             batch_design_conf)

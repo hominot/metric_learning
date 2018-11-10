@@ -5,6 +5,9 @@
 {% if npair %}
     'npair': {{ npair }},
 {% endif %}
+{% if negative_class_mining %}
+    'negative_class_mining': {{ negative_class_mining }},
+{% endif %}
 {% elif name == 'pair' %}
     'positive_ratio': {{ positive_ratio | default(0.5) }},
 {% endif %}

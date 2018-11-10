@@ -30,7 +30,8 @@ class BatchDesign(object, metaclass=ClassRegistry):
     def get_next_batch(self, image_files, labels, batch_conf):
         raise NotImplementedError
 
-    def create_dataset(self, image_files, labels, batch_conf, testing=False):
+    def create_dataset(self, model, image_files, labels, batch_conf,
+                       testing=False):
         data = []
         for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
             elements = self.get_next_batch(image_files, labels, batch_conf)
