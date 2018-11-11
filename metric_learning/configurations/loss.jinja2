@@ -31,6 +31,7 @@
     'name': '{{ name }}',
     'distance_function': 'cosine_similarity',
     'lambda': {{ lambda | default(0.01) }},
+    'importance_sampling': {{ importance_sampling | default(False) }},
 }
 {% elif name == 'lifted' %}
 {

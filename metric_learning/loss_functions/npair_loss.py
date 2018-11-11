@@ -28,7 +28,7 @@ class NPairLossFunction(LossFunction):
                 0.5 * tf.reduce_logsumexp(-pairwise_distances, axis=1) +
                 0.5 * tf.reduce_logsumexp(-pairwise_distances_t, axis=0) +
                 tf.boolean_mask(pairwise_distances, matching_matrix)
-            ) / weights + regularizer * self.conf['loss']['lambda']
+            / weights) + regularizer * self.conf['loss']['lambda']
         else:
             return tf.reduce_mean(
                 0.5 * tf.reduce_logsumexp(-pairwise_distances, axis=1) +
