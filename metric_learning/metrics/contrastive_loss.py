@@ -19,7 +19,7 @@ def count_singletons(all_labels):
 
 
 def compute_contrastive_loss(conf, embeddings_list, labels_list):
-    data = zip(embeddings_list, labels_list)
+    data = list(zip(embeddings_list, labels_list))
     batches = tqdm(data, total=len(embeddings_list), desc='contrastive', dynamic_ncols=True)
     loss = 0.0
     num_pairs = 0
