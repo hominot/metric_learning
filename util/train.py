@@ -64,6 +64,11 @@ def evaluate(conf, model, data_files, train_stat):
 def stopping_criteria(metrics):
     if len(metrics) <= 3:
         return False
+    if 'vrf@1' in metrics[0]:
+        vrf_1 = [float(x['vrf@1']) for x in metrics]
+        max_vrf_1 = max(vrf_1)
+        if vrf_1[-1] > max_vrf_1:
+            return False
     recall_1 = [float(x['recall@1']) for x in metrics]
     max_recall_1 = max(recall_1)
     if recall_1[-1] < max_recall_1 * 0.93:
@@ -76,8 +81,21 @@ def stopping_criteria(metrics):
 
 
 def get_metric_to_report(metrics):
+    ret = {}
     recall_1 = [float(x['recall@1']) for x in metrics]
-    return metrics[np.argmax(recall_1)]
+    for k, v in metrics[np.argmax(recall_1)].items():
+        if k.startswith('recall@'):
+            ret[k] = v
+    if 'vrf@1' in metrics[0]:
+        vrf_1 = [float(x['vrf@1']) for x in metrics]
+        for k, v in metrics[np.argmax(vrf_1)].items():
+            if k.startswith('vrf@'):
+                ret[k] = v
+    if 'auc' in metrics[0]:
+        ret['auc'] = max([x['auc'] for x in metrics])
+    if 'nmi' in metrics[0]:
+        ret['nmi'] = max([x['nmi'] for x in metrics])
+    return ret
 
 
 def train(conf, experiment_name):
