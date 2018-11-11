@@ -12,7 +12,7 @@ class ContrastiveLossFunction(LossFunction):
         alpha = self.conf['loss']['alpha']
 
         pairwise_distances, matching_labels_matrix, weights = dataset.get_pairwise_distances(
-            batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
+            batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED, training=False)
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
         if self.conf['loss'].get('importance_sampling'):
