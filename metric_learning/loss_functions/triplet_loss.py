@@ -8,40 +8,78 @@ from util.tensor_operations import pairwise_difference
 from metric_learning.constants.distance_function import DistanceFunction
 
 
+def masked_maximum(data, mask, dim=1):
+    axis_minimums = tf.reduce_min(data, dim, keepdims=True)
+    masked_maximums = tf.reduce_max(
+        tf.multiply(data - axis_minimums, mask), dim,
+        keepdims=True) + axis_minimums
+    return masked_maximums
+
+
+def masked_minimum(data, mask, dim=1):
+    axis_maximums = tf.reduce_max(data, dim, keepdims=True)
+    masked_minimums = tf.reduce_min(
+        tf.multiply(data - axis_maximums, mask), dim,
+        keepdims=True) + axis_maximums
+    return masked_minimums
+
+
 class TripletLossFunction(LossFunction):
     name = 'triplet'
 
     def loss(self, batch, model, dataset):
         images, labels = batch
-        pairwise_distances, matching_labels_matrix, weights = dataset.get_raw_pairwise_distances(
+        pdist_matrix, adjacency, weights = dataset.get_raw_pairwise_distances(
             batch, model, DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED)
-        pairwise_distances = upper_triangular_part(pairwise_distances)
-        matching_labels_matrix = upper_triangular_part(matching_labels_matrix)
 
-        positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
-        negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
+        lshape = tf.shape(labels)
+        labels = tf.reshape(labels, [lshape[0], 1])
 
-        first_labels = upper_triangular_part(tf.cast(repeat_columns(labels), tf.int64))
-        positive_labels = tf.boolean_mask(first_labels, matching_labels_matrix)
-        negative_labels = tf.boolean_mask(first_labels, ~matching_labels_matrix)
+        adjacency_not = tf.logical_not(adjacency)
 
-        triplet_match = pairwise_matching_matrix(positive_labels, negative_labels)
-        differences = pairwise_difference(positive_distances, negative_distances)
+        batch_size = tf.size(labels)
 
-        alpha = self.conf['loss']['alpha']
-        semi_hard_candidate_mask = triplet_match & \
-                                   (differences < 0) & \
-                                   (alpha + differences > 0)
-        semi_hard_candidates = tf.multiply(
-            tf.cast(semi_hard_candidate_mask, tf.float32),
-            alpha + differences) + \
-            tf.multiply(
-                1 - tf.cast(semi_hard_candidate_mask, tf.float32),
-                alpha)
-        semi_hards = tf.reduce_min(semi_hard_candidates, axis=1)
+        # Compute the mask.
+        pdist_matrix_tile = tf.tile(pdist_matrix, [batch_size, 1])
+        mask = tf.logical_and(
+            tf.tile(adjacency_not, [batch_size, 1]),
+            tf.greater(
+                pdist_matrix_tile, tf.reshape(
+                    tf.transpose(pdist_matrix), [-1, 1])))
+        mask_final = tf.reshape(
+            tf.greater(
+                tf.reduce_sum(
+                    tf.cast(mask, dtype=tf.float32), 1, keepdims=True),
+                0.0), [batch_size, batch_size])
+        mask_final = tf.transpose(mask_final)
 
-        semi_hard_triplet_loss = tf.boolean_mask(
-            semi_hards,
-            (semi_hards > 1e-12) & (semi_hards < alpha - 1e-12))
+        adjacency_not = tf.cast(adjacency_not, dtype=tf.float32)
+        mask = tf.cast(mask, dtype=tf.float32)
 
-        return tf.reduce_mean(semi_hard_triplet_loss)
+        # negatives_outside: smallest D_an where D_an > D_ap.
+        negatives_outside = tf.reshape(
+            masked_minimum(pdist_matrix_tile, mask), [batch_size, batch_size])
+        negatives_outside = tf.transpose(negatives_outside)
+
+        # negatives_inside: largest D_an.
+        negatives_inside = tf.tile(
+            masked_maximum(pdist_matrix, adjacency_not), [1, batch_size])
+        semi_hard_negatives = tf.where(
+            mask_final, negatives_outside, negatives_inside)
+
+        margin = self.conf['loss']['alpha']
+        loss_mat = tf.add(margin, pdist_matrix - semi_hard_negatives)
+
+        mask_positives = tf.cast(
+            adjacency, dtype=tf.float32) - tf.diag(
+            tf.ones([batch_size]))
+
+        num_positives = tf.reduce_sum(mask_positives)
+
+        triplet_loss = tf.truediv(
+            tf.reduce_sum(
+                tf.maximum(
+                    tf.multiply(loss_mat, mask_positives), 0.0)),
+            num_positives)
+
+        return triplet_loss
