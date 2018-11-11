@@ -58,7 +58,7 @@ class MarginLoss(LossFunction):
         negative_distances = tf.stack(negative_distance_list)
         positive_distances = tf.stack(positive_distance_list)
 
-        betas = tf.gather(self.extra_variables['beta'], labels)
+        betas = tf.gather(self.extra_variables['beta'], labels)[:, None]
 
         alpha = self.conf['loss']['alpha']
         positive_loss = tf.maximum(positive_distances - betas + alpha, 0.0)
