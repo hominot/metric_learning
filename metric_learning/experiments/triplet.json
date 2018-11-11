@@ -11,8 +11,8 @@
   "model": [{"name": "resnet50", "dimension": 128, "l2_normalize": true}],
   "loss": [
     {"name": "triplet", "alpha": 1.0},
-    {"name": "triplet", "alpha": 2.0},
-    {"name": "triplet", "alpha": 4.0}
+    {"name": "triplet", "alpha": 0.2},
+    {"name": "triplet", "alpha": 0.5}
   ],
   "metrics": [{"recall": true, "auc": true, "nmi": true, "vrf": true}],
   "trainer": [
