@@ -10,7 +10,9 @@
   ],
   "model": [{"name": "resnet50", "dimension": 128}],
   "loss": [
-    {"name": "npair", "lambda": 0.001}
+    {"name": "npair", "lambda": 0.01},
+    {"name": "npair", "lambda": 0.001},
+    {"name": "npair", "lambda": 0.0001}
   ],
   "metrics": [{"recall": true, "auc": true, "nmi": true, "vrf": true}],
   "trainer": [
