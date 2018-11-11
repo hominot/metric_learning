@@ -1,6 +1,7 @@
 from tqdm import tqdm
 
 import math
+import numpy as np
 import random
 import requests
 import tarfile
@@ -49,7 +50,7 @@ def extract_zip(filepath, directory):
         zip_ref.extractall(directory)
 
 
-def load_images_from_directory(directory, splits=None):
+def load_images_from_directory(directory, splits=None, distort=None):
     label_map = {}
     labels = []
     image_files = []
@@ -64,7 +65,20 @@ def load_images_from_directory(directory, splits=None):
                 label_map[label] = len(label_map)
             image_files.append(os.path.join(subdir, file))
             labels.append(label_map[label])
-    return image_files, labels
+    if not distort:
+        return image_files, labels
+    label_file_map = defaultdict(list)
+    for label, file in zip(labels, image_files):
+        label_file_map[label].append(file)
+    new_label_file_map = defaultdict(list)
+    for label, file_list in label_file_map.items():
+        p = np.random.beta(1, distort)
+        target_num_files = max(2, int(len(file_list) * p))
+        new_label_file_map[label] = random.sample(file_list, target_num_files)
+    ret = []
+    for label, file_list in new_label_file_map.items():
+        ret += [(file, label) for file in file_list]
+    return zip(*ret)
 
 
 def split_train_test(images, labels, split_test_ratio=0.2):
@@ -131,5 +145,6 @@ def get_training_files_labels(conf):
         'train')
     return load_images_from_directory(
         train_dir,
-        splits=set(range(cv_splits)) - {cv_split}
+        splits=set(range(cv_splits)) - {cv_split},
+        distort=conf['dataset'].get('distort'),
     )

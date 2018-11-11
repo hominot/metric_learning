@@ -1,4 +1,7 @@
 {
     'name': '{{ name }}',
-    'cross_validation_split': {{ cross_validation_split | default(-1) }}
+    'cross_validation_split': {{ cross_validation_split | default(-1) }},
+{% if distort %}
+    'distort': {{ distort }},
+{% endif %}
 }
