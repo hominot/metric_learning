@@ -205,7 +205,8 @@ def train(conf, experiment_name):
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
         print('average loss: {:.4f}'.format(sum(losses) / len(losses)))
         metrics.append(evaluate(conf, model, data_files, train_stat))
-        if stopping_criteria(metrics):
+        print(conf['trainer']['early_stopping'])
+        if conf['trainer']['early_stopping'] and stopping_criteria(metrics):
             break
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
         final_metrics = get_metric_to_report(metrics)
