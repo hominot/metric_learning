@@ -5,12 +5,12 @@ from metric_learning.constants.distance_function import DistanceFunction
 from tqdm import tqdm
 from util.registry.data_loader import DataLoader
 from util.tensor_operations import pairwise_matching_matrix
-from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import get_n_blocks
 from util.tensor_operations import pairwise_product
 from util.tensor_operations import compute_pairwise_distances
 from util.tensor_operations import upper_triangular_part
 from util.tensor_operations import repeat_columns
+from util.tensor_operations import stable_sqrt
 
 import math
 import numpy as np
@@ -70,23 +70,25 @@ class GroupedBatchDesign(BatchDesign):
             full_labels = tf.concat(labels_list, axis=0)
             means = []
             mean_distances = []
-            inter_distances = []
             num_labels = model.extra_info['num_labels']
             for label in range(num_labels):
                 label_embeddings = tf.boolean_mask(
                     full_embeddings,
                     tf.equal(full_labels, label))
-                means.append(tf.reduce_mean(label_embeddings, axis=0))
-                distances = upper_triangular_part(compute_pairwise_distances(
-                    label_embeddings,
-                    label_embeddings,
-                    DistanceFunction.EUCLIDEAN_DISTANCE))
-                mean_distances.append(float(tf.reduce_mean(distances) / int(distances.shape[0])))
-            inter_distances = tf.reduce_min(compute_pairwise_distances(
+                label_embeddings_mean = tf.reduce_mean(label_embeddings, axis=0)
+                means.append(label_embeddings_mean)
+                mean_distances.append(
+                    float(tf.reduce_mean(
+                        tf.reduce_sum(tf.square(label_embeddings - label_embeddings_mean), axis=1)
+                    ))
+                )
+            closest_inter_distances = tf.reduce_min(compute_pairwise_distances(
                 tf.stack(means),
                 tf.stack(means),
                 DistanceFunction.EUCLIDEAN_DISTANCE) + tf.eye(num_labels) * 1e6, axis=0)
-            self.cache['class_weights'] = tf.maximum(0.1, tf.minimum(10.0, 1.0 / inter_distances))
+            within_mean_distances = stable_sqrt(tf.constant(mean_distances))
+            self.cache['class_weights'] = within_mean_distances / closest_inter_distances
+            print(self.cache['class_weights'])
 
         data = []
         for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
