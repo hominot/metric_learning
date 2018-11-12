@@ -199,12 +199,11 @@ class GroupedBatchDesign(BatchDesign):
         even_labels = tf.gather(labels, evens)
 
         num_labels = extra_info['num_labels']
-        log_combination = sum([math.log(x) for x in range(num_labels, num_labels - npair, -1)]) - \
-            sum([math.log(x) for x in range(npair, 0, -1)])
-        log_wallneius = tf.log(
-            wallenius(tf.reshape(even_labels, [-1, npair]), self.cache['class_weights'])
-        )
-        weights = tf.exp(log_combination - log_wallneius)
+        log_uniform = npair * math.log(num_labels)
+        weight_sum = float(sum(self.cache['class_weights']))
+        label_weights = tf.gather(self.cache['class_weights'], tf.reshape(even_labels, [-1, npair]))
+        log_label_weights = tf.reduce_sum(tf.log(label_weights) - math.log(weight_sum), axis=1)
+        weights = tf.exp(log_uniform + log_label_weights)
         return tf.reshape(tf.transpose(tf.reshape(tf.tile(weights, [npair]), [-1, 2])), [-1])
 
     @staticmethod
