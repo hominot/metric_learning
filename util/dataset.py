@@ -1,7 +1,6 @@
 from tqdm import tqdm
 
 import math
-import numpy as np
 import random
 import requests
 import tarfile
@@ -72,8 +71,9 @@ def load_images_from_directory(directory, splits=None, distort=None):
         label_file_map[label].append(file)
     new_label_file_map = defaultdict(list)
     for label, file_list in label_file_map.items():
-        p = np.random.beta(1, distort)
+        p = 1 - distort * random.random()
         target_num_files = max(2, int(len(file_list) * p))
+        print(len(file_list), target_num_files)
         new_label_file_map[label] = random.sample(file_list, target_num_files)
     ret = []
     for label, file_list in new_label_file_map.items():
