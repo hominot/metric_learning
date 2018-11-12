@@ -1,25 +1,30 @@
+import tensorflow as tf
+
 from itertools import product
 from functools import reduce
 
 
 def factor_expansion(exponents):
     ret = []
-    for expanded in product(*[[0, exponent] for exponent in exponents]):
-        ret.append(sum(expanded))
+    for exponent_list in exponents:
+        one_row = []
+        for expanded in product(*[[0, exponent] for exponent in exponent_list]):
+            one_row.append(float(sum(expanded)))
+        ret.append(tf.constant(one_row))
     signs = []
-    for expanded in product(*[[1, -1] for _ in exponents]):
-        signs.append(reduce(lambda x, y: x * y, expanded))
-    return ret, signs
+    for exponent_list in exponents:
+        one_row = []
+        for expanded in product(*[[1, -1] for _ in exponent_list]):
+            one_row.append(float(reduce(lambda x, y: x * y, expanded)))
+        signs.append(tf.constant(one_row))
+    return tf.stack(ret), tf.stack(signs)
 
 
 def integrate(exponents, signs):
-    ret = 0.0
-    for exponent, sign in zip(exponents, signs):
-        ret += sign / (exponent + 1)
-    return ret
+    return tf.reduce_sum(signs / (exponents + 1), axis=1)
 
 
 def wallenius(x, w):
-    w_chosen = [w[i] for i in x]
-    d = sum(w) - sum(w_chosen)
-    return integrate(*factor_expansion([weight / d for weight in w_chosen]))
+    w_chosen = tf.gather(w, x)
+    d = sum(w) - tf.reduce_sum(w_chosen, axis=1)
+    return integrate(*factor_expansion(w_chosen / d[:, None]))

@@ -3,7 +3,6 @@ import tensorflow as tf
 from metric_learning.constants.distance_function import DistanceFunction
 from util.registry.loss_function import LossFunction
 from metric_learning.batch_designs.grouped import get_npair_distances
-from metric_learning.batch_designs.grouped import GroupedBatchDesign
 
 
 class NPairLossFunction(LossFunction):
@@ -20,9 +19,9 @@ class NPairLossFunction(LossFunction):
             DistanceFunction.DOT_PRODUCT, transpose=True)
         regularizer = tf.reduce_mean(tf.reduce_sum(tf.square(embeddings), axis=1))
 
-        if self.conf['loss'].get('importance_sampling'):
+        if self.conf['loss'].get('importance_sampling') and self.conf['batch_design'].get('negative_class_mining'):
             _, labels = batch
-            weights = GroupedBatchDesign.get_npair_weights(
+            weights = dataset.get_npair_weights(
                 labels, self.conf['batch_design']['npair'], model.extra_info)
             return tf.reduce_mean(
                 0.5 * tf.reduce_logsumexp(-pairwise_distances, axis=1) +

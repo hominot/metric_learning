@@ -4,9 +4,9 @@ configs = {
     'mnist_simple_dense': generate_config({
         'image': {},
         'dataset': {'name': 'mnist'},
-        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 16},
+        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 16, 'npair': 8, 'negative_class_mining': True},
         'model': {'name': 'simple_dense', 'dimension': 2},
-        'loss': {'name': 'contrastive', 'gamma': 1, 'importance_sampling': True},
+        'loss': {'name': 'npair', 'lambda': 0.001, 'importance_sampling': True},
         'metrics': {'vrf': True, 'vrf_k': [1, 2]},
         'trainer': {'lr_decay_steps': 10},
     }),
@@ -22,7 +22,7 @@ configs = {
     'cub200_npair': generate_config({
         'image': {},
         'dataset': {'name': 'cub200'},
-        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 64, 'npair': 32},
+        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 64, 'npair': 32, 'negative_class_mining': True},
         'model': {'name': 'resnet50', 'dimension': 128},
         'loss': {'name': 'npair', 'lambda': 0.001, 'importance_sampling': True},
         'metrics': {'auc': True, 'recall': True, 'nmi': True},

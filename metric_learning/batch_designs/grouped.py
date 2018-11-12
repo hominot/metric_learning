@@ -3,13 +3,13 @@ from util.registry.batch_design import BatchDesign
 from collections import defaultdict
 from metric_learning.constants.distance_function import DistanceFunction
 from tqdm import tqdm
+from util.distribution import wallenius
 from util.registry.data_loader import DataLoader
 from util.tensor_operations import pairwise_matching_matrix
 from util.tensor_operations import get_n_blocks
 from util.tensor_operations import pairwise_product
 from util.tensor_operations import compute_pairwise_distances
 from util.tensor_operations import upper_triangular_part
-from util.tensor_operations import repeat_columns
 from util.tensor_operations import stable_sqrt
 
 import math
@@ -88,7 +88,6 @@ class GroupedBatchDesign(BatchDesign):
                 DistanceFunction.EUCLIDEAN_DISTANCE) + tf.eye(num_labels) * 1e6, axis=0)
             within_mean_distances = stable_sqrt(tf.constant(mean_distances))
             self.cache['class_weights'] = within_mean_distances / closest_inter_distances
-            print(self.cache['class_weights'])
 
         data = []
         for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
@@ -192,22 +191,21 @@ class GroupedBatchDesign(BatchDesign):
         weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
         return weights
 
-    @staticmethod
-    def get_npair_weights(labels, npair, extra_info):
+    def get_npair_weights(self, labels, npair, extra_info):
         batch_size = int(labels.shape[0])
         group_size = 2
         num_groups = batch_size // group_size
         evens = tf.range(num_groups, dtype=tf.int64) * 2
         even_labels = tf.gather(labels, evens)
-        num_average_images_per_label = extra_info['num_images'] / extra_info['num_labels']
-        label_counts = tf.gather(
-            tf.constant(extra_info['label_counts'], dtype=tf.float32),
-            even_labels) / num_average_images_per_label
-        weights = 1 / tf.reduce_prod(
-            get_n_blocks(tf.transpose(repeat_columns(label_counts)), npair),
-            axis=1
-        ) / (label_counts - 1 / num_average_images_per_label)
-        return weights
+
+        num_labels = extra_info['num_labels']
+        log_combination = sum([math.log(x) for x in range(num_labels, num_labels - npair, -1)]) - \
+            sum([math.log(x) for x in range(npair, 0, -1)])
+        log_wallneius = tf.log(
+            wallenius(tf.reshape(even_labels, [-1, npair]), self.cache['class_weights'])
+        )
+        weights = tf.exp(log_combination - log_wallneius)
+        return tf.reshape(tf.transpose(tf.reshape(tf.tile(weights, [npair]), [-1, 2])), [-1])
 
     @staticmethod
     def get_pairwise_weights(labels, group_size, extra_info):
