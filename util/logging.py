@@ -94,7 +94,7 @@ def upload_string_to_s3(body, bucket, key):
     s3.put_object(Bucket=bucket, Body=body, Key=key)
 
 
-def create_checkpoint(checkpoint, run_name):
+def create_checkpoint(checkpoint, run_name, s3_upload):
     prefix = '{}/experiments/{}/checkpoints/ckpt'.format(
         CONFIG['tensorboard']['local_dir'],
         run_name)
@@ -106,7 +106,7 @@ def create_checkpoint(checkpoint, run_name):
         for line in f:
             print(line.rstrip('\n').replace(os.path.dirname(prefix) + '/', ''), file=g)
     g.close()
-    if CONFIG['tensorboard'].getboolean('s3_upload'):
+    if s3_upload:
         for root, dirnames, filenames in os.walk(os.path.dirname(prefix)):
             for filename in filenames:
                 if filename == 'checkpoint':
