@@ -162,7 +162,6 @@ class GroupedBatchDesign(BatchDesign):
             pairwise_distances = compute_pairwise_distances(
                 embeddings, embeddings, distance_function)
             matching_labels_matrix = pairwise_matching_matrix(labels, labels)
-            print('here')
             weights = self.get_pairwise_weights(labels, group_size, model.extra_info)
             return (
                 upper_triangular_part(pairwise_distances),
@@ -208,7 +207,6 @@ class GroupedBatchDesign(BatchDesign):
         return tf.reshape(tf.transpose(tf.reshape(tf.tile(weights, [npair]), [-1, 2])), [-1])
 
     def get_pairwise_weights(self, labels, group_size, extra_info):
-        print('get pairwise weights')
         batch_size = int(labels.shape[0])
         num_groups = batch_size // group_size
         num_images = extra_info['num_images']
@@ -232,7 +230,6 @@ class GroupedBatchDesign(BatchDesign):
             ) * (1 - tf.pow(1 - class_weights, num_groups) - tf.pow(1 - class_weights[:, None], num_groups)
                  + tf.pow(1 - class_weights_pairwise_sum, num_groups))
             weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
-            print(weights)
             return weights
         positive_weights = (group_size - 1) * num_images * (num_images - 1) / (
                 positive_label_counts * (positive_label_counts - 1) * num_labels * (batch_size - 1))

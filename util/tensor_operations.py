@@ -78,3 +78,7 @@ def get_n_blocks(tensor, n, transpose=False):
 
 def pairwise_product(first, second):
     return tf.multiply(second[None], first[:, None])
+
+
+def pairwise_sum(first, second):
+    return second[None] + first[:, None]
