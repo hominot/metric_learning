@@ -42,7 +42,7 @@ class GroupedBatchDesign(BatchDesign):
 
     def create_dataset(self, model, image_files, labels, batch_conf,
                        testing=False):
-        if batch_conf.get('negative_class_mining'):
+        if batch_conf.get('negative_class_mining') or batch_conf.get('class_pair_mining'):
             data_loader = DataLoader.create(self.conf['dataset']['name'],
                                             self.conf)
             batch_design = BatchDesign.create(
@@ -130,15 +130,17 @@ class GroupedBatchDesign(BatchDesign):
             while len(classes) < num_groups:
                 weight_sum = sum(weights)
                 weights = [k / weight_sum for k in weights]
-                sampled_label = np.random.choice(
-                    data_classes, size=1, p=weights)
+                sampled_label = np.random.choice(data_classes, p=weights)
                 classes.add(sampled_label)
                 weights[sampled_label] = 0.0
                 if len(classes) >= num_groups:
                     break
                 closest_class = int(self.cache['closest_class_labels'][sampled_label])
                 classes.add(closest_class)
+                if len(classes) >= num_groups:
+                    break
                 weights[closest_class] = 0.0
+                print(classes, weights)
             sampled_labels = list(classes)
         else:
             data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
@@ -251,6 +253,20 @@ class GroupedBatchDesign(BatchDesign):
             ) * (1 - tf.pow(1 - class_weights, num_groups))
             negative_weights = group_size * num_images * (num_images - 1) / (
                 label_counts_multiplied * num_groups * (batch_size - 1)
+            ) * (1 - tf.pow(1 - class_weights, num_groups) - tf.pow(1 - class_weights[:, None], num_groups)
+                 + tf.pow(1 - class_weights_pairwise_sum, num_groups))
+            weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+            return weights
+        if self.conf['batch_design'].get('class_pair_mining'):
+            # TODO: calculate class pair mining weights
+            class_weights = tf.gather(self.cache['class_weights'], labels)
+            class_weights = class_weights / sum(class_weights)
+            class_weights_pairwise_sum = pairwise_sum(class_weights, class_weights)
+            positive_weights = (group_size - 1) * num_images * (num_images - 1) / (
+                    positive_label_counts * (positive_label_counts - 1) * num_groups * (batch_size - 1)
+            ) * (1 - tf.pow(1 - class_weights, num_groups))
+            negative_weights = group_size * num_images * (num_images - 1) / (
+                    label_counts_multiplied * num_groups * (batch_size - 1)
             ) * (1 - tf.pow(1 - class_weights, num_groups) - tf.pow(1 - class_weights[:, None], num_groups)
                  + tf.pow(1 - class_weights_pairwise_sum, num_groups))
             weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
