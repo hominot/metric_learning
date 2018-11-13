@@ -130,17 +130,16 @@ class GroupedBatchDesign(BatchDesign):
             while len(classes) < num_groups:
                 weight_sum = sum(weights)
                 weights = [k / weight_sum for k in weights]
-                sampled_label = np.random.choice(data_classes, p=weights)
-                classes.add(sampled_label)
-                weights[sampled_label] = 0.0
+                sampled_label_index = np.random.choice(range(len(data_classes)), p=weights)
+                classes.add(data_classes[sampled_label_index])
+                weights[sampled_label_index] = 0.0
                 if len(classes) >= num_groups:
                     break
-                closest_class = int(self.cache['closest_class_labels'][sampled_label])
+                closest_class = int(self.cache['closest_class_labels'][data_classes[sampled_label_index]])
                 classes.add(closest_class)
                 if len(classes) >= num_groups:
                     break
-                weights[closest_class] = 0.0
-                print(classes, weights)
+                weights[data_classes.index(closest_class)] = 0.0
             sampled_labels = list(classes)
         else:
             data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
