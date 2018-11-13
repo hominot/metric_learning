@@ -7,21 +7,28 @@ def compute_pairwise_distances(first, second, distance_function):
     if distance_function == DistanceFunction.COSINE_SIMILARITY:
         first_norm = first / tf.norm(first, axis=1, keep_dims=True)
         second_norm = second / tf.norm(second, axis=1, keep_dims=True)
-        return -tf.reduce_sum(
-            tf.multiply(second_norm[None], first_norm[:, None]),
-            axis=2)
+        return -tf.matmul(first_norm, tf.transpose(second_norm))
     if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE_SQUARED:
-        return tf.reduce_sum(
-            tf.square(second[None] - first[:, None]),
-            axis=2)
+        distances = tf.add(
+            tf.reduce_sum(tf.square(first), axis=[1], keepdims=True),
+            tf.reduce_sum(
+                tf.square(tf.transpose(second)),
+                axis=[0],
+                keepdims=True)) - 2.0 * tf.matmul(first,
+                                                  tf.transpose(second))
+        return tf.maximum(distances, 0.0)
     if distance_function == DistanceFunction.EUCLIDEAN_DISTANCE:
-        return stable_sqrt(tf.reduce_sum(
-            tf.square(second[None] - first[:, None]),
-            axis=2))
+        distances = tf.add(
+            tf.reduce_sum(tf.square(first), axis=[1], keepdims=True),
+            tf.reduce_sum(
+                tf.square(tf.transpose(second)),
+                axis=[0],
+                keepdims=True)) - 2.0 * tf.matmul(first,
+                                                  tf.transpose(second))
+        distances = tf.maximum(distances, 0.0)
+        return stable_sqrt(distances)
     if distance_function == DistanceFunction.DOT_PRODUCT:
-        return -tf.reduce_sum(
-            tf.multiply(second[None], first[:, None]),
-            axis=2)
+        return -tf.matmul(first, tf.transpose(second))
     raise Exception(
         'Unknown distance function with name {}'.format(distance_function))
 
@@ -78,3 +85,7 @@ def get_n_blocks(tensor, n, transpose=False):
 
 def pairwise_product(first, second):
     return tf.multiply(second[None], first[:, None])
+
+
+def pairwise_sum(first, second):
+    return second[None] + first[:, None]
