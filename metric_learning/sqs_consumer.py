@@ -23,6 +23,3 @@ if __name__ == '__main__':
         experiment_name = message.message_attributes.get('experiment_name').get('StringValue')
         message.delete()
         train(conf, experiment_name)
-
-    time.sleep(10)
-    os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
