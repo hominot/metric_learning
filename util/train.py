@@ -28,6 +28,8 @@ def evaluate(conf, model, data_files, train_stat):
     Metric.cache.clear()
     with tf.contrib.summary.always_record_summaries():
         for metric_conf in model.conf['metrics']:
+            if metric_conf['name'] == 'nmi' and conf['dataset']['name'] == 'stanford_online_product':
+                continue
             conf_copy = {}
             conf_copy.update(conf)
             conf_copy['batch_design'] = metric_conf['batch_design']
