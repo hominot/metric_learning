@@ -5,6 +5,13 @@
     'distance_function': 'euclidean_distance',
     'importance_sampling': {{ importance_sampling | default(False) }},
 }
+{% elif name == 'l1_contrastive' %}
+{
+    'name': '{{ name }}',
+    'alpha': {{ alpha | default(2.0) }},
+    'distance_function': 'euclidean_distance',
+    'importance_sampling': {{ importance_sampling | default(False) }},
+}
 {% elif name == 'triplet' %}
 {
     'name': '{{ name }}',
