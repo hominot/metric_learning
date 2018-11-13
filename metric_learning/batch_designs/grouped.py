@@ -82,12 +82,18 @@ class GroupedBatchDesign(BatchDesign):
                         tf.reduce_sum(tf.square(label_embeddings - label_embeddings_mean), axis=1)
                     ))
                 )
-            closest_inter_distances = tf.reduce_min(compute_pairwise_distances(
+            closest_inter_distances, indices = tf.nn.top_k(-(compute_pairwise_distances(
                 tf.stack(means),
                 tf.stack(means),
-                DistanceFunction.EUCLIDEAN_DISTANCE) + tf.eye(num_labels) * 1e6, axis=0)
+                DistanceFunction.EUCLIDEAN_DISTANCE) + tf.eye(num_labels) * 1e6))
+            closest_inter_distances = tf.reshape(closest_inter_distances, [-1])
+            indices = tf.reshape(indices, [-1])
             within_mean_distances = stable_sqrt(tf.constant(mean_distances))
-            self.cache['class_weights'] = within_mean_distances / closest_inter_distances
+            self.cache['class_weights'] = tf.clip_by_value(
+                within_mean_distances / -closest_inter_distances,
+                clip_value_min=0.2,
+                clip_value_max=5)
+            self.cache['closest_class_labels'] = indices
 
         data = []
         for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
@@ -116,6 +122,24 @@ class GroupedBatchDesign(BatchDesign):
             weights = [k / weight_sum for k in weights]
             sampled_labels = np.random.choice(
                 list(data_map.keys()), size=num_groups, replace=False, p=weights)
+        elif batch_conf.get('class_pair_mining'):
+            classes = set()
+            data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
+            data_classes = list(data_map.keys())
+            weights = [float(self.cache['class_weights'][k]) for k in data_classes]
+            while len(classes) < num_groups:
+                weight_sum = sum(weights)
+                weights = [k / weight_sum for k in weights]
+                sampled_label = np.random.choice(
+                    data_classes, size=1, p=weights)
+                classes.add(sampled_label)
+                weights[sampled_label] = 0.0
+                if len(classes) >= num_groups:
+                    break
+                closest_class = int(self.cache['closest_class_labels'][sampled_label])
+                classes.add(closest_class)
+                weights[closest_class] = 0.0
+            sampled_labels = list(classes)
         else:
             data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
             sampled_labels = np.random.choice(
