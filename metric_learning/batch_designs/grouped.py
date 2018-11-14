@@ -82,12 +82,21 @@ class GroupedBatchDesign(BatchDesign):
                         tf.reduce_sum(tf.square(label_embeddings - label_embeddings_mean), axis=1)
                     ))
                 )
-            closest_inter_distances = tf.reduce_min(compute_pairwise_distances(
-                tf.stack(means),
-                tf.stack(means),
-                DistanceFunction.EUCLIDEAN_DISTANCE) + tf.eye(num_labels) * 1e6, axis=0)
+            closest_inter_distances = []
+            for index, mean in enumerate(means):
+                same_labels = tf.eye(num_labels)[index:index + 1]
+                closest_inter_distances.append(float(
+                    tf.reduce_min(compute_pairwise_distances(
+                        mean[None],
+                        tf.stack(means),
+                        DistanceFunction.EUCLIDEAN_DISTANCE) + same_labels * 1e6, axis=1)
+                ))
             within_mean_distances = stable_sqrt(tf.constant(mean_distances))
-            self.cache['class_weights'] = within_mean_distances / closest_inter_distances
+            self.cache['class_weights'] = tf.clip_by_value(
+                within_mean_distances / tf.constant(closest_inter_distances),
+                0.2,
+                5
+            )
 
         data = []
         for _ in range(batch_conf['num_batches'] * batch_conf.get('combine_batches', 1)):
