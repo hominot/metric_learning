@@ -19,14 +19,14 @@ configs = {
         'metrics': {'auc': True, 'recall': True, 'nmi': True, 'vrf': True},
         'trainer': {'lr_decay_steps': 100, 'learning_rate': 0.0001, 'lr_embedding': 0.0001, 'num_epochs': 20, 'lr_decay_rate': 0.9},
     }),
-    'cub200_npair': generate_config({
+    'cub200_contrastive': generate_config({
         'image': {},
-        'dataset': {'name': 'cub200'},
-        'batch_design': {'name': 'grouped', 'group_size': 2, 'batch_size': 64, 'npair': 32, 'negative_class_mining': True},
+        'dataset': {'name': 'cub200', 'multiple': 1},
+        'batch_design': {'name': 'grouped', 'group_size': 32, 'batch_size': 64},
         'model': {'name': 'resnet50', 'dimension': 128},
-        'loss': {'name': 'npair', 'lambda': 0.001, 'importance_sampling': True},
-        'metrics': {'auc': True, 'recall': True, 'nmi': True},
-        'trainer': {'lr_decay_steps': 100, 'learning_rate': 0.0001, 'lr_embedding': 0.0001, 'num_epochs': 20, 'lr_decay_rate': 0.9},
+        'loss': {'name': 'contrastive', 'alpha': 10.0, 'new_importance_sampling': True, 'l': 256},
+        'metrics': {'auc': True, 'recall': True},
+        'trainer': {'lr_decay_steps': 100, 'learning_rate': 0.0001, 'num_epochs': 20, 'lr_decay_rate': 0.90},
     }),
     'cub200_margin': generate_config({
         'image': {},

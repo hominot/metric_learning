@@ -206,13 +206,8 @@ def train(conf, experiment_name):
         train_stat['epoch'] = epoch + 1
         train_stat['loss'] = Decimal(str(sum(losses) / len(losses)))
         print('average loss: {:.4f}'.format(sum(losses) / len(losses)))
-        metrics.append(evaluate(conf, model, data_files, train_stat))
-        if conf['trainer']['early_stopping'] and stopping_criteria(metrics):
-            break
-    if conf['dataset']['name'] == 'stanford_online_product':
-        create_checkpoint(checkpoint, run_name, s3_upload=True)
+    final_metrics = evaluate(conf, model, data_files, train_stat)
     if CONFIG['tensorboard'].getboolean('dynamodb_upload'):
-        final_metrics = get_metric_to_report(metrics)
         table = db.Table('Experiment')
         for metric, score in final_metrics.items():
             table.update_item(
