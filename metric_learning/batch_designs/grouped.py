@@ -238,12 +238,12 @@ class GroupedBatchDesign(BatchDesign):
             class_weights = class_weights / sum(class_weights)
             class_weights_pairwise_sum = pairwise_sum(class_weights, class_weights)
             positive_weights = (group_size - 1) * num_images * (num_images - 1) / (
-                positive_label_counts * (positive_label_counts - 1) * num_groups * (batch_size - 1)
-            ) * (1 - tf.pow(1 - class_weights, num_groups))
-            negative_weights = group_size * num_images * (num_images - 1) / (
-                label_counts_multiplied * num_groups * (batch_size - 1)
-            ) * (1 - tf.pow(1 - class_weights, num_groups) - tf.pow(1 - class_weights[:, None], num_groups)
-                 + tf.pow(1 - class_weights_pairwise_sum, num_groups))
+                    positive_label_counts * (positive_label_counts - 1) * num_labels * (batch_size - 1)) * (self.conf['loss']['l']) / (num_labels - 1) \
+                               * (1 - tf.pow(1 - class_weights, num_groups))
+            negative_weights = (num_groups - 1) * group_size * num_images * (num_images - 1) / (
+                    (batch_size - 1) * num_labels * (num_labels - 1) * positive_label_counts * (positive_label_counts - 1)) \
+                               * (1 - tf.pow(1 - class_weights, num_groups) - tf.pow(1 - class_weights[:, None], num_groups)
+                                  + tf.pow(1 - class_weights_pairwise_sum, num_groups))
             weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
             return weights
         if self.conf['loss'].get('new_importance_sampling'):
