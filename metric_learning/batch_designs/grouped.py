@@ -42,6 +42,12 @@ class GroupedBatchDesign(BatchDesign):
 
     def create_dataset(self, model, image_files, labels, batch_conf,
                        testing=False):
+        data_map = defaultdict(int)
+        for image_file, label in zip(image_files, labels):
+            data_map[label] += 1
+        data_map = dict(filter(lambda x: x[1] >= self.conf['batch_design']['group_size'], data_map.items()))
+        model.extra_info['num_images'] = sum([y for x, y in data_map.items()])
+        model.extra_info['num_labels'] = len(data_map)
         if batch_conf.get('negative_class_mining'):
             data_loader = DataLoader.create(self.conf['dataset']['name'],
                                             self.conf)

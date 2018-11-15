@@ -49,7 +49,7 @@ def extract_zip(filepath, directory):
         zip_ref.extractall(directory)
 
 
-def load_images_from_directory(directory, splits=None, distort=None):
+def load_images_from_directory(directory, splits=None, distort=None, multiple=1):
     label_map = {}
     labels = []
     image_files = []
@@ -78,6 +78,7 @@ def load_images_from_directory(directory, splits=None, distort=None):
     ret = []
     for label, file_list in new_label_file_map.items():
         ret += [(file, label) for file in file_list]
+    ret = ret * multiple
     return zip(*ret)
 
 
@@ -147,4 +148,5 @@ def get_training_files_labels(conf):
         train_dir,
         splits=set(range(cv_splits)) - {cv_split},
         distort=conf['dataset'].get('distort'),
+        multiple=conf['dataset'].get('multiple', 1),
     )
