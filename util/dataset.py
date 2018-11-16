@@ -142,9 +142,27 @@ def get_training_files_labels(conf):
         CONFIG['dataset']['experiment_dir'],
         conf['dataset']['name'],
         'train')
-    return load_images_from_directory(
+    image_files, labels = load_images_from_directory(
         train_dir,
         splits=set(range(cv_splits)) - {cv_split},
         distort=conf['dataset'].get('distort'),
         multiple=conf['dataset'].get('multiple', 1),
     )
+    if conf['dataset'].get('num_labels'):
+        data_map = defaultdict(list)
+        for image_file, label in zip(image_files, labels):
+            data_map[label].append(image_file)
+        data_map = dict(filter(lambda x: len(x[1]) >= 5, data_map.items()))
+        sampled_labels = random.sample(list(data_map.keys()), conf['dataset']['num_labels'])
+        sampled_label_map = {}
+        for sampled_label in sampled_labels:
+            index = len(sampled_label_map)
+            sampled_label_map[sampled_label] = index
+        ret_image_files = []
+        ret_labels = []
+        for original_index, new_index in sampled_label_map.items():
+            ret_image_files += data_map[original_index]
+            ret_labels += [new_index] * len(data_map[original_index])
+        return ret_image_files, ret_labels
+    else:
+        return image_files, labels

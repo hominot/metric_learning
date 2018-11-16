@@ -155,6 +155,8 @@ def train(conf, experiment_name):
 
     metrics = []
     for epoch in range(conf['trainer']['num_epochs']):
+        if conf['dataset'].get('num_labels'):
+            train_images, train_labels = get_training_files_labels(conf)
         train_ds, num_examples = dataset.create_dataset(
             model,
             train_images,
