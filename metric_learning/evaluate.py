@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 
+from decimal import Decimal
 from util.config import CONFIG
 from util.dataset import load_images_from_directory
 
@@ -16,53 +17,38 @@ from util.registry.batch_design import BatchDesign
 
 
 s3 = boto3.client('s3')
+db = boto3.resource('dynamodb')
+table = db.Table('Experiment')
 
 
 def get_config(experiment):
-    if CONFIG['tensorboard'].getboolean('s3_upload'):
-        ret = s3.get_object(
-            Bucket='hominot',
-            Key='research/metric_learning/experiments/{}/config.json'.format(experiment))
-        return json.loads(ret['Body'].read().decode('utf-8'))
-
-    config_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'experiments', experiment)
-    with open(os.path.join(config_dir, 'config.json'), 'r') as f:
-        return json.load(f)
+    ret = table.get_item(Key={'id': experiment})
+    return json.loads(ret['Item']['config'])
 
 
 def get_checkpoint(temp_dir, experiment, step=None):
-    if CONFIG['tensorboard'].getboolean('s3_upload'):
-        if step is None:
-            checkpoint_path = tf.train.latest_checkpoint(
-                's3://hominot/research/metric_learning/experiments/{}/checkpoints'.format(experiment))
-        else:
-            checkpoint_path = 's3://hominot/research/metric_learning/experiments/{}/checkpoints/ckpt-{}'.format(
-                experiment, step)
-        for data in s3.list_objects(Bucket=CONFIG['tensorboard']['s3_bucket'],
-                                    Prefix=checkpoint_path.split('/', 3)[-1])['Contents']:
-            s3.download_file(
-                Bucket=CONFIG['tensorboard']['s3_bucket'],
-                Key=data['Key'],
-                Filename=os.path.join(temp_dir, data['Key'].split('/')[-1]))
-        return os.path.join(temp_dir, checkpoint_path.split('/')[-1])
-
     if step is None:
-        prefix = '{}/experiments/{}/checkpoints'.format(
-            CONFIG['tensorboard']['local_dir'],
-            experiment)
-        return tf.train.latest_checkpoint(prefix)
-    return '{}/experiments/{}/checkpoints/ckpt-{}'.format(
-        CONFIG['tensorboard']['local_dir'],
-        experiment,
-        step)
+        checkpoint_path = tf.train.latest_checkpoint(
+            's3://hominot/research/metric_learning/experiments/{}/checkpoints'.format(experiment))
+    else:
+        checkpoint_path = 's3://hominot/research/metric_learning/experiments/{}/checkpoints/ckpt-{}'.format(
+            experiment, step)
+    for data in s3.list_objects(Bucket=CONFIG['tensorboard']['s3_bucket'],
+                                Prefix=checkpoint_path.split('/', 3)[-1])['Contents']:
+        s3.download_file(
+            Bucket=CONFIG['tensorboard']['s3_bucket'],
+            Key=data['Key'],
+            Filename=os.path.join(temp_dir, data['Key'].split('/')[-1]))
+    return os.path.join(temp_dir, checkpoint_path.split('/')[-1])
 
 
 METRICS = [
     {
-        'name': 'recall',
-        'k': [1, 2, 4, 8],
-        'compute_period': 10,
-        'batch_size': 48,
+        'name': 'nmi',
+        'batch_design': {
+            'name': 'vanilla',
+            'batch_size': 48,
+        },
         'dataset': 'test',
     },
 ]
@@ -76,7 +62,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     conf = get_config(args.experiment)
-    optimizer = tf.train.AdamOptimizer(learning_rate=conf['trainer']['learning_rate'])
+    conf['metrics'] = METRICS
     model = Model.create(conf['model']['name'], conf)
 
     test_dir = os.path.join(
@@ -90,10 +76,11 @@ if __name__ == '__main__':
         {'data_loader': data_loader})
     test_datasets = {
         'test': vanilla_ds.create_dataset(
-            testing_files, testing_labels, testing=True),
+            model, testing_files, testing_labels, conf['batch_design'], testing=True),
     }
 
     checkpoint = tf.train.Checkpoint(model=model)
+    data = {}
     with tempfile.TemporaryDirectory() as temp_dir:
         c = get_checkpoint(temp_dir, args.experiment, args.step)
         checkpoint.restore(c)
@@ -102,4 +89,26 @@ if __name__ == '__main__':
             metric = Metric.create(metric_conf['name'], conf)
             test_dataset, test_num_testcases = test_datasets[metric_conf['dataset']]
             score = metric.compute_metric(model, test_dataset, test_num_testcases)
-            print(metric_conf['name'], score)
+            if type(score) is dict:
+                for metric, s in score.items():
+                    tf.contrib.summary.scalar('test ' + metric, s)
+                    print('{}: {}'.format(metric, s))
+                    data[metric] = Decimal(str(s))
+            else:
+                tf.contrib.summary.scalar('{}'.format(metric_conf['name']), score)
+                print('{}: {}'.format(metric_conf['name'], score))
+                data[metric_conf['name']] = Decimal(str(score))
+
+    for metric, score in data.items():
+        table.update_item(
+            Key={
+                'id': args.experiment,
+            },
+            UpdateExpression='SET #m = :u',
+            ExpressionAttributeNames={
+                '#m': 'metric:{}'.format(metric),
+            },
+            ExpressionAttributeValues={
+                ':u': score,
+            },
+        )
