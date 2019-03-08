@@ -12,7 +12,7 @@
     'positive_ratio': {{ positive_ratio | default(0.5) }},
 {% endif %}
     'batch_size': {{ batch_size | default(32) }},
-    'num_batches': 100,
+    'num_batches': {{ num_batches | default(100) }},
     'combine_batches': {{ combine_batches | default(1) }},
 {% if q_bias %}
     'q_bias': {{ q_bias }},
