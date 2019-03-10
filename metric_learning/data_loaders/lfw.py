@@ -1,4 +1,5 @@
-from util.dataset import download, extract_tgz, extract_zip from util.registry.data_loader import DataLoader
+from util.dataset import download, extract_tgz, extract_zip
+from util.registry.data_loader import DataLoader
 from util.config import CONFIG
 
 import tensorflow as tf
