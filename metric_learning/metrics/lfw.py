@@ -35,7 +35,7 @@ def _make_pairs_dataset():
             labels.append(label)
             if len(pairs) % num_examples == 0:
                 label = not label
-    return pairs, labels
+    return pairs, labels, num_groups, num_examples
 
 
 def _make_full_image_path(name, n):
@@ -83,7 +83,7 @@ class LFW(Metric):
             self.conf,
             {'data_loader': data_loader})
 
-        pairs, labels = _make_pairs_dataset()
+        pairs, labels, num_groups, num_examples = _make_pairs_dataset()
         image_files, pair_indices = _flatten_image_files(pairs)
 
         test_dataset, num_testcases = batch_design.create_dataset(
@@ -105,8 +105,12 @@ class LFW(Metric):
             distances.append(float(distance))
 
         accuracies = []
-        for i in trange(0, 6000, 600, desc='lfw:accuracy', dynamic_ncols=True):
-            accuracy = _calculate_accuracy(distances[i:i+600], labels[i:i+600])
+        num_examples_per_group = num_examples * 2
+        num_total_examples = num_groups * num_examples_per_group
+        for i in trange(0, num_total_examples, num_examples_per_group,
+                        desc='lfw:accuracy', dynamic_ncols=True):
+            accuracy = _calculate_accuracy(distances[i:i+num_examples_per_group],
+                                           labels[i:i+num_examples_per_group])
             accuracies.append(accuracy)
 
         Metric.cache.clear()
