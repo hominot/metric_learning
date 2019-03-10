@@ -53,4 +53,14 @@
         'num_samples': 10000,
     },
 {% endif %}
+{% if lfw | default(False) %}
+    {
+        'name': 'lfw',
+        'batch_design': {
+            'name': 'vanilla',
+            'batch_size': 48,
+        },
+        'dataset': 'test',
+    },
+{% endif %}
 ]
