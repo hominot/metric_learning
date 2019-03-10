@@ -53,9 +53,9 @@
         'num_samples': 10000,
     },
 {% endif %}
-{% if lfw | default(False) %}
+{% if lfw_acc | default(False) %}
     {
-        'name': 'lfw',
+        'name': 'lfw_acc',
         'batch_design': {
             'name': 'vanilla',
             'batch_size': 48,

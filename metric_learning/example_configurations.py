@@ -16,7 +16,7 @@ configs = {
         'batch_design': {'name': 'grouped', 'group_size': 4, 'batch_size': 64, 'num_batches': 100},
         'model': {'name': 'resnet50', 'dimension': 128},
         'loss': {'name': 'l1_contrastive', 'alpha': 8.0, 'new_importance_sampling': True, 'l': 512},
-        'metrics': {'recall': True, 'recall_k': [1, 2], 'lfw': True,},
+        'metrics': {'recall': True, 'recall_k': [1, 2], 'lfw_acc': True},
         'trainer': {'lr_decay_steps': 1000, 'learning_rate': 0.00003, 'num_epochs': 200, 'lr_decay_rate': 0.9},
     }),
     'lfw_npair': generate_config({

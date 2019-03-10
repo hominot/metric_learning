@@ -71,8 +71,8 @@ def _calculate_accuracy(distances, labels):
     return best_accuracy
 
 
-class LFW(Metric):
-    name = 'lfw'
+class LFWAccuracy(Metric):
+    name = 'lfw_acc'
 
     def compute_metric(self, model, ds, num_testcases):
         Metric.cache.clear()
