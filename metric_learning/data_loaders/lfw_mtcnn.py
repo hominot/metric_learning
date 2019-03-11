@@ -1,4 +1,3 @@
-from util.dataset import download, extract_tgz, extract_zip
 from util.registry.data_loader import DataLoader
 from util.config import CONFIG
 
@@ -45,7 +44,6 @@ class LFWMtcnnDataLoader(DataLoader):
                         file_path,
                         dest_path,
                     )
-        return
 
     def image_parse_function(self, filename):
         width = self.conf['image']['width']
