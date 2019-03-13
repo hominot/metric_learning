@@ -18,9 +18,10 @@ from metric_learning.constants.distance_function import get_distance_function
 from util.config import CONFIG
 
 
-def _make_pairs_dataset():
+def _make_pairs_dataset(conf):
     pairs, labels = [], []
-    with open(os.path.join(CONFIG['dataset']['data_dir'], 'lfw', 'pairs.txt')) as f:
+    with open(os.path.join(CONFIG['dataset']['data_dir'],
+                           conf['dataset']['name'], 'pairs.txt')) as f:
         num_groups, num_examples = map(int, f.readline().rstrip().split('\t'))
         label = True
         for line in f:
@@ -83,7 +84,7 @@ class LFWAccuracy(Metric):
             self.conf,
             {'data_loader': data_loader})
 
-        pairs, labels, num_groups, num_examples = _make_pairs_dataset()
+        pairs, labels, num_groups, num_examples = _make_pairs_dataset(self.conf)
         image_files, pair_indices = _flatten_image_files(pairs)
 
         test_dataset, num_testcases = batch_design.create_dataset(
