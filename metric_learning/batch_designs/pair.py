@@ -94,8 +94,8 @@ class PairBatchDesign(BatchDesign):
                             (even_label_counts * (even_label_counts - 1) * num_labels))
         negative_weights = ((1 - positive_ratio) * num_images * (num_images - 1)) /\
                            (num_labels * (num_labels - 1) * label_counts_multiplied)
-            weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
-            return weights
+        weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
+        return weights
 
     def get_npair_distances(self, batch, model, n, distance_function, training=True):
         raise NotImplementedError
