@@ -14,7 +14,7 @@ class L1ContrastiveLossFunction(LossFunction):
             batch, model, DistanceFunction.EUCLIDEAN_DISTANCE)
         positive_distances = tf.boolean_mask(pairwise_distances, matching_labels_matrix)
         negative_distances = tf.boolean_mask(pairwise_distances, ~matching_labels_matrix)
-        if self.conf['loss'].get('importance_sampling') or self.conf['loss'].get('new_importance_sampling'):
+        if self.conf['loss'].get('importance_sampling') or self.conf['loss'].get('new_importance_sampling') or self.conf['loss'].get('balanced_pairs'):
             positive_weights = tf.boolean_mask(weights, matching_labels_matrix)
             negative_weights = tf.boolean_mask(weights, ~matching_labels_matrix)
             loss_value = (

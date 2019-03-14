@@ -253,7 +253,12 @@ class GroupedBatchDesign(BatchDesign):
             positive_weights = (group_size - 1) * num_images * (num_images - 1) / (
                     positive_label_counts * (positive_label_counts - 1) * num_labels * (batch_size - 1)) * (self.conf['loss']['l']) / (num_labels - 1)
             negative_weights = (num_groups - 1) * group_size * num_images * (num_images - 1) / (
-                    (batch_size - 1) * num_labels * (num_labels - 1) * positive_label_counts * (positive_label_counts - 1))
+                    (batch_size - 1) * num_labels * (num_labels - 1) * label_counts_multiplied)
+            weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+            return weights
+        if self.conf['loss'].get('balanced_pairs'):
+            positive_weights = 1.
+            negative_weights = (num_groups - 1) * group_size / self.conf['loss']['l'] / (group_size - 1)
             weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
             return weights
         positive_weights = (group_size - 1) * num_images * (num_images - 1) / (
