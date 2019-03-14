@@ -17,6 +17,8 @@ class LFWMtcnnDataLoader(DataLoader):
         detector = MTCNN()
         for root, dirnames, filenames in os.walk(lfw_path):
             for file in filenames:
+                if file.endswith('.txt'):
+                    continue
                 file_path = os.path.join(root, file)
                 dest_path = file_path.replace('/lfw/', '/{}/'.format(self.name))
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
