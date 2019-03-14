@@ -8,6 +8,10 @@
     'new_importance_sampling': {{ new_importance_sampling | default(False) }},
     'l': {{ l | default(100) }}
 {%  endif %}
+{% if balanced_pairs %}
+    'balanced_pairs': {{ balanced_pairs | default(False) }},
+    'l': {{ l | default(100) }}
+{%  endif %}
 }
 {% elif name == 'l1_contrastive' %}
 {
@@ -17,6 +21,10 @@
     'importance_sampling': {{ importance_sampling | default(False) }},
 {% if new_importance_sampling %}
     'new_importance_sampling': {{ new_importance_sampling | default(False) }},
+    'l': {{ l | default(100) }}
+{%  endif %}
+{% if balanced_pairs %}
+    'balanced_pairs': {{ balanced_pairs | default(False) }},
     'l': {{ l | default(100) }}
 {%  endif %}
 }

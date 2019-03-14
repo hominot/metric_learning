@@ -71,8 +71,7 @@ class PairBatchDesign(BatchDesign):
         q_bias = self.conf['batch_design'].get('q_bias', 1.0)
         return elementwise_distances, match, (1 / weights) ** q_bias
 
-    @staticmethod
-    def get_pairwise_weights(labels, positive_ratio, extra_info):
+    def get_pairwise_weights(self, labels, positive_ratio, extra_info):
         num_images = extra_info['num_images']
         num_labels = extra_info['num_labels']
         label_counts = tf.gather(
@@ -83,6 +82,11 @@ class PairBatchDesign(BatchDesign):
         even_labels = tf.gather(labels, evens)
         odd_labels = tf.gather(labels, odds)
         match = tf.equal(even_labels, odd_labels)
+        if self.conf['loss'].get('balanced_pairs'):
+            positive_weights = positive_ratio
+            negative_weights = (1 - positive_ratio) / self.conf['loss']['l']
+            weights = positive_weights * tf.cast(match, tf.float32) + negative_weights * tf.cast(~match, tf.float32)
+            return weights
         even_label_counts = tf.gather(label_counts, evens)
         odd_label_counts = tf.gather(label_counts, odds)
         label_counts_multiplied = tf.multiply(even_label_counts, odd_label_counts)
