@@ -21,13 +21,15 @@ class LFWMtcnnDataLoader(DataLoader):
                 dest_path = file_path.replace('/lfw/', '/{}/'.format(self.name))
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
                 img = cv2.imread(file_path)
-                height, width, channels = img.shape
-                result = detector.detect_faces(img)
-                image_string = tf.read_file(file_path)
-                image_decoded = tf.image.decode_jpeg(image_string, channels=3)
-                result = list(filter(lambda x: x['box'][0] > 0 and x['box'][1] > 0, result))
-                result = list(filter(lambda x: x['box'][0] + x['box'][2] < width and x['box'][1] + x['box'][3] < height,
-                                     result))
+                result = None
+                if img is not None:
+                    height, width, channels = img.shape
+                    result = detector.detect_faces(img)
+                    image_string = tf.read_file(file_path)
+                    image_decoded = tf.image.decode_jpeg(image_string, channels=3)
+                    result = list(filter(lambda x: x['box'][0] > 0 and x['box'][1] > 0, result))
+                    result = list(filter(lambda x: x['box'][0] + x['box'][2] < width and x['box'][1] + x['box'][3] < height,
+                                         result))
                 if result:
                     result.sort(key=lambda x: x['box'][2] * x['box'][3], reverse=True)
                     cropped = tf.image.crop_to_bounding_box(

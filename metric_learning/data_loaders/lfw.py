@@ -31,6 +31,12 @@ class LFWDataLoader(DataLoader):
                 shutil.move(os.path.join(root, dirname), os.path.join(extract_path, dirname))
         os.rmdir(os.path.join(extract_path, 'lfw'))
 
+        pairs_filepath = download(
+            'http://vis-www.cs.umass.edu/lfw/pairs.txt',
+            os.path.join(CONFIG['dataset']['temp_dir'], 'pairs.txt'))
+        shutil.move(pairs_filepath,
+                    os.path.join(CONFIG['dataset']['data_dir'], self.name, 'pairs.txt'))
+
         webface_filepath = download(
             'https://s3-us-west-2.amazonaws.com/hominot/research/dataset/CASIA-WebFace.zip',
             os.path.join(CONFIG['dataset']['temp_dir'], 'webface')
