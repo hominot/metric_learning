@@ -4,5 +4,6 @@
     'k': {{ k | default(8) }},
     {% endif %}
     'dimension': {{ dimension | default(128) }},
-    'l2_normalize': {{ l2_normalize | default(False) }}
+    'l2_normalize': {{ l2_normalize | default(False) }},
+    'save_model' {{ save_model | default(False) }}
 }

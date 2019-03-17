@@ -85,7 +85,6 @@ def save_config(conf, run_name, experiment_name):
         table = db.Table('Experiment')
         table.put_item(Item=data)
 
-
 def upload_file_to_s3(file_path, bucket, key):
     s3.upload_file(file_path, bucket, key)
 
@@ -124,3 +123,8 @@ def create_checkpoint(checkpoint, run_name, s3_upload):
                     )
                 )
                 os.remove(os.path.join(root, filename))
+
+def save_model(conf, run_name, experiment_name, model):
+    model_dir = os.path.join(CONFIG['tensorboard']['local_dir'], 'models', run_name)
+    if not tf.gfile.Exists(model_dir):
+        tf.gfile.MakeDirs(model_dir)

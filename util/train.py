@@ -233,3 +233,5 @@ def train(conf, experiment_name):
                     ':u': score,
                 },
             )
+    if conf['model']['save_model']:
+        save_model(conf, run_name, experiment_name, model)
