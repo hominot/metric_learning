@@ -26,7 +26,17 @@ class MarginLoss(LossFunction):
         beta = self.conf['loss']['beta']
         positive_loss = tf.maximum(positive_distances - beta, 0.0)
         negative_loss = tf.maximum(alpha - negative_distances, 0.0)
+        if self.conf['loss'].get('importance_sampling') or self.conf['loss'].get('new_importance_sampling') or self.conf['loss'].get('balanced_pairs'):
+            positive_weights = tf.boolean_mask(weights, matching_labels_matrix)
+            negative_weights = tf.boolean_mask(weights, ~matching_labels_matrix)
+            loss_value = (
+                sum(positive_loss * positive_weights) +
+                sum(negative_loss * negative_weights)
+            ) / int(pairwise_distances.shape[0])
+        else:
+            loss_value = (
+                sum(positive_loss) +
+                sum(negative_loss)
+            ) / int(pairwise_distances.shape[0])
 
-        pair_cnt = tf.reduce_sum(tf.cast(positive_loss > 0, tf.float32)) + tf.reduce_sum(tf.cast(negative_loss > 0, tf.float32))
-
-        return tf.reduce_sum(positive_loss + negative_loss) / pair_cnt
+        return loss_value
