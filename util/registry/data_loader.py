@@ -21,7 +21,7 @@ class DataLoader(object, metaclass=ClassRegistry):
         width = self.conf['image']['random_crop']['width']
         height = self.conf['image']['random_crop']['height']
         channel = self.conf['image']['channel']
-        return tf.random_crop(image, [width, height, channel])
+        return tf.random_crop(image, [height, width, channel])
 
     def random_flip(self, image):
         return tf.image.random_flip_left_right(image)
@@ -33,10 +33,10 @@ class DataLoader(object, metaclass=ClassRegistry):
         height = self.conf['image']['height']
         return tf.image.crop_to_bounding_box(
             image,
-            (width - crop_width) // 2,
             (height - crop_height) // 2,
-            crop_width,
-            crop_height)
+            (width - crop_width) // 2,
+            crop_height,
+            crop_width)
 
     def __str__(self):
         return self.conf['dataset']['name']
