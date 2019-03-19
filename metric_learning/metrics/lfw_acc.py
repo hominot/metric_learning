@@ -30,8 +30,8 @@ def _make_pairs_dataset(conf):
                 name2 = name1
             else:
                 name1, n1, name2, n2 = line.rstrip().split('\t')
-            pair_lhs = _make_full_image_path(name1, n1)
-            pair_rhs = _make_full_image_path(name2, n2)
+            pair_lhs = _make_full_image_path(name1, n1, conf)
+            pair_rhs = _make_full_image_path(name2, n2, conf)
             pairs.append([pair_lhs, pair_rhs])
             labels.append(label)
             if len(pairs) % num_examples == 0:
@@ -39,9 +39,9 @@ def _make_pairs_dataset(conf):
     return pairs, labels, num_groups, num_examples
 
 
-def _make_full_image_path(name, n):
+def _make_full_image_path(name, n, conf):
     filename = '{}_{:04d}.jpg'.format(name, int(n))
-    return os.path.join(CONFIG['dataset']['data_dir'], 'lfw', 'test', name, filename)
+    return os.path.join(CONFIG['dataset']['data_dir'], conf['dataset']['name'], 'test', name, filename)
 
 
 def _flatten_image_files(pairs):
