@@ -29,7 +29,7 @@ def compute_one_loss(conf, num_labels, label_counts, data, i, j):
         tf.gather(label_counts, labels),
         tf.gather(label_counts, test_labels),
     )
-    l = 1 / (conf['loss']['l'] + 1)
+    l = 1 / (conf['loss'].get('l', 256) + 1)
     if i == j:
         label_product = label_product - tf.diag(tf.gather(label_counts, labels))
         positive_distances = tf.boolean_mask(distances, matches)
