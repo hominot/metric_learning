@@ -36,7 +36,7 @@ def compute_contrastive_loss(conf, embeddings_list, labels_list, extra_info):
                 tf.gather(label_counts, labels),
                 tf.gather(label_counts, test_labels),
             )
-            l = 1 / conf['loss']['l']
+            l = 1 / (conf['loss']['l'] + 1)
             if i == j:
                 distances = upper_triangular_part(distances)
                 matches = upper_triangular_part(matches)
