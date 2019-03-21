@@ -121,23 +121,18 @@ class GroupedBatchDesign(BatchDesign):
         random.shuffle(data)
 
         batch_size = batch_conf['batch_size']
+        if batch_conf.get('uniform'):
+            print('here')
+            return data[0:batch_size]
         group_size = batch_conf['group_size']
         num_groups = batch_size // group_size
         data_map = defaultdict(list)
         for image_file, label in data:
             data_map[label].append(image_file)
 
-        if batch_conf.get('negative_class_mining'):
-            data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
-            weights = [float(self.cache['class_weights'][k]) for k in data_map.keys()]
-            weight_sum = sum(weights)
-            weights = [k / weight_sum for k in weights]
-            sampled_labels = np.random.choice(
-                list(data_map.keys()), size=num_groups, replace=False, p=weights)
-        else:
-            data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
-            sampled_labels = np.random.choice(
-                list(data_map.keys()), size=num_groups, replace=False)
+        data_map = dict(filter(lambda x: len(x[1]) >= group_size, data_map.items()))
+        sampled_labels = np.random.choice(
+            list(data_map.keys()), size=num_groups, replace=False)
         grouped_data = []
         for label in sampled_labels:
             for _ in range(group_size):
@@ -256,7 +251,12 @@ class GroupedBatchDesign(BatchDesign):
                     (batch_size - 1) * num_labels * (num_labels - 1) * label_counts_multiplied)
             weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
             return weights
-        if self.conf['loss'].get('balanced_pairs'):
+        if self.conf['loss'].get('balanced_pairs') and not self.conf['batch_design'].get('uniform'):
+            positive_weights = 1.
+            negative_weights = (num_groups - 1) * group_size / self.conf['loss']['l'] / (group_size - 1)
+            weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
+            return weights
+        if self.conf['loss'].get('balanced_pairs') and self.conf['batch_design'].get('uniform'):
             positive_weights = 1.
             negative_weights = (num_groups - 1) * group_size / self.conf['loss']['l'] / (group_size - 1)
             weights = positive_weights * tf.cast(matching_labels_matrix, tf.float32) + negative_weights * tf.cast(~matching_labels_matrix, tf.float32)
