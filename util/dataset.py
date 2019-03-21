@@ -70,10 +70,12 @@ def load_images_from_directory(directory, splits=None, distort=None, multiple=1)
     for label, file in zip(labels, image_files):
         label_file_map[label].append(file)
     new_label_file_map = defaultdict(list)
-    for label, file_list in label_file_map.items():
-        p = 1 - distort * random.random()
-        target_num_files = max(2, int(len(file_list) * p))
-        new_label_file_map[label] = random.sample(file_list, target_num_files)
+    for index, (label, file_list) in enumerate(label_file_map.items()):
+        if index < len(label_file_map) // 2:
+            num_samples = distort['base'] - distort['value']
+        else:
+            num_samples = distort['base'] + distort['value']
+        new_label_file_map[label] = file_list[0:num_samples]
     ret = []
     for label, file_list in new_label_file_map.items():
         ret += [(file, label) for file in file_list]

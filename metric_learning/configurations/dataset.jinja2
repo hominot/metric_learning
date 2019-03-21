@@ -2,7 +2,10 @@
     'name': '{{ name }}',
     'cross_validation_split': {{ cross_validation_split | default(-1) }},
 {% if distort %}
-    'distort': {{ distort }},
+    'distort': {
+        'base': {{ distort_base }},
+        'value': {{ distort_value }},
+    },
 {% endif %}
 {% if multiple %}
     'multiple': {{ multiple }},
