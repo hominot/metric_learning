@@ -40,7 +40,11 @@ def _make_pairs_dataset(conf):
 
 
 def _make_full_image_path(name, n, conf):
-    filename = '{}_{:04d}.jpg'.format(name, int(n))
+    if conf['dataset']['name'] == 'lfw_aligned':
+        extension = 'png'
+    else:
+        extension = 'jpg'
+    filename = '{}_{:04d}.{}'.format(name, int(n), extension)
     return os.path.join(CONFIG['dataset']['data_dir'], conf['dataset']['name'], 'test', name, filename)
 
 
