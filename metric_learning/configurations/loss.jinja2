@@ -1,3 +1,9 @@
+{% if name == 'softmax' %}
+{
+    'name': '{{ name }}',
+    'distance_function': 'euclidean_distance',
+}
+{%  endif %}
 {% if name == 'contrastive' %}
 {
     'name': '{{ name }}',
