@@ -22,7 +22,10 @@ class Model(tf.keras.models.Model, metaclass=ClassRegistry):
         for k, v in self.loss_function.extra_variables.items():
             setattr(self, k, v)
             self.variable_names.append(k)
-        if 'dimension' in conf['model']:
+        if conf['loss']['name'] == 'softmax':
+            self.embedding = Dense(extra_info['num_labels'],
+                                   name='dimension_reduction')
+        elif 'dimension' in conf['model']:
             self.embedding = Dense(conf['model']['dimension'],
                                    name='dimension_reduction')
             self.variable_names.append('embedding')

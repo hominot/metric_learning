@@ -7,7 +7,7 @@ class RandomBatchDesign(BatchDesign):
     name = 'random'
 
     def get_next_batch(self, image_files, labels, batch_conf):
-        data = list(zip(image_files, labels, range(len(image_files))))
+        data = list(zip(image_files, labels))
         random.shuffle(data)
         return data[:batch_conf['batch_size']]
 
